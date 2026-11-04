@@ -1,0 +1,60 @@
+[
+  {
+    "fixture": "ruby",
+    "mode": "dependency",
+    "scenario": "parallel_full",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 3,
+    "p50_seconds": 3.134579206001945,
+    "p95_seconds": 3.200899985007709,
+    "median_peak_rss_kib": 106516.0,
+    "median_allocations": 9033371,
+    "cache_bytes": [
+      7262099,
+      7262122
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      8105763,
+      8105763
+    ],
+    "p95_peak_rss_kib": 116536.0,
+    "p95_allocations": 9034998,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "dependency",
+    "scenario": "parallel_full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 2.952344011995592,
+    "p95_seconds": 2.952344011995592,
+    "median_peak_rss_kib": 116720.0,
+    "median_allocations": 9146181,
+    "cache_bytes": [
+      7262086,
+      7262086
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      8105763,
+      8105763
+    ],
+    "p95_peak_rss_kib": 116720.0,
+    "p95_allocations": 9146181,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  }
+]

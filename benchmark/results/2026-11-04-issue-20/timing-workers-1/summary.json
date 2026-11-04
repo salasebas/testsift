@@ -1,0 +1,31 @@
+[
+  {
+    "fixture": "ruby",
+    "mode": "dependency",
+    "scenario": "parallel_full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 4.705670187002397,
+    "p95_seconds": 4.705670187002397,
+    "median_peak_rss_kib": 131272.0,
+    "median_allocations": 11073862,
+    "cache_bytes": [
+      7467511,
+      7467511
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      8349927,
+      8349927
+    ],
+    "p95_peak_rss_kib": 131272.0,
+    "p95_allocations": 11073862,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  }
+]

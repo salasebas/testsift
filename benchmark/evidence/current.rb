@@ -16,8 +16,7 @@ module PerformanceEvidence
     end
 
     def prepare_fixture(fixture)
-      super
-      return unless @options[:corpus]
+      return super unless @options[:corpus]
 
       raise ArgumentError, 'corpus requires the ruby fixture alone' unless @options.fetch(:fixtures) == ['ruby']
 
@@ -27,6 +26,9 @@ module PerformanceEvidence
         file.puts "gem 'msgpack', '= 1.8.7', require: false"
         file.puts "gem 'sqlite3', '= 2.10.2', require: false"
       end
+      super
+      return if @options[:lockfiles]
+
       command('bundle', 'install', chdir: cwd(fixture), env: { 'BUNDLE_GEMFILE' => gemfile })
     end
 
