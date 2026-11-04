@@ -4,6 +4,8 @@ TestSift is a fork of [RSpec Tracer](https://github.com/avmnu-sng/rspec-tracer)
 for affected-test selection. Development starts from upstream
 `v2.0.0.rc.1`, commit `f13851f7b3393aaafa7c7df088c1605747f07ce5`.
 See [FORK.md](FORK.md) for the baseline and initial scope.
+The [TestSift roadmap](https://github.com/salasebas/testsift/issues/1) tracks
+the research, engine extraction, coverage integration, and runner adapters.
 
 The imported implementation and installation instructions below still use
 the `rspec-tracer` gem and `RSpecTracer` namespace. They describe the upstream

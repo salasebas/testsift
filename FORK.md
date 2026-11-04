@@ -31,6 +31,12 @@ dependency engine separate from runner adapters, then evaluate Rust for
 measured bottlenecks. Add Minitest after the RSpec flow works through that
 interface. These are development intentions, not implemented fork features.
 
+The [TestSift roadmap](https://github.com/salasebas/testsift/issues/1) records
+the implementation order, acceptance criteria, and dependencies. The
+[upstream inventory](https://github.com/salasebas/testsift/issues/2) separates
+inherited capabilities from unfinished upstream work. TestSift's own
+packaging and versioning are tracked in [issue #5](https://github.com/salasebas/testsift/issues/5).
+
 Keep tests executed in the current run distinct from historical coverage
 carried forward for skipped tests. A preserved percentage alone does not
 establish that the current run measured the complete suite.
