@@ -90,6 +90,15 @@ below as they are reproduced.
   command can therefore omit failures. Follow-up: fail the benchmark if any
   scenario or child fails. Retained results below explicitly require all 14
   scenarios with 10 samples each, plus direct Rails behavior checks.
+- CI exposed an inherited parallel cleanup race with four workers: a worker
+  directory can remain after the elected worker's purge. The exact scheduling
+  cause remains unconfirmed; the parallel module is unchanged from the baseline.
+  Follow-up: reproduce delayed peer startup and verify completion ownership
+  without relying on a guessed worker count. The two-worker integration helper
+  was also setting `PARALLEL_TEST_GROUPS`, which the CLI overwrites; it must
+  pass `-n 2` to exercise its documented two-worker contract. The existing
+  green-exit example now also checks the reported process count; no previous
+  assertion checked which process count actually ran.
 
 ## Core lifecycle contract
 
@@ -229,6 +238,18 @@ Security thresholds, vulnerability suppressions, engine behavior, and benchmark
 limits are unchanged. The timing artifact below predates these dependency
 repairs and does not measure their performance.
 
+[CI run 41795833980](https://github.com/salasebas/testsift/actions/runs/41795833980)
+completed 84 jobs successfully, including security, the full benchmark, and
+every Rails cell. Its parallel cleanup failure exposed the fixture helper's
+process-count error recorded above. The helper now uses the CLI's documented
+[`-n` option](https://github.com/grosser/parallel_tests/tree/v4.10.1#usage).
+The extended existing example fails before that correction, reporting four
+processes instead of two. Afterward, `task test:features:ruby-parallel` passes
+all seven examples with both parallel_tests 4.10.1 and 5.7.0, verified in their
+resolved fixture lockfiles. A fresh `task check` also passes 2,177 examples
+with zero failures and the two expected LocalStack skips. This corrects the
+two-worker test setup; it does not claim to repair the four-worker race.
+
 ## Before and after overhead
 
 [Raw samples and environment](../../benchmark/engine_extraction.json) contain
@@ -284,3 +305,5 @@ ratchet evaluation, and reporting limits. No review findings remain open.
 
 A fourth fresh Astra review approved the security follow-up, including the
 lockfile, generated bundle, Puma's Ruby requirement, and preserved CI matrix.
+A fifth approved the two-worker helper correction and confirmed the cleanup
+assertions remain unchanged; the four-worker defect remains explicitly pending.

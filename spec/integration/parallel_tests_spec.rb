@@ -46,8 +46,7 @@ module ParallelTestsSpecHelpers
 
   def run_parallel
     Bundler.with_unbundled_env do
-      Open3.capture2e({ 'PARALLEL_TEST_GROUPS' => '2' },
-                      'bundle', 'exec', 'parallel_rspec', 'spec',
+      Open3.capture2e('bundle', 'exec', 'parallel_rspec', '-n', '2', 'spec',
                       chdir: FIXTURE_ROOT)
     end
   end
@@ -83,6 +82,7 @@ RSpec.describe 'parallel_tests v2 engine integration' do
       out, status = run_parallel
 
       expect(status.exitstatus).to eq(0), "parallel run failed:\n#{out}"
+      expect(out).to include('2 processes for')
     end
 
     it 'purges per-worker parallel_tests_N directories on the last worker' do
