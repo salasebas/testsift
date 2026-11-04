@@ -64,10 +64,27 @@ tasks:
     cmds:
       - ruby benchmark/evidence/run.rb {{.CLI_ARGS}}
 
+  benchmark:evidence:current:
+    desc: Measure the extracted engine and generated scale corpus separately from the imported baseline
+    deps: [benchmark:bundle]
+    cmds:
+      - ruby benchmark/evidence/current.rb {{.CLI_ARGS}}
+
   benchmark:coverage:real:
     desc: Measure snapshots and scans of actual VM Coverage over executable Ruby files
     cmds:
       - ruby benchmark/evidence/coverage.rb
+
+  benchmark:evidence:runtime:
+    desc: Compare installed Ruby runtimes and YJIT on sparse and dense real Coverage workloads
+    cmds:
+      - ruby benchmark/evidence/runtime.rb {{.CLI_ARGS}}
+
+  benchmark:evidence:startup:
+    desc: Measure unwrapped RSpec discovery with dry-run and no benchmark bootstrap
+    deps: [benchmark:bundle]
+    cmds:
+      - ruby benchmark/evidence/startup.rb {{.CLI_ARGS}}
 
   benchmark:evidence:input-fault:
     desc: Compare semantic input-change selection with full failing RSpec oracles
