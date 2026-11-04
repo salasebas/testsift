@@ -1,0 +1,48 @@
+require 'digest'
+require 'fileutils'
+require 'json'
+require 'open3'
+require 'time'
+
+repo = '/home/sebastian/Projects/testsift-issue3-baseline'
+destination = File.join(repo, 'tmp/evidence-plain-final-20261104')
+raise 'output exists' if File.exist?(destination)
+FileUtils.mkdir_p(destination)
+work = File.join(repo, 'tmp/evidence-stock-final-20261104/work')
+boot = File.join(repo, 'benchmark/evidence/boot.rb')
+fixtures = { 'ruby' => ['benchmark/fixtures/ruby_app', 38], 'rails' => ['spec/fixtures/rails_app', 308] }
+metadata = { baseline_revision: 'f13851f7b3393aaafa7c7df088c1605747f07ce5',
+             recorded_at: Time.now.utc.iso8601, driver_sha256: Digest::SHA256.file(__FILE__).hexdigest,
+             boot_sha256: Digest::SHA256.file(boot).hexdigest, repetitions: 20, seed: 10_017,
+             ruby: RUBY_DESCRIPTION, helper_patch: 'Ruby fixture tracer gated by EVIDENCE_TRACER=0' }
+File.write(File.join(destination, 'metadata.json'), JSON.pretty_generate(metadata))
+random = Random.new(10_017)
+20.times do |round|
+  fixtures.keys.product([false, true]).shuffle(random: random).each do |fixture, bootstrap|
+    relative, expected = fixtures.fetch(fixture)
+    cwd = File.join(work, relative)
+    token = "#{fixture}-#{bootstrap}-#{round}"
+    json = File.join(destination, "#{token}.json")
+    timing = File.join(destination, "#{token}.time")
+    env = { 'BUNDLE_GEMFILE' => File.join(cwd, 'Gemfile'), 'EVIDENCE_TRACER' => '0', 'RSPEC_TRACER' => '0',
+            'EVIDENCE_MODE' => 'plain', 'EVIDENCE_PROFILE' => '0',
+            'EVIDENCE_TELEMETRY' => File.join(destination, "#{token}-telemetry"),
+            'RAILS_ENV' => 'test', 'COVERAGE' => 'false', 'RUBYOPT' => '-EUTF-8' }
+    args = bootstrap ? ['bundle', 'exec', 'ruby', '-r', boot, '-S', 'rspec'] : ['bundle', 'exec', 'rspec']
+    command = ['/usr/bin/time', '-f', '%M %U %S', '-o', timing, *args, '--format', 'json', '--out', json]
+    start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    stdout, stderr, status = Open3.capture3(env, *command, chdir: cwd)
+    elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
+    File.write(File.join(destination, "#{token}.log"), stdout + stderr)
+    raise "#{token} failed" unless status.success?
+    payload = JSON.parse(File.read(json))
+    examples = payload.fetch('examples')
+    raise "#{token} did not execute full suite" unless examples.size == expected && examples.all? { |item| item['status']=='passed' }
+    resource = File.readlines(timing).last.split.map(&:to_f)
+    row = { fixture: fixture, bootstrap: bootstrap, round: round, command: command, env: env,
+            wall_seconds: elapsed, peak_rss_kib: resource[0], user_seconds: resource[1], system_seconds: resource[2],
+            selected: examples.size, failures: [], exit_code: status.exitstatus }
+    File.open(File.join(destination, 'runs.jsonl'), 'a') { |file| file.puts(JSON.generate(row)) }
+    warn "#{token}: #{elapsed.round(3)}s"
+  end
+end

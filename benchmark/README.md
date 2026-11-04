@@ -3,6 +3,16 @@
 Measures rspec-tracer's overhead across four scenarios and enforces a
 ratchet to catch performance regressions before they land.
 
+## Imported-baseline measurements
+
+The separate [evidence driver](evidence/README.md) measures complete Ruby and Rails
+RSpec processes against a fixed source revision, with matched Coverage controls,
+cache resets, failure oracles, memory, allocations, and exclusive method profiles.
+See the [issue #3 results](results/2026-11-04-issue-3/REPORT.md),
+[optimization inventory](PERFORMANCE_INVENTORY.md), and
+[Coverage and Rust assessment](COVERAGE_RUST_RESEARCH.md). These experiments do not
+change the existing benchmark limits.
+
 ## Scenarios
 
 | Name | What it measures | Fixture |

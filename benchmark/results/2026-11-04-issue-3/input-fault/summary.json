@@ -1,0 +1,44 @@
+[
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "fault",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 20,
+    "p50_seconds": 0.3316412799904356,
+    "p95_seconds": 0.34492767399933655,
+    "median_peak_rss_kib": 44148.0,
+    "median_allocations": 262777,
+    "cache_bytes": [
+      71137,
+      71149
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "lines",
+    "scenario": "fault",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 20,
+    "p50_seconds": 1.477888132998487,
+    "p95_seconds": 1.507116788008716,
+    "median_peak_rss_kib": 145732.0,
+    "median_allocations": 2372820,
+    "cache_bytes": [
+      2139180,
+      2139192
+    ],
+    "selected_ratio": [
+      0.05194805194805195,
+      0.05194805194805195
+    ],
+    "omitted_failing_tests": 0
+  }
+]

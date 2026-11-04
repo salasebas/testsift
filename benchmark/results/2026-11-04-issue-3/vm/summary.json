@@ -1,0 +1,942 @@
+[
+  {
+    "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "tracepoint",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "file_set_reset": {
+        "count": 20,
+        "p50_seconds": 3.990135155618191e-07,
+        "p95_seconds": 6.059999577701092e-07,
+        "p50_allocations": 0
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 9.433992090635002e-06,
+        "p95_seconds": 9.64099308475852e-06,
+        "p50_allocations": 0
+      },
+      "file_set_result": {
+        "count": 20,
+        "p50_seconds": 3.9300357457250357e-07,
+        "p95_seconds": 4.4199987314641476e-07,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.10837370800436474,
+    "peak_rss_kib": 24444.0,
+    "user_seconds": 0.09,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 100,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "lines",
+    "coverage_files": 100,
+    "line_slots": 6600,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 3.01730033243075e-05,
+        "p95_seconds": 4.8214002163149416e-05,
+        "p50_allocations": 201
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 2.0619918359443545e-06,
+        "p95_seconds": 2.5850022211670876e-06,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 2.9547998565249145e-05,
+        "p95_seconds": 5.7415993069298565e-05,
+        "p50_allocations": 102
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 3.069872036576271e-07,
+        "p95_seconds": 6.539921741932631e-07,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 2.981899888254702e-05,
+        "p95_seconds": 3.914500121027231e-05,
+        "p50_allocations": 202
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 1.436899765394628e-05,
+        "p95_seconds": 1.8111008103005588e-05,
+        "p50_allocations": 102
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 1.084299583453685e-05,
+        "p95_seconds": 1.1918004020117223e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.05910095300350804,
+    "peak_rss_kib": 25260.0,
+    "user_seconds": 0.04,
+    "system_seconds": 0.0,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "lines",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 7.627600280102342e-05,
+        "p95_seconds": 0.00020773800497408956,
+        "p50_allocations": 1001
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 2.3600005079060793e-06,
+        "p95_seconds": 3.364999429322779e-06,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.00014642300084233284,
+        "p95_seconds": 0.00018016899412032217,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 5.659967428073287e-07,
+        "p95_seconds": 1.7120037227869034e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 7.672401261515915e-05,
+        "p95_seconds": 0.00046880099398549646,
+        "p50_allocations": 1002
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 7.275700045283884e-05,
+        "p95_seconds": 8.002099639270455e-05,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 5.2094997954554856e-05,
+        "p95_seconds": 5.815700569655746e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.11659714100824203,
+    "peak_rss_kib": 35860.0,
+    "user_seconds": 0.1,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "branches",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.021328420989448205,
+        "p95_seconds": 0.03309143299702555,
+        "p50_allocations": 121501
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 8.669987437315285e-06,
+        "p95_seconds": 1.5922007150948048e-05,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.0003706649877130985,
+        "p95_seconds": 0.0007248420006362721,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 2.038010279648006e-06,
+        "p95_seconds": 4.6570057747885585e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 0.018571364009403624,
+        "p95_seconds": 0.02919358600047417,
+        "p50_allocations": 121502
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 0.00017654099792707711,
+        "p95_seconds": 0.00027567399956751615,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 6.053299875929952e-05,
+        "p95_seconds": 0.00010379099694546312,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 1.5096860019984888,
+    "peak_rss_kib": 111956.0,
+    "user_seconds": 1.45,
+    "system_seconds": 0.04,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "tracepoint",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "file_set_reset": {
+        "count": 20,
+        "p50_seconds": 4.350004019215703e-07,
+        "p95_seconds": 6.710033630952239e-07,
+        "p50_allocations": 0
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 1.0522009688429534e-05,
+        "p95_seconds": 1.3682001736015081e-05,
+        "p50_allocations": 0
+      },
+      "file_set_result": {
+        "count": 20,
+        "p50_seconds": 4.67000063508749e-07,
+        "p95_seconds": 5.699985194951296e-07,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.12855477900302503,
+    "peak_rss_kib": 22460.0,
+    "user_seconds": 0.1,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 500,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "branches",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.021526224998524413,
+        "p95_seconds": 0.023254892992554232,
+        "p50_allocations": 121501
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 0.0020061639952473342,
+        "p95_seconds": 0.0026848709967453033,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.000319755999953486,
+        "p95_seconds": 0.0003643019881565124,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 1.7709971871227026e-06,
+        "p95_seconds": 4.1530001908540726e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 0.01871991298685316,
+        "p95_seconds": 0.01964793099614326,
+        "p50_allocations": 121502
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 0.00016994000179693103,
+        "p95_seconds": 0.00019481100025586784,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 5.984000745229423e-05,
+        "p95_seconds": 6.361700070556253e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 1.47022211800504,
+    "peak_rss_kib": 111768.0,
+    "user_seconds": 1.41,
+    "system_seconds": 0.04,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 100,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "branches",
+    "coverage_files": 100,
+    "line_slots": 6600,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.004508943995460868,
+        "p95_seconds": 0.0052947459917049855,
+        "p50_allocations": 24301
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 6.514004780910909e-06,
+        "p95_seconds": 7.94099469203502e-06,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 4.978101060260087e-05,
+        "p95_seconds": 6.399999256245792e-05,
+        "p50_allocations": 102
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 8.610077202320099e-07,
+        "p95_seconds": 1.2899981811642647e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 0.003818069992121309,
+        "p95_seconds": 0.005178595005418174,
+        "p50_allocations": 24302
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 2.3342014173977077e-05,
+        "p95_seconds": 3.107200609520078e-05,
+        "p50_allocations": 102
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 1.241300196852535e-05,
+        "p95_seconds": 1.42659991979599e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.32272461100365035,
+    "peak_rss_kib": 41392.0,
+    "user_seconds": 0.3,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 500,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "lines",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.00010175300121773034,
+        "p95_seconds": 0.0002473459899192676,
+        "p50_allocations": 1001
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 0.0010250199993606657,
+        "p95_seconds": 0.001202728002681397,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.000156690992298536,
+        "p95_seconds": 0.0002035490033449605,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 1.0630028555169702e-06,
+        "p95_seconds": 2.4030014174059033e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 9.217600745614618e-05,
+        "p95_seconds": 0.0007324199978029355,
+        "p50_allocations": 1002
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 7.662401185370982e-05,
+        "p95_seconds": 0.00013243600551504642,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 5.638699803967029e-05,
+        "p95_seconds": 6.17660116404295e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.14700317299866583,
+    "peak_rss_kib": 35980.0,
+    "user_seconds": 0.12,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "off",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "execution": {
+        "count": 20,
+        "p50_seconds": 7.980124792084098e-07,
+        "p95_seconds": 1.2419914128258824e-06,
+        "p50_allocations": 0
+      }
+    },
+    "wall_seconds": 0.09443238700623624,
+    "peak_rss_kib": 22892.0,
+    "user_seconds": 0.07,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 2000,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "branches",
+    "coverage_files": 2000,
+    "line_slots": 132000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.08279715200478677,
+        "p95_seconds": 0.10682970100606326,
+        "p50_allocations": 486001
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 9.419993148185313e-06,
+        "p95_seconds": 1.1814001481980085e-05,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.0015412120119435713,
+        "p95_seconds": 0.011485367998830043,
+        "p50_allocations": 2002
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 5.41000918019563e-06,
+        "p95_seconds": 1.0706004104577005e-05,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 0.08474886900512502,
+        "p95_seconds": 0.17273964000924025,
+        "p50_allocations": 486002
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 0.0007418479945044965,
+        "p95_seconds": 0.009135488013271242,
+        "p50_allocations": 2002
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 0.0004693179944297299,
+        "p95_seconds": 0.0006160140037536621,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 6.164169002993731,
+    "peak_rss_kib": 705112.0,
+    "user_seconds": 5.85,
+    "system_seconds": 0.27,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 2000,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "lines",
+    "coverage_files": 2000,
+    "line_slots": 132000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.0006882589950691909,
+        "p95_seconds": 0.0012096610007574782,
+        "p50_allocations": 4001
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 4.405999789014459e-06,
+        "p95_seconds": 7.014998118393123e-06,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.0007019879994913936,
+        "p95_seconds": 0.0008490719919791445,
+        "p50_allocations": 2002
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 2.205008058808744e-06,
+        "p95_seconds": 4.975998308509588e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 0.0003526439977576956,
+        "p95_seconds": 0.00048076099483296275,
+        "p50_allocations": 4002
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 0.0003240910009481013,
+        "p95_seconds": 0.0003591879940358922,
+        "p50_allocations": 2002
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 0.00025768599880393595,
+        "p95_seconds": 0.00028931999986525625,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.3848139600013383,
+    "peak_rss_kib": 63208.0,
+    "user_seconds": 0.33,
+    "system_seconds": 0.04,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "off",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "execution": {
+        "count": 20,
+        "p50_seconds": 5.089968908578157e-07,
+        "p95_seconds": 8.969946065917611e-07,
+        "p50_allocations": 0
+      }
+    },
+    "wall_seconds": 0.10181702898989897,
+    "peak_rss_kib": 24292.0,
+    "user_seconds": 0.08,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "branches",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.01974819700990338,
+        "p95_seconds": 0.025493145993095823,
+        "p50_allocations": 121501
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 1.0282994480803609e-05,
+        "p95_seconds": 1.2721997336484492e-05,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.0003613540029618889,
+        "p95_seconds": 0.0005060169933130965,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 2.2619933588430285e-06,
+        "p95_seconds": 6.107002263888717e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 0.022570412009372376,
+        "p95_seconds": 0.038925895001739264,
+        "p50_allocations": 121502
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 0.00017420599760953337,
+        "p95_seconds": 0.0001953610044438392,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 6.408900662790984e-05,
+        "p95_seconds": 6.971399125177413e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 1.5641333549865521,
+    "peak_rss_kib": 161068.0,
+    "user_seconds": 1.49,
+    "system_seconds": 0.06,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "branches",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 0.021189115999732167,
+        "p95_seconds": 0.029078631996526383,
+        "p50_allocations": 121501
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 9.107010555453598e-06,
+        "p95_seconds": 1.2507996871136129e-05,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.00035109699820168316,
+        "p95_seconds": 0.0004686579923145473,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 1.963999238796532e-06,
+        "p95_seconds": 3.031003871001303e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 0.02788315899670124,
+        "p95_seconds": 0.029511303990148008,
+        "p50_allocations": 121502
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 0.00015119100862648338,
+        "p95_seconds": 0.00022865600476507097,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 6.112300616223365e-05,
+        "p95_seconds": 7.2975002694875e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 1.6491668880044017,
+    "peak_rss_kib": 121344.0,
+    "user_seconds": 1.59,
+    "system_seconds": 0.04,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 4.0.9 (2026-10-23 revision 3e93b23afc) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "lines",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 8.479399548377842e-05,
+        "p95_seconds": 0.00018624699441716075,
+        "p50_allocations": 1001
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 2.8040085453540087e-06,
+        "p95_seconds": 4.694011295214295e-06,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.00015524000627920032,
+        "p95_seconds": 0.00016673599020577967,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 8.259958121925592e-07,
+        "p95_seconds": 1.8769933376461267e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 8.241600880865008e-05,
+        "p95_seconds": 0.0017152569926111028,
+        "p50_allocations": 1002
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 7.481600914616138e-05,
+        "p95_seconds": 0.00010227000166196376,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 5.5316006182692945e-05,
+        "p95_seconds": 6.878199928905815e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.1283879559923662,
+    "peak_rss_kib": 30164.0,
+    "user_seconds": 0.1,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "off",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "execution": {
+        "count": 20,
+        "p50_seconds": 8.00995621830225e-07,
+        "p95_seconds": 1.2980017345398664e-06,
+        "p50_allocations": 0
+      }
+    },
+    "wall_seconds": 0.10064129400416277,
+    "peak_rss_kib": 29828.0,
+    "user_seconds": 0.08,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.4.12 (2026-10-23 revision 366f5fdc00) +PRISM [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "lines",
+    "coverage_files": 500,
+    "line_slots": 33000,
+    "measurements": {
+      "snapshot": {
+        "count": 40,
+        "p50_seconds": 8.438099757768214e-05,
+        "p95_seconds": 0.0006499369919765741,
+        "p50_allocations": 1001
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 2.449000021442771e-06,
+        "p95_seconds": 3.965003998018801e-06,
+        "p50_allocations": 0
+      },
+      "line_scan": {
+        "count": 20,
+        "p50_seconds": 0.00016101000073831528,
+        "p95_seconds": 0.00019701199198607355,
+        "p50_allocations": 502
+      },
+      "keys_from_existing_snapshot": {
+        "count": 20,
+        "p50_seconds": 7.539929356426001e-07,
+        "p95_seconds": 1.9180006347596645e-06,
+        "p50_allocations": 1
+      },
+      "extra_snapshot_for_keys": {
+        "count": 20,
+        "p50_seconds": 8.477299707010388e-05,
+        "p95_seconds": 0.0006404370069503784,
+        "p50_allocations": 1002
+      },
+      "normalize_each_with_object": {
+        "count": 20,
+        "p50_seconds": 7.477399776689708e-05,
+        "p95_seconds": 9.374000364914536e-05,
+        "p50_allocations": 502
+      },
+      "normalize_each_pair": {
+        "count": 20,
+        "p50_seconds": 5.737801257055253e-05,
+        "p95_seconds": 6.385699089150876e-05,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.1232819489960093,
+    "peak_rss_kib": 28884.0,
+    "user_seconds": 0.1,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 500,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "tracepoint",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "file_set_reset": {
+        "count": 20,
+        "p50_seconds": 1.153995981439948e-06,
+        "p95_seconds": 3.5179982660338283e-06,
+        "p50_allocations": 0
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 0.0055117250012699515,
+        "p95_seconds": 0.005790911003714427,
+        "p50_allocations": 0
+      },
+      "file_set_result": {
+        "count": 20,
+        "p50_seconds": 2.3180036805570126e-06,
+        "p95_seconds": 3.2999960239976645e-06,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.22697312200034503,
+    "peak_rss_kib": 30040.0,
+    "user_seconds": 0.2,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 500,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "off",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "execution": {
+        "count": 20,
+        "p50_seconds": 0.0004200340044917539,
+        "p95_seconds": 0.00045330499415285885,
+        "p50_allocations": 0
+      }
+    },
+    "wall_seconds": 0.13952837999386247,
+    "peak_rss_kib": 29952.0,
+    "user_seconds": 0.11,
+    "system_seconds": 0.01,
+    "exit_code": 0
+  },
+  {
+    "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "files": 500,
+    "touched": 1,
+    "branch_sites_per_file": 60,
+    "iterations": 20,
+    "mode": "tracepoint",
+    "coverage_files": null,
+    "line_slots": null,
+    "measurements": {
+      "file_set_reset": {
+        "count": 20,
+        "p50_seconds": 4.659959813579917e-07,
+        "p95_seconds": 6.839982233941555e-07,
+        "p50_allocations": 0
+      },
+      "execution": {
+        "count": 20,
+        "p50_seconds": 1.0126008419319987e-05,
+        "p95_seconds": 1.043900556396693e-05,
+        "p50_allocations": 0
+      },
+      "file_set_result": {
+        "count": 20,
+        "p50_seconds": 4.4199987314641476e-07,
+        "p95_seconds": 5.23999915458262e-07,
+        "p50_allocations": 1
+      }
+    },
+    "wall_seconds": 0.12599048898846377,
+    "peak_rss_kib": 30076.0,
+    "user_seconds": 0.09,
+    "system_seconds": 0.02,
+    "exit_code": 0
+  }
+]
