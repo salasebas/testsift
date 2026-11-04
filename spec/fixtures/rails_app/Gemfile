@@ -48,7 +48,8 @@ else
   gem "activerecord-jdbcsqlite3-adapter", "~> 71.0"
 end
 
-gem "puma", "~> 6.0"
+gem "puma", "~> 7.2.1"
+gem "json", "~> 2.0"
 gem "sprockets-rails"
 gem "bootsnap", require: false
 

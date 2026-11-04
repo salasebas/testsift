@@ -77,7 +77,13 @@ module RSpecTracer
         example_id = example.metadata[:rspec_tracer_example_id]
         return unless example_id
 
-        engine.public_send(method, example_id, example.execution_result)
+        result = example.execution_result
+        engine.public_send(method, example_id, {
+                             started_at: result.started_at.utc,
+                             finished_at: result.finished_at.utc,
+                             run_time: result.run_time,
+                             status: result.status.to_s
+                           })
       end
     end
   end

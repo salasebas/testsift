@@ -21,7 +21,17 @@ RSpec.describe RSpecTracer::RSpec::ReporterHook do
 
   let(:reporter)          { reporter_class.new }
   let(:engine)            { spy('Engine') }
-  let(:execution_result)  { double('ExecutionResult') }
+  let(:started_at) { Time.new(2026, 1, 1, 12, 0, 0, '+05:00') }
+  let(:execution_result) do
+    double('ExecutionResult', started_at: started_at, finished_at: started_at + 0.5,
+                              run_time: 0.5, status: :passed)
+  end
+  let(:normalized_result) do
+    {
+      started_at: started_at.utc, finished_at: (started_at + 0.5).utc,
+      run_time: 0.5, status: 'passed'
+    }
+  end
   let(:example) do
     double('Example',
            metadata: { rspec_tracer_example_id: 'ex1' },
@@ -84,7 +94,7 @@ RSpec.describe RSpecTracer::RSpec::ReporterHook do
       it "forwards the example id + execution_result to Engine##{:"on_#{callback}"}" do
         reporter.public_send(callback, example)
 
-        expect(engine).to have_received(engine_method).with('ex1', execution_result)
+        expect(engine).to have_received(engine_method).with('ex1', normalized_result)
         expect(reporter.super_calls).to eq([[callback, example]])
       end
 

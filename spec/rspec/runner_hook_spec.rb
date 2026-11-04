@@ -253,11 +253,11 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         allow(engine).to receive(:run_example?).with('ex1').and_return(false)
       end
 
-      it 'notifies the engine of the skip and does not call register_example' do
+      it 'registers the discovered example before notifying the engine of the skip' do
         runner.run_specs([])
 
         expect(engine).to have_received(:on_example_skipped).with('ex1')
-        expect(engine).not_to have_received(:register_example)
+        expect(engine).to have_received(:register_example)
       end
     end
 
@@ -285,10 +285,18 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         expect(engine).not_to have_received(:register_tracks)
       end
 
-      it 'invokes apply_env_filter_decisions between the two passes' do
+      it 'registers every discovered test before ENV decisions and selection' do
+        second = double('SecondExample', metadata: { file_path: 'spec/bar_spec.rb' },
+                                         description: 'another', example_group: example.example_group)
+        allow(world).to receive(:filtered_examples).and_return(example_group => [example, second])
+        allow(RSpecTracer::Example).to receive(:from).with(second).and_return(example_id: 'ex2')
         runner.run_specs([])
 
-        expect(engine).to have_received(:apply_env_filter_decisions)
+        expect(engine).to have_received(:register_example).with(hash_including(example_id: 'ex1')).ordered
+        expect(engine).to have_received(:register_example).with(hash_including(example_id: 'ex2')).ordered
+        expect(engine).to have_received(:apply_env_filter_decisions).ordered
+        expect(engine).to have_received(:run_example?).with('ex1').ordered
+        expect(engine).to have_received(:run_example?).with('ex2').ordered
       end
 
       it 'does not read tracks for ignored spec files' do

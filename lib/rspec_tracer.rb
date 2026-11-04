@@ -32,6 +32,7 @@ require_relative 'rspec_tracer/load_config'
 # zero load cost for aws/git subshell code.
 require_relative 'rspec_tracer/rspec/installation'
 require_relative 'rspec_tracer/rspec/parallel_tests'
+require_relative 'rspec_tracer/rspec/rails_setup'
 require_relative 'rspec_tracer/source_file'
 require_relative 'rspec_tracer/time_formatter'
 require_relative 'rspec_tracer/version'
@@ -177,8 +178,12 @@ module RSpecTracer
       setup_coverage
       setup_rails
 
-      @engine = RSpecTracer::Engine.new(configuration: RSpecTracer)
+      @engine = RSpecTracer::Engine.new(
+        configuration: RSpecTracer,
+        read_cache_path: parallel_tests? ? File.dirname(RSpecTracer.cache_path) : nil
+      )
       @engine.setup
+      RSpecTracer::RSpec::RailsSetup.install(engine: @engine, configuration: RSpecTracer)
     end
 
     # Internal method on the tracer pipeline.
