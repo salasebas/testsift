@@ -1,0 +1,34 @@
+[
+  {
+    "fixture": "rails",
+    "bootstrap": true,
+    "repetitions": 20,
+    "p50_seconds": 2.7926391979999607,
+    "p95_seconds": 2.8379717619973235,
+    "median_peak_rss_kib": 161360.0
+  },
+  {
+    "fixture": "ruby",
+    "bootstrap": false,
+    "repetitions": 20,
+    "p50_seconds": 0.17753444399568252,
+    "p95_seconds": 0.18700593800167553,
+    "median_peak_rss_kib": 34372.0
+  },
+  {
+    "fixture": "rails",
+    "bootstrap": false,
+    "repetitions": 20,
+    "p50_seconds": 2.8796296910004457,
+    "p95_seconds": 2.967310644002282,
+    "median_peak_rss_kib": 162320.0
+  },
+  {
+    "fixture": "ruby",
+    "bootstrap": true,
+    "repetitions": 20,
+    "p50_seconds": 0.24558831099420786,
+    "p95_seconds": 0.26433302799705416,
+    "median_peak_rss_kib": 33440.0
+  }
+]

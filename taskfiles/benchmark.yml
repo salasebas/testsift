@@ -58,6 +58,23 @@ tasks:
     cmds:
       - ruby benchmark/harness.rb --full --ratchet benchmark/ratchet.json
 
+  benchmark:evidence:
+    desc: Measure isolated Ruby and Rails runs with real Coverage and a failing-test oracle
+    deps: [benchmark:bundle]
+    cmds:
+      - ruby benchmark/evidence/run.rb {{.CLI_ARGS}}
+
+  benchmark:coverage:real:
+    desc: Measure snapshots and scans of actual VM Coverage over executable Ruby files
+    cmds:
+      - ruby benchmark/evidence/coverage.rb
+
+  benchmark:evidence:input-fault:
+    desc: Compare semantic input-change selection with full failing RSpec oracles
+    deps: [benchmark:bundle]
+    cmds:
+      - ruby benchmark/evidence/input_fault.rb {{.CLI_ARGS}}
+
   benchmark:ratchet:update:
     desc: Regenerate benchmark/ratchet.json from a fresh 10-iter run (requires --yes to confirm)
     deps: [benchmark:bundle]

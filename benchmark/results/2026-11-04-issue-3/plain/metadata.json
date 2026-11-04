@@ -1,0 +1,10 @@
+{
+  "baseline_revision": "f13851f7b3393aaafa7c7df088c1605747f07ce5",
+  "recorded_at": "2026-11-04T08:50:17Z",
+  "driver_sha256": "399c0a1ce23c06709019665cd5dbbe3272fc944ef2307571415b3e95d607762e",
+  "boot_sha256": "7a5089f3409348960ff60588117eea5ddd5aa7f9a1dcb51e48248cea3ac16a12",
+  "repetitions": 20,
+  "seed": 10017,
+  "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+  "helper_patch": "Ruby fixture tracer gated by EVIDENCE_TRACER=0"
+}

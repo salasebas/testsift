@@ -1,0 +1,41 @@
+require 'digest'
+require 'fileutils'
+require 'json'
+require 'open3'
+require 'time'
+
+repo = '/home/sebastian/Projects/testsift-issue3-baseline'
+script = File.join(repo, 'benchmark/evidence/coverage.rb')
+destination = File.join(repo, 'tmp/evidence-vm-final-20261104')
+raise 'output exists' if File.exist?(destination)
+FileUtils.mkdir_p(destination)
+versions = %w[3.3.10 3.4.12 4.0.9]
+modes = %w[off lines branches tracepoint]
+cells = versions.product(modes).map { |version, mode| [version, mode, 500, 1] }
+cells.concat([100, 2000].product(%w[lines branches]).map { |files, mode| ['3.3.10', mode, files, 1] })
+cells.concat(modes.map { |mode| ['3.3.10', mode, 500, 500] })
+metadata = { recorded_at: Time.now.utc.iso8601, script_sha256: Digest::SHA256.file(script).hexdigest,
+             seed: 44_003, iterations: 20, branch_sites: 60, jit: 'disabled', cells: cells }
+File.write(File.join(destination, 'metadata.json'), JSON.pretty_generate(metadata))
+cells.shuffle(random: Random.new(44_003)).each do |version, mode, files, touched|
+  token = "#{version}-#{mode}-#{files}-#{touched}"
+  timing = File.join(destination, "#{token}.time")
+  executable = "/home/sebastian/.local/share/rv/rubies/ruby-#{version}/bin/ruby"
+  env = { 'GEM_HOME' => nil, 'GEM_PATH' => nil, 'BUNDLE_GEMFILE' => nil, 'BUNDLE_BIN_PATH' => nil,
+          'RUBYLIB' => nil, 'RUBYOPT' => '-EUTF-8', 'RUBY_YJIT_ENABLE' => nil,
+          'FILES' => files.to_s, 'BRANCH_SITES' => '60', 'ITERATIONS' => '20',
+          'TOUCHED' => touched.to_s, 'MODE' => mode }
+  command = ['/usr/bin/time', '-f', '%M %U %S', '-o', timing, executable, '--disable-yjit', script]
+  start = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+  stdout, stderr, status = Open3.capture3(env, *command, chdir: repo)
+  elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - start
+  File.write(File.join(destination, "#{token}.json"), stdout)
+  File.write(File.join(destination, "#{token}.stderr"), stderr)
+  raise "#{token} failed: #{stderr}" unless status.success?
+  resource = File.readlines(timing).last.split.map(&:to_f)
+  row = JSON.parse(stdout).merge('command' => command, 'env' => env, 'wall_seconds' => elapsed,
+                                'peak_rss_kib' => resource[0], 'user_seconds' => resource[1],
+                                'system_seconds' => resource[2], 'exit_code' => status.exitstatus)
+  File.open(File.join(destination, 'runs.jsonl'), 'a') { |file| file.puts(JSON.generate(row)) }
+  warn "#{token}: #{elapsed.round(3)}s"
+end
