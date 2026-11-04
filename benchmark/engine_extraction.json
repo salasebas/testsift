@@ -1,0 +1,887 @@
+{
+  "schema_version": 1,
+  "baseline_revision": "03173c22b32b0accaccf37a5e662487b3bc79c50",
+  "implementation_revision": "1a77a71e0aa7928156556e6b50dceb6b58a315fd",
+  "command": "ruby benchmark/harness.rb --full --iterations 10 --ratchet benchmark/ratchet.json --no-enforce",
+  "run_order": "baseline block, implementation block; compatible Rails baseline block, compatible Rails implementation block",
+  "filesystem": {
+    "before": "btrfs",
+    "after": "btrfs"
+  },
+  "ruby_fixture_cache": {
+    "schema_version": 5,
+    "run_id": "62cc4d6690357b3ec61f9512d3050bd6"
+  },
+  "rails_bundle": {
+    "rails": "7.1.6",
+    "rspec_rails": "6.1.5",
+    "sqlite3": "1.7.3-x86_64-linux",
+    "json": "2.21.2"
+  },
+  "rails_command": "BenchmarkHarness.run_scenario(name, BenchmarkHarness::SCENARIOS.fetch(name), iterations: 10), with a temporary Gemfile that eval_gemfile loads the fixture Gemfile and constrains json to ~> 2.21.0",
+  "limits_modified": false,
+  "limitations": [
+    "Shared workstation; sequential blocks do not control CPU-frequency or background-load drift.",
+    "The initial tmpfs baseline is excluded. Both retained checkouts use btrfs.",
+    "Rails 7.1 with unconstrained json 3.1.0 fails on inherited ActiveSupport quirks_mode incompatibility. All three Rails results here replace those invalid runs using the same compatible temporary bundle.",
+    "The inherited harness can omit failed scenarios and ignore fork-child status; these records require 14 scenarios and 10 timings in each side. The compatible Rails full fixture was also checked directly: 308 examples, zero failures.",
+    "ENV mismatch scenarios invalidate only their first measured iteration in a block, as defined by the existing harness.",
+    "This compares the tracer before and after extraction. It does not measure tracer overhead against plain RSpec."
+  ],
+  "results": {
+    "cold_ruby": {
+      "before": {
+        "scenario": "cold_ruby",
+        "iterations": 10,
+        "timings": [
+          0.2349,
+          0.2423,
+          0.2471,
+          0.2438,
+          0.2882,
+          0.3366,
+          0.2475,
+          0.2381,
+          0.2467,
+          0.2487
+        ],
+        "p50": 0.2469,
+        "p95": 0.3366,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:19:18Z"
+        }
+      },
+      "after": {
+        "scenario": "cold_ruby",
+        "iterations": 10,
+        "timings": [
+          0.2329,
+          0.234,
+          0.2336,
+          0.2372,
+          0.2697,
+          0.2424,
+          0.2349,
+          0.2339,
+          0.2394,
+          0.2439
+        ],
+        "p50": 0.2361,
+        "p95": 0.2697,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:36Z"
+        }
+      },
+      "p50_ratio": 0.9563
+    },
+    "warm_noop": {
+      "before": {
+        "scenario": "warm_noop",
+        "iterations": 10,
+        "timings": [
+          0.2478,
+          0.2253,
+          0.2275,
+          0.2291,
+          0.2253,
+          0.2265,
+          0.2225,
+          0.2207,
+          0.221,
+          0.2238
+        ],
+        "p50": 0.2253,
+        "p95": 0.2478,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:19:21Z"
+        }
+      },
+      "after": {
+        "scenario": "warm_noop",
+        "iterations": 10,
+        "timings": [
+          0.2153,
+          0.2141,
+          0.2189,
+          0.2231,
+          0.2211,
+          0.2145,
+          0.2281,
+          0.2215,
+          0.2141,
+          0.2246
+        ],
+        "p50": 0.22,
+        "p95": 0.2281,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:39Z"
+        }
+      },
+      "p50_ratio": 0.9765
+    },
+    "warm_env_mismatch": {
+      "before": {
+        "scenario": "warm_env_mismatch",
+        "iterations": 10,
+        "timings": [
+          0.2297,
+          0.3496,
+          0.5417,
+          0.2501,
+          0.2291,
+          0.2381,
+          0.244,
+          0.2669,
+          0.2419,
+          0.2298
+        ],
+        "p50": 0.2429,
+        "p95": 0.5417,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:19:24Z"
+        }
+      },
+      "after": {
+        "scenario": "warm_env_mismatch",
+        "iterations": 10,
+        "timings": [
+          0.2157,
+          0.2129,
+          0.2175,
+          0.224,
+          0.22,
+          0.2242,
+          0.2187,
+          0.2224,
+          0.2235,
+          0.2117
+        ],
+        "p50": 0.2194,
+        "p95": 0.2242,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:41Z"
+        }
+      },
+      "p50_ratio": 0.9033
+    },
+    "track_env_warm_mismatch": {
+      "before": {
+        "scenario": "track_env_warm_mismatch",
+        "iterations": 10,
+        "timings": [
+          0.2307,
+          0.225,
+          0.2216,
+          0.2272,
+          0.2273,
+          0.2329,
+          0.2167,
+          0.2208,
+          0.2252,
+          0.2252
+        ],
+        "p50": 0.2252,
+        "p95": 0.2329,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:19:26Z"
+        }
+      },
+      "after": {
+        "scenario": "track_env_warm_mismatch",
+        "iterations": 10,
+        "timings": [
+          0.243,
+          0.2239,
+          0.215,
+          0.2179,
+          0.2178,
+          0.2294,
+          0.2203,
+          0.2182,
+          0.221,
+          0.2154
+        ],
+        "p50": 0.2193,
+        "p95": 0.243,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:44Z"
+        }
+      },
+      "p50_ratio": 0.9738
+    },
+    "parallel_tests_2_workers": {
+      "before": {
+        "scenario": "parallel_tests_2_workers",
+        "iterations": 10,
+        "timings": [
+          1.5242,
+          1.4951,
+          1.4421,
+          1.4355,
+          1.4838,
+          1.4835,
+          0.5096,
+          1.5006,
+          1.495,
+          1.4328
+        ],
+        "p50": 1.4836,
+        "p95": 1.5242,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:19:40Z"
+        }
+      },
+      "after": {
+        "scenario": "parallel_tests_2_workers",
+        "iterations": 10,
+        "timings": [
+          1.5471,
+          0.562,
+          0.6601,
+          1.7358,
+          1.5341,
+          1.5097,
+          0.5653,
+          1.5522,
+          0.7833,
+          1.6535
+        ],
+        "p50": 1.5219,
+        "p95": 1.7358,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:56Z"
+        }
+      },
+      "p50_ratio": 1.0258
+    },
+    "cold_rails": {
+      "before": {
+        "scenario": "cold_rails",
+        "iterations": 10,
+        "timings": [
+          2.9008,
+          2.6423,
+          2.5887,
+          2.4157,
+          2.4539,
+          2.4292,
+          2.539,
+          2.506,
+          2.6654,
+          4.7311
+        ],
+        "p50": 2.5638,
+        "p95": 4.7311,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:24:11Z"
+        }
+      },
+      "after": {
+        "scenario": "cold_rails",
+        "iterations": 10,
+        "timings": [
+          2.4217,
+          2.5243,
+          2.4076,
+          2.4653,
+          2.5023,
+          2.5444,
+          2.5212,
+          2.4699,
+          2.47,
+          2.5603
+        ],
+        "p50": 2.4861,
+        "p95": 2.5603,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:26:37Z"
+        }
+      },
+      "p50_ratio": 0.9697
+    },
+    "cold_rails_v2": {
+      "before": {
+        "scenario": "cold_rails_v2",
+        "iterations": 10,
+        "timings": [
+          9.6218,
+          7.6761,
+          7.3552,
+          6.8563,
+          7.2887,
+          11.529,
+          6.7506,
+          6.6382,
+          6.6067,
+          6.5445
+        ],
+        "p50": 7.0725,
+        "p95": 11.529,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:25:29Z"
+        }
+      },
+      "after": {
+        "scenario": "cold_rails_v2",
+        "iterations": 10,
+        "timings": [
+          6.8109,
+          7.047,
+          7.6573,
+          6.6447,
+          6.6947,
+          7.0698,
+          6.6282,
+          6.5801,
+          6.7221,
+          6.4605
+        ],
+        "p50": 6.7084,
+        "p95": 7.6573,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:27:46Z"
+        }
+      },
+      "p50_ratio": 0.9485
+    },
+    "cold_rails_v2_warm_iter": {
+      "before": {
+        "scenario": "cold_rails_v2_warm_iter",
+        "iterations": 10,
+        "timings": [
+          4.2237,
+          4.2034,
+          4.1123,
+          4.1332,
+          4.1176,
+          3.9934,
+          4.0455,
+          4.066,
+          4.1062,
+          4.098
+        ],
+        "p50": 4.1093,
+        "p95": 4.2237,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:26:11Z"
+        }
+      },
+      "after": {
+        "scenario": "cold_rails_v2_warm_iter",
+        "iterations": 10,
+        "timings": [
+          4.2696,
+          4.5452,
+          4.5629,
+          4.0313,
+          4.0318,
+          4.1825,
+          4.1393,
+          4.1851,
+          4.1654,
+          4.0306
+        ],
+        "p50": 4.174,
+        "p95": 4.5629,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:28:29Z"
+        }
+      },
+      "p50_ratio": 1.0157
+    },
+    "coverage_adapter": {
+      "before": {
+        "scenario": "coverage_adapter",
+        "iterations": 10,
+        "timings": [
+          0.5666,
+          0.5714,
+          0.565,
+          0.5624,
+          0.6014,
+          0.5862,
+          0.5724,
+          0.5919,
+          0.5607,
+          0.5662
+        ],
+        "p50": 0.569,
+        "p95": 0.6014,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:19:58Z"
+        }
+      },
+      "after": {
+        "scenario": "coverage_adapter",
+        "iterations": 10,
+        "timings": [
+          0.8191,
+          0.7039,
+          0.8852,
+          0.6792,
+          0.7451,
+          0.6532,
+          0.7106,
+          0.6793,
+          0.7208,
+          0.8501
+        ],
+        "p50": 0.7157,
+        "p95": 0.8852,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:21:18Z"
+        }
+      },
+      "p50_ratio": 1.2578
+    },
+    "cache_load": {
+      "before": {
+        "scenario": "cache_load",
+        "iterations": 10,
+        "timings": [
+          0.4157,
+          0.4108,
+          0.4187,
+          0.4193,
+          0.4377,
+          0.4154,
+          0.4078,
+          0.4197,
+          0.4209,
+          0.4316
+        ],
+        "p50": 0.419,
+        "p95": 0.4377,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:02Z"
+        }
+      },
+      "after": {
+        "scenario": "cache_load",
+        "iterations": 10,
+        "timings": [
+          0.6311,
+          0.6436,
+          0.4757,
+          0.4856,
+          0.4637,
+          0.5029,
+          0.4773,
+          0.5288,
+          0.4933,
+          0.4727
+        ],
+        "p50": 0.4894,
+        "p95": 0.6436,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:21:23Z"
+        }
+      },
+      "p50_ratio": 1.168
+    },
+    "cache_load_msgpack": {
+      "before": {
+        "scenario": "cache_load_msgpack",
+        "iterations": 10,
+        "timings": [
+          0.4922,
+          0.4662,
+          0.4772,
+          0.4541,
+          0.4461,
+          0.4558,
+          0.4554,
+          0.4462,
+          0.4547,
+          0.4479
+        ],
+        "p50": 0.4551,
+        "p95": 0.4922,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:07Z"
+        }
+      },
+      "after": {
+        "scenario": "cache_load_msgpack",
+        "iterations": 10,
+        "timings": [
+          0.5175,
+          0.5025,
+          0.5344,
+          0.5263,
+          0.5458,
+          0.5251,
+          0.5323,
+          0.4973,
+          0.5041,
+          0.5596
+        ],
+        "p50": 0.5257,
+        "p95": 0.5596,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:21:28Z"
+        }
+      },
+      "p50_ratio": 1.1551
+    },
+    "cache_load_sqlite": {
+      "before": {
+        "scenario": "cache_load_sqlite",
+        "iterations": 10,
+        "timings": [
+          0.5626,
+          0.548,
+          0.5627,
+          0.5459,
+          0.5792,
+          0.5817,
+          0.5858,
+          0.5467,
+          0.5816,
+          0.5668
+        ],
+        "p50": 0.5648,
+        "p95": 0.5858,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:12Z"
+        }
+      },
+      "after": {
+        "scenario": "cache_load_sqlite",
+        "iterations": 10,
+        "timings": [
+          0.7379,
+          0.7002,
+          0.6981,
+          0.6476,
+          0.6367,
+          0.6882,
+          0.6384,
+          0.6605,
+          0.7052,
+          0.6168
+        ],
+        "p50": 0.6743,
+        "p95": 0.7379,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:21:35Z"
+        }
+      },
+      "p50_ratio": 1.1939
+    },
+    "file_read_hook": {
+      "before": {
+        "scenario": "file_read_hook",
+        "iterations": 10,
+        "timings": [
+          1.5107,
+          1.4969,
+          1.572,
+          1.5469,
+          1.4874,
+          1.4912,
+          1.5358,
+          1.4868,
+          1.4979,
+          1.4368
+        ],
+        "p50": 1.4974,
+        "p95": 1.572,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:27Z"
+        }
+      },
+      "after": {
+        "scenario": "file_read_hook",
+        "iterations": 10,
+        "timings": [
+          1.7886,
+          1.7199,
+          1.5733,
+          1.7637,
+          1.5453,
+          1.6257,
+          1.6881,
+          1.8686,
+          1.7099,
+          1.6376
+        ],
+        "p50": 1.699,
+        "p95": 1.8686,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:21:52Z"
+        }
+      },
+      "p50_ratio": 1.1346
+    },
+    "loaded_files_tracker": {
+      "before": {
+        "scenario": "loaded_files_tracker",
+        "iterations": 10,
+        "timings": [
+          0.6637,
+          0.6734,
+          0.6602,
+          0.6723,
+          0.6698,
+          0.6629,
+          0.683,
+          0.6718,
+          0.6564,
+          0.6731
+        ],
+        "p50": 0.6708,
+        "p95": 0.683,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:20:34Z"
+        }
+      },
+      "after": {
+        "scenario": "loaded_files_tracker",
+        "iterations": 10,
+        "timings": [
+          0.7005,
+          0.7629,
+          0.7059,
+          0.7281,
+          0.7246,
+          0.7399,
+          0.7347,
+          0.7121,
+          0.7422,
+          0.7256
+        ],
+        "p50": 0.7269,
+        "p95": 0.7629,
+        "env": {
+          "ruby": "3.3.10",
+          "ruby_platform": "x86_64-linux",
+          "os": "linux",
+          "cpu": "13th Gen Intel(R) Core(TM) i7-1355U",
+          "cores": 12,
+          "recorded_at": "2026-11-04T06:21:59Z"
+        }
+      },
+      "p50_ratio": 1.0836
+    }
+  },
+  "ratchet_statuses": {
+    "cold_ruby": {
+      "status": "ok",
+      "ratio": 0.5238517861104948,
+      "threshold": 0.4507
+    },
+    "warm_noop": {
+      "status": "ok",
+      "ratio": 0.5440158259149357,
+      "threshold": 0.4044
+    },
+    "warm_env_mismatch": {
+      "status": "ok",
+      "ratio": 0.5352525006099049,
+      "threshold": 0.4099
+    },
+    "track_env_warm_mismatch": {
+      "status": "ok",
+      "ratio": 0.5455223880597014,
+      "threshold": 0.402
+    },
+    "parallel_tests_2_workers": {
+      "status": "informational",
+      "ratio": 1.4322416713721062,
+      "threshold": 1.0626
+    },
+    "cold_rails": {
+      "status": "ok",
+      "ratio": 0.2941399178902285,
+      "threshold": 8.4521
+    },
+    "cold_rails_v2": {
+      "status": "ok",
+      "ratio": 0.3381795450879174,
+      "threshold": 19.8368
+    },
+    "cold_rails_v2_warm_iter": {
+      "status": "ok",
+      "ratio": 0.8068350955869561,
+      "threshold": 5.1733
+    },
+    "coverage_adapter": {
+      "status": "ok",
+      "ratio": 0.5979614002840672,
+      "threshold": 1.1969
+    },
+    "cache_load": {
+      "status": "ok",
+      "ratio": 0.6331996377280372,
+      "threshold": 0.7729
+    },
+    "cache_load_msgpack": {
+      "status": "ok",
+      "ratio": 0.6363636363636364,
+      "threshold": 0.8261
+    },
+    "cache_load_sqlite": {
+      "status": "ok",
+      "ratio": 0.6533281658753997,
+      "threshold": 1.0321
+    },
+    "file_read_hook": {
+      "status": "ok",
+      "ratio": 0.3334445469354111,
+      "threshold": 5.0953
+    },
+    "loaded_files_tracker": {
+      "status": "ok",
+      "ratio": 0.5152761040618132,
+      "threshold": 1.4107
+    }
+  },
+  "rails_final_fork_state": {
+    "cache": {
+      "schema_version": 5,
+      "run_id": "2e83f6429509b873e7d62eba337c55a7"
+    },
+    "summary": {
+      "total_examples": 308,
+      "passed_examples": 308,
+      "failed_examples": 0,
+      "interrupted_examples": 0
+    }
+  }
+}

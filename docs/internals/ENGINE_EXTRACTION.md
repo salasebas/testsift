@@ -64,8 +64,8 @@ below as they are reproduced.
   Follow-up: normalize nested result keys for all storage backends and add a
   report-level regression. This extraction preserves the persisted result.
 - The advertised ten-second `task check` budget is already exceeded on this
-  machine. The unchanged baseline ran 2,174 examples in 43.66 seconds, before
-  the benchmark. The default unit command includes subprocess integration
+  machine. The fork baseline ran 2,167 examples in 81.69 seconds, before
+  the benchmark. The extraction ran 2,177 in 71.27 seconds. The default unit command includes subprocess integration
   tests. Follow-up: separate the fast suite from subprocess integration tests
   without reducing per-PR checks.
 - The imported rc.1 SQLite backend cannot reliably persist a failing run.
@@ -82,8 +82,8 @@ below as they are reproduced.
   the test independent of global Coverage state and reject neutral failures
   in the mutation gate. Its percentage is not proof for affected methods.
 - The unchanged HTML reporter development lockfile currently fails
-  `npm audit --audit-level=high`, with 16 advisories affecting 8 moderate and
-  8 high dependency entries. `package.json`, `package-lock.json`, and the
+  `npm audit --audit-level=high`, with 16 vulnerable dependency entries,
+  8 moderate and 8 high. `package.json`, `package-lock.json`, and the
   reporter bundle are unchanged. Follow-up: update and verify the reporter
   toolchain separately. This is a security-check blocker, not an engine
   extraction regression.
@@ -92,6 +92,17 @@ below as they are reproduced.
   Gemfile still pins Puma 6.x. Follow-up: update the fixture server dependency
   and verify the supported Rails matrix. The configured Trivy command exits
   zero while reporting these findings; that exit does not mean a clean scan.
+- Rails 7.1.6 with unconstrained `json` 3.1.0 raises `unknown keyword:
+  quirks_mode` while ActiveSupport serializes the existing RSpec identity.
+  Both baselines fail on the unchanged `Example.from` implementation.
+  Benchmark preparation uses an explicit temporary JSON 2.21.2 bundle.
+  Follow-up: establish a compatible dependency policy without changing cached
+  identity bytes accidentally.
+- The benchmark runner drops failed scenarios with `filter_map`, and the
+  long-running fork scenario does not check child exit status. A successful
+  command can therefore omit failures. Follow-up: fail the benchmark if any
+  scenario or child fails. Retained results below explicitly require all 14
+  scenarios with 10 samples each, plus direct Rails behavior checks.
 
 ## Core lifecycle contract
 
@@ -164,6 +175,7 @@ LocalStack 4.14.0 and Redis 7 run in dedicated local containers.
 | `task test:regressions:plain` | 8 examples, zero failures. |
 | `task test:fuzz:full` | 10,000 iterations per harness; no crashes. |
 | `task test:features:rails` | 13 examples, zero failures, including golden coverage equality. |
+| Rails 7.1.6 fixture with the compatible JSON bundle, `bundle exec rspec --no-color` | 308 examples, zero failures. |
 | `task test:dogfood` | Cold and warm fixture runs pass. |
 | `task test:integration:parallel` | 7 examples, zero failures, including merged reports and warm selection. |
 | `task test:integration:remote-cache` | 14 examples, zero failures against LocalStack. |
@@ -194,3 +206,56 @@ the branch with `testsift`. Rebase conflicts only removed the callbacks and
 tests already moved by this change. The rebased engine and engine test files
 match the reviewed extraction; the 228 focused tests and complete
 `task check` were rerun on the target branch.
+
+## Before and after overhead
+
+[Raw samples and environment](../../benchmark/engine_extraction.json) contain
+14 scenarios, 10 repetitions per side, and 280 timings. Baseline and
+implementation checkouts both use btrfs on the same host. Initial tmpfs
+measurements are excluded. The measured implementation is `1a77a71`; later
+commits only add this evidence.
+
+Each cell below is p50 / p95 in seconds. Measurements include the existing
+scenario's process boot, discovery, cache work, and reports. The fork scenario
+amortizes Rails boot as documented by the existing benchmark.
+
+| Scenario | Before | After |
+| --- | --- | --- |
+| Ruby cold | 0.2469 / 0.3366 | 0.2361 / 0.2697 |
+| Ruby warm, no change | 0.2253 / 0.2478 | 0.2200 / 0.2281 |
+| Two workers, cold | 1.4836 / 1.5242 | 1.5219 / 1.7358 |
+| Rails models, cold | 2.5638 / 4.7311 | 2.4861 / 2.5603 |
+| Rails full suite, cold | 7.0725 / 11.5290 | 6.7084 / 7.6573 |
+| Rails full suite, fork after boot | 4.1093 / 4.2237 | 4.1740 / 4.5629 |
+
+The retained after measurements pass `BenchmarkHarness.compare_to_ratchet`
+against the unchanged `benchmark/ratchet.json`: 13 OK, one informational
+parallel scenario. Ruby fixture cache identities match across revisions,
+schema 5 and run id `62cc4d6690357b3ec61f9512d3050bd6`. Both final Rails fork
+reports contain 308 passed examples with no failures or interruptions, and
+share run id `2e83f6429509b873e7d62eba337c55a7`.
+
+The command is `ruby benchmark/harness.rb --full --iterations 10 --ratchet
+benchmark/ratchet.json --no-enforce`. The three Rails scenarios are replaced
+with compatible-bundle measurements using the same
+`BenchmarkHarness.run_scenario` calls. The temporary Gemfiles use Bundler's
+`eval_gemfile` to load each fixture Gemfile, then add `gem 'json', '~> 2.21.0'`.
+Their environment sets `RAILS_VERSION='~> 7.1.0'`,
+`RSPEC_RAILS_VERSION='~> 6.1.0'`, `SQLITE3_VERSION='~> 1.4'`, and
+`BUNDLE_GEMFILE` to the matching temporary file. Resolved versions are Rails
+7.1.6, rspec-rails 6.1.5, sqlite3 1.7.3, and json 2.21.2.
+
+Sequential blocks on a shared workstation include background-load and CPU
+frequency variation. The unchanged standalone coverage microbenchmark also
+shifted by +25.8%, which limits causal interpretation of small median
+differences. ENV mismatch scenarios invalidate only the first measured
+iteration, following the existing benchmark. This compares extraction cost;
+plain-RSpec overhead and the broader profiling study remain in issue #3.
+
+## Review outcome
+
+Three fresh Astra reviews covered the implementation and evidence. Round 1
+requested real RSpec coverage for new, pending, and interrupted tests. Those
+scenarios and their deliberate failure checks resolved S1. Round 2 approved
+the implementation against `testsift`. Round 3 approved the timing artifact,
+ratchet evaluation, and reporting limits. No review findings remain open.
