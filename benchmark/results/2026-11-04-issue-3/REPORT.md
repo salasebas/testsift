@@ -1,5 +1,8 @@
 # Real selector costs and the next Rust experiment
 
+Published baseline: 2026-11-04. These results describe the frozen imported
+implementation below. Later optimization measurements must use a separate dataset.
+
 Optimize snapshot production before porting the graph or cache. The imported Rails
 fixture takes **6.588 s with lines** and **22.335 s with branches** at p50.
 Actual `Coverage.peek_result` calls consume **17.209 s** median exclusive time in
@@ -11,8 +14,8 @@ A benchmark-only snapshot reuse reduces the paired branch median **23.8%**, from
 prototype is a public native file-event collector for an explicit dependency-only
 contract. A literal Coverage language port retains the global snapshot work.
 
-See the [component inventory](PERFORMANCE_INVENTORY.md) and
-[Coverage/Rust assessment](COVERAGE_RUST_RESEARCH.md) for all candidates, maintained
+See the [component inventory](../../PERFORMANCE_INVENTORY.md) and
+[Coverage/Rust assessment](../../COVERAGE_RUST_RESEARCH.md) for all candidates, maintained
 projects, fork options, source evidence, compatibility, and adoption gates.
 
 ## Source and protocol
@@ -49,7 +52,7 @@ task benchmark:evidence:input-fault -- --modes lines --cases fault --repetitions
 
 To replay dependency resolution, add
 `--lockfiles benchmark/results/2026-11-04-issue-3/stock/metadata.json` and use a new
-output directory. The [driver guide](evidence/README.md) defines setup, modes, memory,
+output directory. The [driver guide](../../evidence/README.md) defines setup, modes, memory,
 allocation scope, profiling, and platform requirements.
 
 Wall time includes Bundler, boot, discovery, cache loading/saving, reports, and exit.
@@ -283,7 +286,7 @@ per-example line history or establish real-application dependency equivalence.
 5. **Gate graph/cache/native-consumer ports on larger real workloads.** Their present
    measured costs do not justify first priority. Require at least 10% complete-run
    improvement including conversion/FFI, no worse p95/RSS, exact behavior parity, and
-   working engine fallback. The [inventory](PERFORMANCE_INVENTORY.md) gives the checks.
+   working engine fallback. The [inventory](../../PERFORMANCE_INVENTORY.md) gives the checks.
 
 Do not port Coverage merely to change C counters into Rust counters. Supercov combines
 Rust probe planning with Ruby Coverage/probes and is a reference, not a compatible
@@ -293,13 +296,13 @@ validated here as a drop-in collector for the entire supported interpreter matri
 
 ## Artifacts and verification
 
-- [Stock metadata and exact locks](results/2026-11-04-issue-3/stock/metadata.json);
-  [stock summary](results/2026-11-04-issue-3/stock/summary.json).
-- [Paired summary](results/2026-11-04-issue-3/paired/summary.json).
-- [Semantic-input summary](results/2026-11-04-issue-3/input-fault/summary.json).
-- [Direct RSpec summary](results/2026-11-04-issue-3/plain/summary.json).
-- [VM measurements](results/2026-11-04-issue-3/vm/summary.json).
-- Each dataset contains `runs.jsonl.gz`. [SHA256SUMS](results/2026-11-04-issue-3/SHA256SUMS)
+- [Stock metadata and exact locks](stock/metadata.json);
+  [stock summary](stock/summary.json).
+- [Paired summary](paired/summary.json).
+- [Semantic-input summary](input-fault/summary.json).
+- [Direct RSpec summary](plain/summary.json).
+- [VM measurements](vm/summary.json).
+- Each dataset contains `runs.jsonl.gz`. [SHA256SUMS](SHA256SUMS)
   covers the published evidence.
 
 ```sh
@@ -324,15 +327,6 @@ this investigation. The independent source/spec and semantic-input fault runs in
 the published evidence found no omitted failing examples or exit-status mismatches.
 The discovery guard was observed failing with an intentionally misplaced observer
 (`0 != 38`), then passing for full, warm, fault, and two-worker executions.
-
-The authorized frontend dependency refresh upgrades Vite from 8.0.16 to 8.3.5,
-the current stable release in the [regularly patched Vite branch](https://vite.dev/releases).
-The committed JavaScript bundle was rebuilt. An actual generated Ruby-fixture report
-was served over local HTTP and checked in Chrome: hydration, text filtering, dependency
-tabs, and column sorting worked, with no browser errors or console messages.
-The [captured reporter](results/2026-11-04-issue-3/reporter-vite-8.3.5.png) shows the
-rebuilt frontend. Local `file:` loading showed the static fallback; the interactive
-check used HTTP so browser module restrictions did not mask the build.
 
 The root bundle advisory check passed using the pinned audit tool with an explicit
 writable advisory database (`bundle-audit check --update --database

@@ -3,7 +3,7 @@
 This inventory covers the imported implementation at
 `f13851f7b3393aaafa7c7df088c1605747f07ce5`. It separates changes to the amount of work
 from changes to the language doing that work. The experiment and raw measurements
-are documented in [the issue #3 report](ISSUE_3_RESULTS.md). Collector implementations,
+are documented in [the issue #3 report](results/2026-11-04-issue-3/REPORT.md). Collector implementations,
 licenses, maintenance evidence, and pinned primary sources are in
 [the Coverage and Rust assessment](COVERAGE_RUST_RESEARCH.md).
 
