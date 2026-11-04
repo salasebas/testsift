@@ -1,0 +1,60 @@
+[
+  {
+    "fixture": "ruby",
+    "mode": "dependency",
+    "scenario": "parallel_full",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 3,
+    "p50_seconds": 3.096374974993523,
+    "p95_seconds": 4.502701321995119,
+    "median_peak_rss_kib": 110384.0,
+    "median_allocations": 9575078,
+    "cache_bytes": [
+      7330094,
+      7330101
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      8187147,
+      8187147
+    ],
+    "p95_peak_rss_kib": 110488.0,
+    "p95_allocations": 9575081,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "dependency",
+    "scenario": "parallel_full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 4.187733701997786,
+    "p95_seconds": 4.187733701997786,
+    "median_peak_rss_kib": 112744.0,
+    "median_allocations": 9681657,
+    "cache_bytes": [
+      7330095,
+      7330095
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      8187147,
+      8187147
+    ],
+    "p95_peak_rss_kib": 112744.0,
+    "p95_allocations": 9681657,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  }
+]

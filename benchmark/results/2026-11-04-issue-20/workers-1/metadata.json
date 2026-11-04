@@ -1,0 +1,101 @@
+{
+  "baseline_revision": "e225fbf240f9828e922aa48f8fd59632dfeab4b0",
+  "driver_revision": "09bdc39fc7a6c775b5dce3cb602b67295fdeb799",
+  "driver_sha256": {
+    "current.rb": "313e0d04551681b1818930079d1d76562b2a952b6f6065b23054291c20a87986",
+    "current_boot.rb": "4de393aca5e218da4c5c4a35308d2f48aebc955131ab58fb33a4c568a671c7f5",
+    "corpus.rb": "8b7adbdabd963b131755a625cd19abaa6f1d6c6b777514b8fe401b23522fe905",
+    "cache_probe.rb": "aa22a86bb1f62e7981039267c8d6ad4d4b56cd7e7ce924b22886e90828f18802",
+    "run.rb": "83e20a07904818fdf8a51fcc689b7824cc420e47e6657f82fb2b8e16fb869af5",
+    "boot.rb": "7a5089f3409348960ff60588117eea5ddd5aa7f9a1dcb51e48248cea3ac16a12",
+    "malloc_probe.c": "8fab2799f1a72ebedd4aa0f5c2e25e6e4551ca8a386bf8b42097822b06604346"
+  },
+  "recorded_at": "2026-11-04T19:29:12Z",
+  "ruby": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+  "kernel": "Linux 6.19.10-300.fc44.x86_64 x86_64 GNU/Linux",
+  "cpu": "model name\t: 13th Gen Intel(R) Core(TM) i7-1355U",
+  "memory": "MemTotal:       40715980 kB",
+  "cpu_affinity": "pid 623732's current affinity list: 0-11",
+  "options": {
+    "repetitions": 3,
+    "profiles": 1,
+    "seed": 30031,
+    "fixtures": [
+      "ruby"
+    ],
+    "modes": [
+      "dependency"
+    ],
+    "revision": "e225fbf",
+    "output": "tmp/issue20-measured-workers-1",
+    "cases": [
+      "parallel_full"
+    ],
+    "variants": [
+      "stock"
+    ],
+    "workers": 1,
+    "backend": "json",
+    "serializer": "json",
+    "corpus": {
+      "files": 100,
+      "branch_sites": 8,
+      "examples": 1000,
+      "fanout": 1,
+      "inputs": 100,
+      "eager": false
+    },
+    "command_arguments": [
+      "--fixtures",
+      "ruby",
+      "--corpus",
+      "sparse",
+      "--modes",
+      "dependency",
+      "--cases",
+      "parallel_full",
+      "--workers",
+      "1",
+      "--repetitions",
+      "3",
+      "--profiles",
+      "1",
+      "--output",
+      "tmp/issue20-measured-workers-1"
+    ]
+  },
+  "bundle_path": "/home/sebastian/.cache/testsift-bundle",
+  "lockfiles": {
+    "ruby": {
+      "sha256": "5ca532c293c7eef2e9c4b5e3664b5ecad0bef42b8cf32c1c4227f203a3e79812",
+      "content": "PATH\n  remote: ../../..\n  specs:\n    rspec-tracer (2.0.0.rc.1)\n      docile (~> 1.4)\n      rspec-core (~> 3.12)\n\nGEM\n  remote: https://rubygems.org/\n  specs:\n    diff-lcs (1.6.2)\n    docile (1.4.1)\n    mini_portile2 (2.8.9)\n    msgpack (1.8.7)\n    parallel (2.3.0)\n    parallel_tests (4.10.1)\n      parallel\n    rspec (3.13.2)\n      rspec-core (~> 3.13.0)\n      rspec-expectations (~> 3.13.0)\n      rspec-mocks (~> 3.13.0)\n    rspec-core (3.13.6)\n      rspec-support (~> 3.13.0)\n    rspec-expectations (3.13.5)\n      diff-lcs (>= 1.2.0, < 2.0)\n      rspec-support (~> 3.13.0)\n    rspec-mocks (3.13.8)\n      diff-lcs (>= 1.2.0, < 2.0)\n      rspec-support (~> 3.13.0)\n    rspec-support (3.13.7)\n    sqlite3 (2.10.2)\n      mini_portile2 (~> 2.8.0)\n    sqlite3 (2.10.2-x86_64-linux-gnu)\n\nPLATFORMS\n  ruby\n  x86_64-linux\n\nDEPENDENCIES\n  msgpack (= 1.8.7)\n  parallel_tests (~> 4.7)\n  rspec (~> 3.13)\n  rspec-tracer!\n  sqlite3 (= 2.10.2)\n\nBUNDLED WITH\n   2.5.22\n"
+    }
+  },
+  "engine_revision": "e225fbf240f9828e922aa48f8fd59632dfeab4b0",
+  "root_lockfile": "PATH\n  remote: .\n  specs:\n    rspec-tracer (2.0.0.rc.1)\n      docile (~> 1.4)\n      rspec-core (~> 3.12)\n\nGEM\n  remote: https://rubygems.org/\n  specs:\n    ast (2.4.3)\n    benchmark (0.5.0)\n    cgi (0.5.2)\n    coderay (1.1.3)\n    concurrent-ruby (1.3.8)\n    connection_pool (3.0.2)\n    diff-lcs (1.6.2)\n    docile (1.4.1)\n    erb (4.0.4.1)\n      cgi (>= 0.3.3)\n    execjs (2.10.2)\n      json (>= 2)\n    io-console (0.9.5)\n    irb (1.18.0)\n      pp (>= 0.6.0)\n      prism (>= 1.3.0)\n      rdoc (>= 4.0.0)\n      reline (>= 0.4.2)\n    json (2.21.2)\n    knapsack (4.0.0)\n      rake\n    language_server-protocol (3.17.0.6)\n    lint_roller (1.1.0)\n    logger (1.7.0)\n    method_source (1.1.0)\n    msgpack (1.8.7)\n    mutant (0.16.3)\n      diff-lcs (>= 1.6, < 3)\n      irb (~> 1.15)\n      parser (~> 3.3.10)\n      regexp_parser (~> 2.10)\n      securerandom (>= 0.3)\n      sorbet-runtime (~> 0.6.0)\n      unparser (>= 0.8.2, < 0.10)\n    mutant-rspec (0.16.3)\n      mutant (= 0.16.3)\n      rspec-core (>= 3.8.0, < 5.0.0)\n    parallel (2.3.0)\n    parallel_tests (5.9.0)\n      parallel\n    parser (3.3.13.0)\n      ast (~> 2.4.1)\n      racc\n    pp (0.6.4)\n      prettyprint\n    prettyprint (0.2.1)\n    prism (1.9.0)\n    pry (0.16.1)\n      coderay (~> 1.1)\n      method_source (~> 1.0)\n      reline (>= 0.6.0)\n    racc (1.8.1)\n    rack (3.2.8)\n    rainbow (3.1.1)\n    rake (13.4.2)\n    rantly (2.0.0)\n    rbs (4.2.0)\n      logger\n      prism (>= 1.6.0)\n      tsort\n    rdoc (8.1.0)\n      erb\n      prism (>= 1.6.0)\n      rbs (>= 4.0.0)\n      tsort\n    redis (6.0.0)\n      redis-client (= 0.30.1)\n    redis-client (0.30.1)\n      connection_pool\n    regexp_parser (2.13.1)\n    reline (0.7.0)\n      io-console (~> 0.5)\n    rspec (3.13.2)\n      rspec-core (~> 3.13.0)\n      rspec-expectations (~> 3.13.0)\n      rspec-mocks (~> 3.13.0)\n    rspec-core (3.13.6)\n      rspec-support (~> 3.13.0)\n    rspec-expectations (3.13.5)\n      diff-lcs (>= 1.2.0, < 2.0)\n      rspec-support (~> 3.13.0)\n    rspec-mocks (3.13.8)\n      diff-lcs (>= 1.2.0, < 2.0)\n      rspec-support (~> 3.13.0)\n    rspec-rerun (1.1.0)\n      rspec (~> 3.0)\n    rspec-retry (0.6.2)\n      rspec-core (> 3.3)\n    rspec-support (3.13.7)\n    rubocop (1.88.2)\n      json (~> 2.3)\n      language_server-protocol (~> 3.17.0.2)\n      lint_roller (~> 1.1.0)\n      parallel (>= 1.10)\n      parser (>= 3.3.0.2)\n      rainbow (>= 2.2.2, < 4.0)\n      regexp_parser (>= 2.9.3, < 3.0)\n      rubocop-ast (>= 1.49.0, < 2.0)\n      ruby-progressbar (~> 1.7)\n      unicode-display_width (>= 2.4.0, < 4.0)\n    rubocop-ast (1.50.0)\n      parser (>= 3.3.7.2)\n      prism (~> 1.7)\n    rubocop-performance (1.26.1)\n      lint_roller (~> 1.1)\n      rubocop (>= 1.75.0, < 2.0)\n      rubocop-ast (>= 1.47.1, < 2.0)\n    rubocop-rake (0.7.1)\n      lint_roller (~> 1.1)\n      rubocop (>= 1.72.1)\n    rubocop-rspec (3.10.2)\n      lint_roller (~> 1.1)\n      regexp_parser (>= 2.0)\n      rubocop (~> 1.86, >= 1.86.2)\n    ruby-progressbar (1.13.0)\n    securerandom (0.4.1)\n    simplecov (0.22.0)\n      docile (~> 1.1)\n      simplecov-html (~> 0.11)\n      simplecov_json_formatter (~> 0.1)\n    simplecov-html (0.13.2)\n    simplecov_json_formatter (0.1.4)\n    sorbet-runtime (0.6.13632)\n    sprockets (4.4.1)\n      concurrent-ruby (~> 1.1)\n      logger\n      rack (>= 2.2.4, < 4)\n    sqlite3 (2.10.2-aarch64-linux-gnu)\n    sqlite3 (2.10.2-aarch64-linux-musl)\n    sqlite3 (2.10.2-arm-linux-gnu)\n    sqlite3 (2.10.2-arm-linux-musl)\n    sqlite3 (2.10.2-arm64-darwin)\n    sqlite3 (2.10.2-x86-linux-gnu)\n    sqlite3 (2.10.2-x86-linux-musl)\n    sqlite3 (2.10.2-x86_64-darwin)\n    sqlite3 (2.10.2-x86_64-linux-gnu)\n    sqlite3 (2.10.2-x86_64-linux-musl)\n    stackprof (0.2.28)\n    tsort (0.2.0)\n    uglifier (4.2.1)\n      execjs (>= 0.3.0, < 3)\n    unicode-display_width (3.3.0)\n      unicode-emoji (~> 4.3)\n    unicode-emoji (4.3.0)\n    unparser (0.9.0)\n      diff-lcs (>= 1.6, < 3)\n      parser (>= 3.3.0)\n      prism (>= 1.5.1)\n    yard (0.9.45)\n    yui-compressor (0.12.0)\n\nPLATFORMS\n  aarch64-linux-gnu\n  aarch64-linux-musl\n  arm-linux-gnu\n  arm-linux-musl\n  arm64-darwin\n  x86-linux-gnu\n  x86-linux-musl\n  x86_64-darwin\n  x86_64-linux-gnu\n  x86_64-linux-musl\n\nDEPENDENCIES\n  benchmark (>= 0.4)\n  connection_pool (>= 2.5)\n  erb (~> 4.0)\n  knapsack (~> 4.0)\n  msgpack (>= 1.7)\n  mutant-rspec (= 0.16.3)\n  parallel (>= 1.26)\n  parallel_tests (>= 4.10)\n  pry (~> 0.14)\n  rake (~> 13.2)\n  rantly (~> 2.0)\n  redis (>= 4.8)\n  rspec (>= 3.12)\n  rspec-rerun (~> 1.1)\n  rspec-retry (~> 0.6)\n  rspec-tracer!\n  rubocop (= 1.88.2)\n  rubocop-performance (= 1.26.1)\n  rubocop-rake (= 0.7.1)\n  rubocop-rspec (= 3.10.2)\n  simplecov (~> 0.22)\n  sprockets (~> 4.2)\n  sqlite3 (>= 2.0)\n  stackprof (~> 0.2)\n  uglifier (~> 4.2)\n  yard (~> 0.9)\n  yui-compressor (~> 0.12)\n\nBUNDLED WITH\n   2.5.22\n",
+  "remote": "unmeasured; no authorized remote backend configured",
+  "coverage_owner": "benchmark bootstrap; fixture SimpleCov disabled",
+  "corpus_identity": "304e70639865e42f62563d5d874b3dade733af2d2805cf6892fab32f5ea25c3c",
+  "command": [
+    "/home/sebastian/.local/share/rv/rubies/ruby-3.3.10/bin/ruby",
+    "benchmark/evidence/current.rb",
+    "--fixtures",
+    "ruby",
+    "--corpus",
+    "sparse",
+    "--modes",
+    "dependency",
+    "--cases",
+    "parallel_full",
+    "--workers",
+    "1",
+    "--repetitions",
+    "3",
+    "--profiles",
+    "1",
+    "--output",
+    "tmp/issue20-measured-workers-1"
+  ],
+  "rubyopt": "-EUTF-8",
+  "compiler": "cc (GCC) 16.2.1 20260819 (Red Hat 16.2.1-2)"
+}

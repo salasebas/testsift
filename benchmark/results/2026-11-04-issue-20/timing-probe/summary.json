@@ -1,0 +1,60 @@
+[
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 31.63024522199703,
+    "p95_seconds": 31.63024522199703,
+    "median_peak_rss_kib": 538680.0,
+    "median_allocations": 107164212,
+    "cache_bytes": [
+      80127307,
+      80127307
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      83518123,
+      83518123
+    ],
+    "p95_peak_rss_kib": 538680.0,
+    "p95_allocations": 107164212,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "warm",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 14.127736447000643,
+    "p95_seconds": 14.127736447000643,
+    "median_peak_rss_kib": 605472.0,
+    "median_allocations": 43911193,
+    "cache_bytes": [
+      80506670,
+      80506670
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      82660336,
+      82660336
+    ],
+    "p95_peak_rss_kib": 605472.0,
+    "p95_allocations": 43911193,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  }
+]

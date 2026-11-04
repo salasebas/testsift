@@ -13,6 +13,10 @@ See the [issue #3 results](results/2026-11-04-issue-3/REPORT.md),
 [Coverage and Rust assessment](COVERAGE_RUST_RESEARCH.md). These experiments do not
 change the existing benchmark limits.
 
+The separate [current-engine driver](evidence/CURRENT_ENGINE.md) adds executable
+scale corpora, independent input-failure oracles, backend checks, and runtime
+comparisons. Its measurements stay outside the frozen imported-baseline dataset.
+
 ## Scenarios
 
 | Name | What it measures | Fixture |
