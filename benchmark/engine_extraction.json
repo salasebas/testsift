@@ -26,6 +26,7 @@
     "Rails 7.1 with unconstrained json 3.1.0 fails on inherited ActiveSupport quirks_mode incompatibility. All three Rails results here replace those invalid runs using the same compatible temporary bundle.",
     "The inherited harness can omit failed scenarios and ignore fork-child status; these records require 14 scenarios and 10 timings in each side. The compatible Rails full fixture was also checked directly: 308 examples, zero failures.",
     "ENV mismatch scenarios invalidate only their first measured iteration in a block, as defined by the existing harness.",
+    "The inherited parallel_tests_2_workers scenario sets PARALLEL_TEST_GROUPS without -n. The CLI overwrites that variable, so these samples use the default CPU-derived worker count, not a verified two-worker count. The original scenario key and all samples are retained.",
     "This compares the tracer before and after extraction. It does not measure tracer overhead against plain RSpec."
   ],
   "results": {

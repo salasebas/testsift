@@ -99,6 +99,11 @@ below as they are reproduced.
   pass `-n 2` to exercise its documented two-worker contract. The existing
   green-exit example now also checks the reported process count; no previous
   assertion checked which process count actually ran.
+- The benchmark's `parallel_tests_2_workers` scenario has the same ignored
+  environment variable. Its historical measurements use the CLI's default
+  CPU-derived count, not a verified two-worker count. The raw timings and
+  scenario key are retained with this limitation. Follow-up: pass `-n 2` and
+  regenerate the parallel benchmark baseline as part of issue #3.
 
 ## Core lifecycle contract
 
@@ -266,7 +271,7 @@ amortizes Rails boot as documented by the existing benchmark.
 | --- | --- | --- |
 | Ruby cold | 0.2469 / 0.3366 | 0.2361 / 0.2697 |
 | Ruby warm, no change | 0.2253 / 0.2478 | 0.2200 / 0.2281 |
-| Two workers, cold | 1.4836 / 1.5242 | 1.5219 / 1.7358 |
+| Parallel, default worker count, cold | 1.4836 / 1.5242 | 1.5219 / 1.7358 |
 | Rails models, cold | 2.5638 / 4.7311 | 2.4861 / 2.5603 |
 | Rails full suite, cold | 7.0725 / 11.5290 | 6.7084 / 7.6573 |
 | Rails full suite, fork after boot | 4.1093 / 4.2237 | 4.1740 / 4.5629 |
@@ -307,3 +312,5 @@ A fourth fresh Astra review approved the security follow-up, including the
 lockfile, generated bundle, Puma's Ruby requirement, and preserved CI matrix.
 A fifth approved the two-worker helper correction and confirmed the cleanup
 assertions remain unchanged; the four-worker defect remains explicitly pending.
+A sixth approved the historical benchmark label correction and confirmed that
+all scenario keys, samples, and numeric summaries remain unchanged.
