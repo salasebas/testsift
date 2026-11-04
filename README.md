@@ -1,4 +1,13 @@
-# rspec-tracer
+# TestSift
+
+TestSift is a fork of [RSpec Tracer](https://github.com/avmnu-sng/rspec-tracer)
+for affected-test selection. Development starts from upstream
+`v2.0.0.rc.1`, commit `f13851f7b3393aaafa7c7df088c1605747f07ce5`.
+See [FORK.md](FORK.md) for the baseline and initial scope.
+
+The imported implementation and installation instructions below still use
+the `rspec-tracer` gem and `RSpecTracer` namespace. They describe the upstream
+API, not a published `testsift` gem.
 
 [![CI](https://github.com/avmnu-sng/rspec-tracer/actions/workflows/ci.yml/badge.svg)](https://github.com/avmnu-sng/rspec-tracer/actions/workflows/ci.yml)
 [![Gem Version](https://badge.fury.io/rb/rspec-tracer.svg)](https://badge.fury.io/rb/rspec-tracer)
