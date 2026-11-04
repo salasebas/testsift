@@ -4,6 +4,7 @@ require 'digest'
 require 'json'
 require 'open3'
 require 'optparse'
+require 'rbconfig'
 require 'tmpdir'
 require_relative 'coverage'
 
@@ -33,12 +34,14 @@ module RuntimeEvidence
       command.push('--yjit', '--yjit-call-threshold=1') if jit
       command.push(__FILE__, '--child')
       env = { 'FILES' => '200', 'BRANCH_SITES' => '32', 'ITERATIONS' => '20',
-              'MODE' => mode, 'TOUCHED' => touched.to_s, 'RUBYOPT' => nil }
+              'MODE' => mode, 'TOUCHED' => touched.to_s, 'RUBYOPT' => nil,
+              'RUBY_YJIT_ENABLE' => nil, 'RUBY_MJIT_ENABLE' => nil }
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       stdout, stderr, status = Open3.capture3(env, *command)
       raise "runtime comparison failed: #{command.inspect}: #{stderr}" unless status.success?
 
-      JSON.parse(stdout).merge(command: command, env: env, ruby_sha256: Digest::SHA256.file(ruby).hexdigest,
+      JSON.parse(stdout).merge(command: command, env: env, requested_yjit: jit,
+                               ruby_sha256: Digest::SHA256.file(ruby).hexdigest,
                                command_seconds: Process.clock_gettime(Process::CLOCK_MONOTONIC) - started,
                                peak_rss_kib: File.read(resource).strip.to_i)
     end
@@ -57,7 +60,9 @@ if $PROGRAM_NAME == __FILE__
 
       def result
         jit = defined?(RubyVM::YJIT) && RubyVM::YJIT.enabled?
-        super.merge(yjit_enabled: jit, yjit_stats: jit ? RubyVM::YJIT.runtime_stats : nil)
+        super.merge(yjit_enabled: jit, yjit_stats: jit ? RubyVM::YJIT.runtime_stats : nil,
+                    gems: Gem.loaded_specs.transform_values { |spec| spec.version.to_s },
+                    configure_args: RbConfig::CONFIG.fetch('configure_args'))
       end
     end)
     CoverageEvidence.new.run

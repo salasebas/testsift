@@ -32,6 +32,9 @@ module CurrentEvidenceSummary
   end
 
   def self.profiles(rows)
+    return nil if %w[plain coverage_control unwrapped_plain].include?(rows.first.fetch('scenario'))
+    return nil unless rows.first.fetch('env')['EVIDENCE_PROFILE_PURPOSE'] == 'timing'
+
     COMPONENTS.transform_values do |labels|
       seconds = rows.map { |row| component_seconds(row, labels) }
       { seconds: distribution(seconds),

@@ -24,8 +24,10 @@ task benchmark:evidence:current -- --output tmp/current-engine
 ```
 
 The default engine revision is `e225fbf`, resolved to a full SHA in metadata. The
-default campaign has 20 clean repetitions and three additional profile repetitions
-per cell. Use `--revision SHA` to measure another engine. Run one campaign at a
+default campaign has 20 clean repetitions and three additional timing repetitions
+per cell. Allocator sampling runs separately because `mallinfo2` can traverse large
+allocator free lists and perturb the hot methods being timed. Use `--revision SHA`
+to measure another engine. Run one campaign at a
 time. Leave other CPU-intensive applications idle where possible.
 
 Metadata includes the engine revision, all driver hashes, compiler, Ruby, OS,
@@ -124,6 +126,25 @@ persistence, and reports. Nested methods are subtracted from their caller.
 Interning is timed once per outer call, including recursion, so counters and
 allocator probes do not run for every nested object. Use clean complete
 commands for performance comparisons and profiles to choose the next experiment.
+Component summaries apply to traced runs. Controls retain their runner/discovery
+and branch-export measurements in raw telemetry, but do not install the tracer's
+collector probes. Their missing component measurements must not be read as zero
+collector cost.
+
+The default task uses `timing.rb`, which disables allocator sampling while retaining
+the same engine instrumentation. A timing-only pass can use zero clean repetitions:
+
+```sh
+task benchmark:evidence:current -- --fixtures ruby --corpus large --cases full,warm --repetitions 0 --profiles 1 --output tmp/current-timing
+```
+
+Use `benchmark:evidence:memory` for the separate allocator observation. Its timing
+counters include allocator-probe overhead and are excluded from component budgets.
+Clean wall time, allocations, and RSS from that driver remain valid.
+
+```sh
+task benchmark:evidence:memory -- --fixtures ruby --corpus large --cases full,warm --repetitions 3 --profiles 1 --output tmp/current-memory
+```
 
 `unwrapped_plain` runs RSpec without either benchmark bootstrap. It has no Ruby
 allocation counter. Compare it with `plain` under the same fixture and mode:
@@ -145,7 +166,7 @@ task benchmark:evidence:startup -- --modes lines --cases unwrapped_plain --repet
 GNU time supplies peak process-tree RSS, which includes native allocations. It is
 the maximum single-process peak, not simultaneous worker RSS summed together.
 Per-worker telemetry also records `/proc/self/status`'s `VmHWM`. Profile boundaries
-sample glibc used arena bytes plus used mmap bytes with `mallinfo2`. The maximum
+in the memory pass sample glibc used arena bytes plus used mmap bytes with `mallinfo2`. The maximum
 sample is a lower bound, includes Ruby heap arenas, and excludes allocations
 that appear and disappear between boundaries. It is not native-only peak memory.
 GC malloc counters are net increases since collection, not heap peaks. Native-only

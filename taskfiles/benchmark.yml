@@ -68,6 +68,12 @@ tasks:
     desc: Measure the extracted engine and generated scale corpus separately from the imported baseline
     deps: [benchmark:bundle]
     cmds:
+      - ruby benchmark/evidence/timing.rb {{.CLI_ARGS}}
+
+  benchmark:evidence:memory:
+    desc: Measure current-engine RSS and sampled allocator state separately from exclusive timing
+    deps: [benchmark:bundle]
+    cmds:
       - ruby benchmark/evidence/current.rb {{.CLI_ARGS}}
 
   benchmark:coverage:real:
