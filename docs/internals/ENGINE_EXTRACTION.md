@@ -81,23 +81,10 @@ below as they are reproduced.
   'RSpecTracer::Tracker::LoadedFilesTracker#build_inputs'`. Follow-up: make
   the test independent of global Coverage state and reject neutral failures
   in the mutation gate. Its percentage is not proof for affected methods.
-- The unchanged HTML reporter development lockfile currently fails
-  `npm audit --audit-level=high`, with 16 vulnerable dependency entries,
-  8 moderate and 8 high. `package.json`, `package-lock.json`, and the
-  reporter bundle are unchanged. Follow-up: update and verify the reporter
-  toolchain separately. This is a security-check blocker, not an engine
-  extraction regression.
-- Trivy reports two high-severity advisories for Puma 6.6.1 in the generated
-  Rails fixture lockfile, CVE-2026-47736 and CVE-2026-47737. The fixture
-  Gemfile still pins Puma 6.x. Follow-up: update the fixture server dependency
-  and verify the supported Rails matrix. The configured Trivy command exits
-  zero while reporting these findings; that exit does not mean a clean scan.
-- Rails 7.1.6 with unconstrained `json` 3.1.0 raises `unknown keyword:
-  quirks_mode` while ActiveSupport serializes the existing RSpec identity.
-  Both baselines fail on the unchanged `Example.from` implementation.
-  Benchmark preparation uses an explicit temporary JSON 2.21.2 bundle.
-  Follow-up: establish a compatible dependency policy without changing cached
-  identity bytes accidentally.
+- Seven moderate npm audit entries remain in the ESLint development dependency
+  chain. Compatible updates remove all high and critical findings. The remaining
+  minimatch fix requires dependency major changes unsupported by the current
+  ESLint plugins; follow up when their peer requirements permit the upgrade.
 - The benchmark runner drops failed scenarios with `filter_map`, and the
   long-running fork scenario does not check child exit status. A successful
   command can therefore omit failures. Follow-up: fail the benchmark if any
@@ -183,10 +170,10 @@ LocalStack 4.14.0 and Redis 7 run in dedicated local containers.
 | `task test:mutation:smoke` | All configured percentage gates pass; see the inherited neutral-failure limitation above. |
 | `task test:mutation:rspec` | All gates pass; RunnerHook 88.82%, ReporterHook 98.82%. |
 | `task lint:actions`, `task lint:yaml`, `task check:bundle`, `task docs:leak-check` | Pass. |
-| `task lint:node`, `task reporters:html:check` | Pass; no generated bundle changes. |
+| `task lint:node`, `task reporters:html:check` | Pass before the security follow-up below. |
 | `task security:bundle-audit` | No vulnerabilities found. |
-| `task security:trivy` | Completes and reports two inherited Puma findings in the Rails fixture. |
-| `npm audit --audit-level=high` | Fails on the unchanged reporter lockfile; pending above. |
+| `task security:trivy` | Initially reports two inherited Puma findings; fixed in the security follow-up below. |
+| `npm audit --audit-level=high` | Initially fails with eight high entries; fixed in the security follow-up below. |
 
 The six entry-point scenarios also pass against the unmodified `testsift`
 baseline. Temporary process-local mutations prove the new assertions detect
@@ -206,6 +193,41 @@ the branch with `testsift`. Rebase conflicts only removed the callbacks and
 tests already moved by this change. The rebased engine and engine test files
 match the reviewed extraction; the 228 focused tests and complete
 `task check` were rerun on the target branch.
+
+## Security follow-up
+
+The first CI run on the extraction, [41786622632](https://github.com/salasebas/testsift/actions/runs/41786622632),
+completed 27 jobs successfully but failed its npm security audit. The maintainer
+requested dependency repairs in the same PR before handoff.
+
+- Update Vite from 8.0.16 to 8.3.5 and apply compatible transitive npm fixes.
+  Rebuild the committed HTML bundle. The supported release policy is documented
+  by [Vite](https://vite.dev/releases).
+- Update the Rails fixture's Puma requirement from 6.x to 7.2.1, the patched
+  version for [CVE-2026-47736](https://github.com/puma/puma/security/advisories/GHSA-qpgp-93vx-g8v8)
+  and [CVE-2026-47737](https://github.com/puma/puma/security/advisories/GHSA-2vqw-3mp8-cgmx).
+  Its Ruby minimum is 3.0, below the matrix minimum of 3.1.
+- Constrain the fixture to JSON 2.x. Rails 7.1's existing `quirks_mode` argument
+  is incompatible with JSON 3.1. The unconstrained fixture reproduces nine
+  failures in 124 model examples; the constrained fixture passes all 308
+  examples without changing identity serialization or engine behavior.
+
+Local verification after these changes:
+
+| Command or check | Result |
+| --- | --- |
+| `npm ci`, `npm audit --audit-level=high` | Reproducible install; zero high or critical entries. Seven moderate development entries remain. |
+| `task lint:node`, `task reporters:html:build` | Pass with Vite 8.3.5. |
+| Browser smoke of generated HTML | Two outcomes render, text filtering and duration sorting work, no page or console errors. |
+| `task security:bundle-audit` | No vulnerabilities found. |
+| `task security:trivy` | Zero configured high or critical findings across the root, Ruby fixture, Rails fixture, and npm lockfiles. |
+| `task check` | 244 Ruby files without lint offenses; 2,177 examples, zero failures, two expected skips without LocalStack; smoke limits pass. |
+| `RAILS_VERSION='~> 7.1.0' RSPEC_RAILS_VERSION='~> 6.1.0' SQLITE3_VERSION='~> 1.4' RSPEC_TRACER=1 task fixtures:rails:rspec` | 308 examples, zero failures. |
+| `task test:features:rails` | 13 examples, zero failures, including golden coverage equality. |
+
+Security thresholds, vulnerability suppressions, engine behavior, and benchmark
+limits are unchanged. The timing artifact below predates these dependency
+repairs and does not measure their performance.
 
 ## Before and after overhead
 
@@ -259,3 +281,6 @@ requested real RSpec coverage for new, pending, and interrupted tests. Those
 scenarios and their deliberate failure checks resolved S1. Round 2 approved
 the implementation against `testsift`. Round 3 approved the timing artifact,
 ratchet evaluation, and reporting limits. No review findings remain open.
+
+A fourth fresh Astra review approved the security follow-up, including the
+lockfile, generated bundle, Puma's Ruby requirement, and preserved CI matrix.
