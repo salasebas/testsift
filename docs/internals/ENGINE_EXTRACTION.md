@@ -81,6 +81,17 @@ below as they are reproduced.
   'RSpecTracer::Tracker::LoadedFilesTracker#build_inputs'`. Follow-up: make
   the test independent of global Coverage state and reject neutral failures
   in the mutation gate. Its percentage is not proof for affected methods.
+- The unchanged HTML reporter development lockfile currently fails
+  `npm audit --audit-level=high`, with 16 advisories affecting 8 moderate and
+  8 high dependency entries. `package.json`, `package-lock.json`, and the
+  reporter bundle are unchanged. Follow-up: update and verify the reporter
+  toolchain separately. This is a security-check blocker, not an engine
+  extraction regression.
+- Trivy reports two high-severity advisories for Puma 6.6.1 in the generated
+  Rails fixture lockfile, CVE-2026-47736 and CVE-2026-47737. The fixture
+  Gemfile still pins Puma 6.x. Follow-up: update the fixture server dependency
+  and verify the supported Rails matrix. The configured Trivy command exits
+  zero while reporting these findings; that exit does not mean a clean scan.
 
 ## Core lifecycle contract
 
@@ -135,3 +146,51 @@ Before extraction it fails in `Engine#build_read_backend` because the global
 `RSpecTracer.parallel_tests?` method is unavailable. After extraction it
 exercises JSON persistence, cold/warm selection, explicit worker read paths,
 changed inputs, normalized results, and interruption without defining RSpec.
+
+## Verification
+
+Verification uses Ruby 3.3.10 on Linux x86_64, Intel Core i7-1355U, with
+RSpec Core 3.13.6, expectations 3.13.5, mocks 3.13.8, Docile 1.4.1, and Task
+3.45.4. Gems and pinned repository tools were installed for these checks.
+LocalStack 4.14.0 and Redis 7 run in dedicated local containers.
+
+| Command | Observed result |
+| --- | --- |
+| `task check` | 244 Ruby files without lint offenses; 2,177 examples, zero failures, no pending examples; both smoke benchmarks pass unchanged limits. |
+| `ruby -Ilib spec/core/engine_lifecycle.rb` | Exit 0; RSpec absent before and after the lifecycle. |
+| `bundle exec rspec spec/engine_spec.rb spec/engine_rails_spec.rb spec/engine_isolation_spec.rb spec/rspec spec/integration/engine_boundary_spec.rb` | 228 examples, zero failures with tracer self-instrumentation disabled. |
+| `task test:property` | 25 examples, zero failures. |
+| `task test:edge-cases` | 109 examples, zero failures. |
+| `task test:regressions:plain` | 8 examples, zero failures. |
+| `task test:fuzz:full` | 10,000 iterations per harness; no crashes. |
+| `task test:features:rails` | 13 examples, zero failures, including golden coverage equality. |
+| `task test:dogfood` | Cold and warm fixture runs pass. |
+| `task test:integration:parallel` | 7 examples, zero failures, including merged reports and warm selection. |
+| `task test:integration:remote-cache` | 14 examples, zero failures against LocalStack. |
+| `task test:integration:remote-cache:redis` | 15 examples, zero failures against Redis. |
+| `task test:mutation:smoke` | All configured percentage gates pass; see the inherited neutral-failure limitation above. |
+| `task test:mutation:rspec` | All gates pass; RunnerHook 88.82%, ReporterHook 98.82%. |
+| `task lint:actions`, `task lint:yaml`, `task check:bundle`, `task docs:leak-check` | Pass. |
+| `task lint:node`, `task reporters:html:check` | Pass; no generated bundle changes. |
+| `task security:bundle-audit` | No vulnerabilities found. |
+| `task security:trivy` | Completes and reports two inherited Puma findings in the Rails fixture. |
+| `npm audit --audit-level=high` | Fails on the unchanged reporter lockfile; pending above. |
+
+The six entry-point scenarios also pass against the unmodified `testsift`
+baseline. Temporary process-local mutations prove the new assertions detect
+pending outcomes converted to `failed`, interrupted registrations treated as
+passed, and a new identity incorrectly filtered from a warm run. Each
+mutation fails its focused scenario; the production code passes all six.
+
+The standalone core test fails before extraction on the global
+`parallel_tests?` access. The ordering check fails before extraction because
+ENV selection precedes example registration. The reporter conversion check
+fails before extraction because the engine receives an RSpec object. These
+checks pass after extraction. The Rails callback test also fails when its
+error containment is removed in an isolated copy.
+
+The RSpec, Rails, parallel, and remote-cache checks were run before aligning
+the branch with `testsift`. Rebase conflicts only removed the callbacks and
+tests already moved by this change. The rebased engine and engine test files
+match the reviewed extraction; the 228 focused tests and complete
+`task check` were rerun on the target branch.

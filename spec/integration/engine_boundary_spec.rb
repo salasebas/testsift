@@ -47,7 +47,7 @@ RSpec.describe RSpecTracer::Engine do
     Open3.capture2e(
       { 'ENGINE_BOUNDARY_FLAG' => 'enabled' }.merge(env),
       RbConfig.ruby, '-I', lib_path, '-rrspec/core', '-e',
-      'exit RSpec::Core::Runner.run(ARGV)', *Dir.glob(File.join(root, '*_spec.rb')).sort, chdir: root
+      'exit RSpec::Core::Runner.run(ARGV)', *Dir.glob(File.join(root, '*_spec.rb')), chdir: root
     )
   end
 
