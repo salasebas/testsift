@@ -130,7 +130,6 @@ module RSpecTracer
               to_run[example_group] << example
               groups << example.example_group.parent_groups.last
 
-              engine.register_example(tracer_example)
             else
               engine.on_example_skipped(example_id)
             end
@@ -152,6 +151,7 @@ module RSpecTracer
             example_id = tracer_example[:example_id]
             example.metadata[:rspec_tracer_example_id] = example_id
             tracer_cache[example] = tracer_example
+            engine.register_example(tracer_example)
 
             tracks = RSpecTracer::RSpec::Metadata.tracks_for(example)
             next if tracks[:files].empty? && tracks[:env].empty?

@@ -5,6 +5,7 @@ require 'digest'
 require 'json'
 require 'set'
 
+require_relative 'engine/snapshot_builder'
 require_relative 'tracker/coverage_adapter'
 require_relative 'tracker/declared_globs'
 require_relative 'tracker/dependency_graph'
@@ -25,45 +26,10 @@ require_relative 'storage/snapshot'
 require_relative 'storage/sqlite_backend'
 
 module RSpecTracer
-  # Top-level coordinator for the v2 core engine. Wires
-  # CoverageAdapter + IOHooks + DeclaredGlobs + NewFileDetector +
-  # WholeSuiteInvalidators + LoadedFilesTracker + ExampleRegistry +
-  # DependencyGraph + Storage into a single pipeline.
-  #
-  # Named `Engine` rather than `Tracker` because the `Tracker`
-  # namespace is already taken by the sub-module that houses the
-  # leaf observers (`Tracker::CoverageAdapter`, `Tracker::IOHooks`,
-  # etc.). `RSpecTracer.engine` is the public accessor the RSpec
-  # hooks dispatch through during a run.
-  #
-  # Lifecycle (driven by RSpec hooks in `lib/rspec_tracer.rb`):
-  #
-  #   engine = Engine.new(configuration: RSpecTracer)
-  #   engine.setup                       # install hooks, load cache,
-  #                                      # compute filter decisions
-  #   engine.run_example?(id)            # per-example filter (from cache)
-  #   engine.register_example(example)   # record metadata + duplicates
-  #   engine.example_started             # peek baseline + open bucket
-  #     # ... example body runs, IOHooks record into bucket ...
-  #   engine.example_finished(id)        # diff coverage, attribute, close
-  #   engine.on_example_{passed,failed,pending,skipped}(id, result)
-  #   engine.finalize                    # persist snapshot + coverage
-  #
-  # Per-example coverage delta map: peek baseline at example_started,
-  # peek again at example_finished, store the per-line strength delta
-  # under `@examples_coverage[id][file_path][line]`. Reporters::
-  # CoverageJsonReporter consumes the cumulative coverage at finalize
-  # via Tracker::CoverageAdapter#peek_unfiltered + the engine's
-  # `merge_skipped_coverage` algorithm.
-  #
-  # Cache parity: `finalize` builds a Snapshot with file-name-keyed
-  # dependency / reverse_dependency / all_files maps (matching the
-  # 1.x on-disk convention - root-stripped file names with a leading
-  # "/") and hands it to Storage::JsonBackend. The 2.0 schema bump
-  # adds `boot_set`; everything else mirrors the 1.x cache layout
-  # byte-for-byte.
   # rubocop:disable Metrics/ClassLength
   class Engine
+    include SnapshotBuilder
+
     # Internal constant.
     # @api private
     EXAMPLE_RUN_REASON = {
@@ -101,8 +67,9 @@ module RSpecTracer
 
     # Internal method on the tracer pipeline.
     # @api private
-    def initialize(configuration: RSpecTracer)
+    def initialize(configuration:, read_cache_path: nil)
       @configuration = configuration
+      @read_cache_path = read_cache_path
       @filtered_examples = {}
       @all_examples = {}
       @duplicate_examples = {}
@@ -124,7 +91,7 @@ module RSpecTracer
 
       build_observers
       install_io_hooks
-      install_rails_observers
+      install_rails_observers if @configuration.rails?
       ensure_coverage_started
 
       @loaded_files_tracker.capture_boot_set!
@@ -171,6 +138,7 @@ module RSpecTracer
     def register_example(example)
       example_id = example[:example_id]
       @registry.register(example_id, metadata: example, identity_hash: example_id)
+      example.replace(@all_examples.fetch(example_id, {}).merge(example))
       @all_examples[example_id] = example
       @duplicate_examples[example_id] ||= []
       @duplicate_examples[example_id] << example
@@ -463,40 +431,10 @@ module RSpecTracer
       )
     end
 
-    # Install the Rails-observer family (ActionView notifications +
-    # I18n backend prepend) when Rails is detected in the process.
-    # Errors here never propagate - the tracer gracefully degrades to
-    # IOHooks-only behavior.
-    #
-    # Two-mode dispatch handles the canonical README setup order
-    # (RSpecTracer.start BEFORE `require_relative '../config/environment'`,
-    # so Rails is not yet loaded at engine.setup time):
-    #
-    # - **Eager** (Rails already loaded): install subscribers + arm the
-    #   AR-schema warn directly.
-    # - **Late-bind** (Rails not yet loaded): register a `before(:suite)`
-    #   hook that re-checks `defined?(::Rails::VERSION)` after Rails has
-    #   loaded (typically via the user's `rails_helper.rb` requiring
-    #   `config/environment` later in the boot chain). The hook installs
-    #   subscribers + the inline AR-schema warn at suite time.
-    #
-    # Without the late-bind path, `track_ar_schema_notifications` was
-    # silently inert under the canonical README setup -- the documented
-    # `use_transactional_fixtures` warn never fired and the
-    # `sql.active_record` subscriber never attached.
-    def install_rails_observers
-      if @configuration.rails?
-        do_install_rails_observers
-        arm_ar_schema_setup_warn if ar_schema_notifications_enabled?
-      else
-        arm_rails_late_bind_install
-      end
-    end
-
     # Subscriber-install body. Idempotent via `@rails_observers_installed`
     # so a re-call (e.g. eager path then late-bind firing on a slow Rails
     # load) is a no-op. Shared between the eager and late-bind paths.
-    def do_install_rails_observers
+    def install_rails_observers
       return if rails_observers_installed?
 
       require_relative 'rails/notifications'
@@ -521,96 +459,6 @@ module RSpecTracer
       @rails_observers_installed = false
     end
 
-    # Late-bind: at engine.setup `defined?(::Rails::VERSION)` was false,
-    # so register a `before(:suite)` hook that re-checks Rails-loaded
-    # state at suite time. By that point the user's `rails_helper.rb`
-    # has typically required `config/environment` and Rails IS loaded.
-    # Installs subscribers + inline-fires the AR-schema warn so the
-    # documented behavior holds end-to-end under the canonical README
-    # setup order. No-op when Rails still hasn't loaded by suite start.
-    def arm_rails_late_bind_install
-      return unless defined?(::RSpec) && ::RSpec.respond_to?(:configure)
-
-      engine = self
-      ::RSpec.configure do |config|
-        config.before(:suite) { engine.send(:rails_late_bind_install_hook) }
-      end
-    rescue StandardError => e
-      @configuration.logger.warn(
-        "rspec-tracer: rails late-bind install failed (#{e.class}: #{e.message})"
-      )
-    end
-
-    # Body of the late-bind `before(:suite)` hook. Extracted so the
-    # registration shape stays flat and the per-fire logic is testable
-    # without invoking RSpec's suite machinery.
-    def rails_late_bind_install_hook
-      return unless defined?(::Rails::VERSION) && !::Rails::VERSION.nil?
-      return if rails_observers_installed?
-
-      do_install_rails_observers
-      return unless rails_observers_installed?
-      return unless ar_schema_notifications_enabled?
-
-      emit_ar_schema_setup_warn_if_needed
-    end
-
-    # `track_ar_schema_notifications` promises per-example attribution
-    # of `db/schema.rb` via the `sql.active_record` subscriber. That
-    # narrow promise only holds when no per-example AR cleanup
-    # mechanism fires queries inside the rspec-tracer per-example
-    # bucket window. Common Rails setups trip this:
-    #
-    #   - `use_transactional_fixtures = true` (Rails default): per-
-    #     example BEGIN/COMMIT fires sql.active_record -> every
-    #     example gets schema attributed -> any schema mutation re-
-    #     runs every example (safe but wide).
-    #   - DatabaseCleaner :truncation / :deletion / :transaction in
-    #     around hooks: same outcome.
-    #
-    # Eager path: defer the check to before(:suite) -- at engine.setup
-    # the user has not run their RSpec.configure block yet, so
-    # `use_transactional_fixtures` is unset. The late-bind path
-    # short-circuits this method and inline-fires
-    # `emit_ar_schema_setup_warn_if_needed` from inside its own
-    # before(:suite) hook (no nested registration).
-    def arm_ar_schema_setup_warn
-      return unless defined?(::RSpec) && ::RSpec.respond_to?(:configure)
-
-      engine = self
-      ::RSpec.configure do |config|
-        config.before(:suite) do
-          engine.send(:emit_ar_schema_setup_warn_if_needed)
-        end
-      end
-    rescue StandardError => e
-      @configuration.logger.warn(
-        "rspec-tracer: ar-schema warn install failed (#{e.class}: #{e.message})"
-      )
-    end
-
-    # Inline check for the AR-schema attribution-widening precondition.
-    # Reused by `arm_ar_schema_setup_warn` (registered from engine.setup
-    # under the eager path) and `arm_rails_late_bind_install` (fired
-    # from inside its own before(:suite) hook). The shared helper
-    # avoids registering a nested before(:suite) under the late-bind
-    # path, which is unsafe across RSpec versions.
-    def emit_ar_schema_setup_warn_if_needed
-      return unless ::RSpec.configuration.respond_to?(:use_transactional_fixtures)
-      return if ::RSpec.configuration.use_transactional_fixtures == false
-
-      @configuration.logger.warn(
-        'rspec-tracer: track_ar_schema_notifications is enabled but ' \
-        'use_transactional_fixtures defaults to true; per-example ' \
-        'BEGIN/COMMIT fires sql.active_record so db/schema.rb gets ' \
-        'attributed to every AR-touching example (safe, but widens ' \
-        'invalidation). For narrow attribution, set ' \
-        'use_transactional_fixtures = false and use sequence-based ' \
-        'factories (or another non-AR cleanup mechanism). See ' \
-        'README section "Narrow AR-schema attribution".'
-      )
-    end
-
     # Internal method on the tracer pipeline.
     # @api private
     def uninstall_rails_observers
@@ -628,6 +476,8 @@ module RSpecTracer
     def rails_observers_installed?
       defined?(@rails_observers_installed) && @rails_observers_installed == true
     end
+
+    public :install_rails_observers, :rails_observers_installed?
 
     # rubocop:disable Naming/AccessorMethodName
     def set_rails_bucket(bucket)
@@ -701,10 +551,9 @@ module RSpecTracer
     # Internal method on the tracer pipeline.
     # @api private
     def build_read_backend
-      return @storage_backend unless RSpecTracer.parallel_tests?
+      return @storage_backend unless @read_cache_path
 
-      parent_cache_path = File.dirname(@configuration.cache_path)
-      build_storage_backend(parent_cache_path)
+      build_storage_backend(@read_cache_path)
     end
 
     # On warm runs, skipped examples don't re-populate @all_examples,
@@ -950,7 +799,7 @@ module RSpecTracer
     def record_execution_result(example_id, result)
       return unless @all_examples.key?(example_id)
 
-      @all_examples[example_id][:execution_result] = formatted_execution_result(result)
+      @all_examples[example_id][:execution_result] = result.dup
     end
 
     # Ports the 1.x flaky-detection contract: an example transitions
@@ -975,95 +824,6 @@ module RSpecTracer
     # @api private
     def previously_flaky?(id)
       @previous_snapshot&.flaky_examples&.include?(id)
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def formatted_execution_result(result)
-      {
-        started_at: result.started_at.utc,
-        finished_at: result.finished_at.utc,
-        run_time: result.run_time,
-        status: result.status.to_s
-      }
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def build_snapshot
-      run_id = Digest::MD5.hexdigest(@all_examples.keys.sort.to_json)
-      @run_id = run_id
-
-      RSpecTracer::Storage::Snapshot.new(
-        schema_version: RSpecTracer::Storage::Schema::CURRENT,
-        run_id: run_id,
-        all_examples: @all_examples,
-        duplicate_examples: duplicates_for_snapshot,
-        interrupted_examples: @registry.ids_with_status(:interrupted),
-        flaky_examples: @registry.ids_with_status(:flaky),
-        failed_examples: @registry.ids_with_status(:failed),
-        pending_examples: @registry.ids_with_status(:pending),
-        skipped_examples: @registry.ids_with_status(:skipped),
-        all_files: all_files_by_name,
-        dependency: dependency_by_name,
-        reverse_dependency: reverse_dependency_by_name,
-        examples_coverage: merge_examples_coverage_with_previous,
-        boot_set: @loaded_files_tracker.boot_set_digest_snapshot,
-        wsi_snapshot: @whole_suite_invalidators.digest_snapshot,
-        env_snapshot: env_snapshot_for_persistence,
-        env_dependency: env_dependency_for_persistence,
-        cache_hit_reason: @filtered_examples.values.tally,
-        filtered_examples: @filtered_examples
-      )
-    end
-
-    # Merge the current run's per-example coverage with the previous
-    # run's. Re-run examples contribute their freshly-computed map
-    # (record_coverage_delta overwrote per-line strengths, so
-    # @examples_coverage[id] is the authoritative new coverage).
-    # Skipped examples don't appear in @examples_coverage, so the
-    # prev map carries them forward unchanged. Previously in
-    # seed_state_from_previous; moved here so large caches don't
-    # pay the full examples_coverage materialization cost at setup
-    # time. Preserves 1.x semantics: the saved map is the union of
-    # (prev minus this-run's keys) + this-run's entries.
-    def merge_examples_coverage_with_previous
-      merged = {}
-      if @previous_snapshot
-        prev = @previous_snapshot.examples_coverage
-        if prev.is_a?(Hash)
-          prev.each { |id, cov| merged[id] = cov unless @examples_coverage.key?(id) }
-        end
-      end
-      @examples_coverage.each { |id, cov| merged[id] = cov }
-      merged
-    end
-
-    # Snapshot only the env keys THIS run tracked - persisting keys
-    # that stopped being tracked (user removed `tracks: env: ...`
-    # between runs) would pin stale digests in the cache. Missing
-    # keys on the next load just trigger a one-time re-run for any
-    # example that reintroduces them, which is the correct behavior.
-    def env_snapshot_for_persistence
-      return {} if @env_snapshot.nil? || @tracked_env_names.empty?
-
-      @env_snapshot.digest_snapshot(@tracked_env_names)
-    end
-
-    # Project the per-example `@tracks_env` map (Set<env_name> per
-    # example_id) into a JSON-friendly Hash[id => sorted Array] for
-    # persistence. Reporters consume this to render the env-
-    # dependency view on the Examples Dependency report. Empty sets
-    # drop out so the on-disk map stays narrow. Sort keeps the output
-    # deterministic for downstream diffs and golden tests.
-    def env_dependency_for_persistence
-      result = {}
-      @tracks_env.each do |example_id, names|
-        next if names.nil? || names.empty?
-
-        result[example_id] = names.to_a.sort
-      end
-      result
     end
 
     # Resolve one glob against the project root into a Set of
@@ -1109,36 +869,6 @@ module RSpecTracer
     def per_example_tracks_inputs(example_id)
       set = @tracks_files[example_id]
       set.nil? || set.empty? ? Set.new : set.dup
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def duplicates_for_snapshot
-      @duplicate_examples.select { |_, entries| entries.count > 1 }
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def all_files_by_name
-      @all_files.each_with_object({}) do |(_, meta), acc|
-        acc[meta[:file_name]] = meta
-      end
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def dependency_by_name
-      @graph.dependency_hash.transform_values do |paths|
-        paths.to_set { |p| path_to_file_name(p) }
-      end
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def reverse_dependency_by_name
-      @graph.reverse_dependency_hash.each_with_object({}) do |(path, ids), acc|
-        acc[path_to_file_name(path)] = ids.to_set
-      end
     end
 
     # Internal method on the tracer pipeline.

@@ -9,6 +9,9 @@ Audience: contributors + curious users debugging unexpected behavior.
 
 ## Documents
 
+- [`ENGINE_EXTRACTION.md`](ENGINE_EXTRACTION.md) defines the runner-neutral
+  engine contract, inventories the RSpec boundary, and records extraction
+  evidence and inherited defects for issue #6.
 - [`HOW_TRACKS_CASCADES.md`](HOW_TRACKS_CASCADES.md) — the per-example
   `tracks: { files:, env: }` DSL: how nested describes union (rather
   than overwrite) parent metadata, why we ship our own walker instead
