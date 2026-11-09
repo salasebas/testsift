@@ -4,15 +4,15 @@ require 'fileutils'
 require 'json'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/engine'
+require 'testsift/engine'
 require_relative 'support/engine_context'
 
 # The Engine class is the v2 coordinator. Unit tests drive it with a
 # stubbed configuration so the subject doesn't depend on the global
-# RSpecTracer module's state. Integration coverage (real RSpec
+# TestSift module's state. Integration coverage (real RSpec
 # fixture, subprocess) lives at spec/integration/ruby_app_v2_tracker_spec.rb.
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Engine do
+RSpec.describe TestSift::Engine do
   include_context 'with engine configuration'
 
   describe '#initialize' do
@@ -48,7 +48,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     it 'constructs a JSON storage backend pointed at cache_path' do
-      expect(tracker.storage_backend).to be_a(RSpecTracer::Storage::JsonBackend)
+      expect(tracker.storage_backend).to be_a(TestSift::Storage::JsonBackend)
     end
 
     it 'constructs a SQLite storage backend when configuration selects :sqlite' do
@@ -56,18 +56,18 @@ RSpec.describe RSpecTracer::Engine do
 
       sqlite_tracker = build_tracker(stub_configuration(storage_backend: :sqlite)).tap(&:setup)
 
-      expect(sqlite_tracker.storage_backend).to be_a(RSpecTracer::Storage::SqliteBackend)
+      expect(sqlite_tracker.storage_backend).to be_a(TestSift::Storage::SqliteBackend)
     end
 
     it 'falls back to JsonBackend with a warn when sqlite3 is missing' do
       # allow_any_instance_of intercepts the constructor's require.
       # sqlite3 is already loaded in this process, so any other
       # technique would be an elaborate detour for one assertion.
-      allow_any_instance_of(RSpecTracer::Storage::SqliteBackend) # rubocop:disable RSpec/AnyInstance
+      allow_any_instance_of(TestSift::Storage::SqliteBackend) # rubocop:disable RSpec/AnyInstance
         .to receive(:require).with('sqlite3').and_raise(LoadError)
       fallback_tracker = build_tracker(stub_configuration(storage_backend: :sqlite)).tap(&:setup)
 
-      expect(fallback_tracker.storage_backend).to be_a(RSpecTracer::Storage::JsonBackend)
+      expect(fallback_tracker.storage_backend).to be_a(TestSift::Storage::JsonBackend)
       expect(logger).to have_received(:warn).with(/sqlite backend unavailable/)
     end
 
@@ -77,13 +77,13 @@ RSpec.describe RSpecTracer::Engine do
       ).tap(&:setup)
 
       expect(msgpack_tracker.storage_backend.serializer)
-        .to eq(RSpecTracer::Storage::Serializer::Msgpack)
+        .to eq(TestSift::Storage::Serializer::Msgpack)
     end
 
     it 'installs IOHooks' do
       tracker
 
-      expect(RSpecTracer::Tracker::IOHooks.installed?).to be(true)
+      expect(TestSift::Tracker::IOHooks.installed?).to be(true)
     end
 
     it 'captures the boot set via the LoadedFilesTracker' do
@@ -95,7 +95,7 @@ RSpec.describe RSpecTracer::Engine do
       expect(tracker_instance.setup).to be(tracker_instance)
     end
 
-    # Coverage + SimpleCov are both running in the test env (rspec-tracer
+    # Coverage + SimpleCov are both running in the test env (testsift
     # self-tracking + SimpleCov dogfood), so ensure_coverage_started normally
     # short-circuits at the SimpleCov guard. These two specs stub both
     # predicates false so the new #195 path that threads
@@ -203,7 +203,7 @@ RSpec.describe RSpecTracer::Engine do
       tracker.example_started
       tracker.example_finished('ex1')
 
-      expect(RSpecTracer::Tracker::IOHooks.current_bucket).to be_nil
+      expect(TestSift::Tracker::IOHooks.current_bucket).to be_nil
     end
 
     it 'on_example_passed records the execution result on the metadata hash' do
@@ -289,7 +289,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     it 'returns the Snapshot it persisted' do
-      expect(tracker.finalize).to be_a(RSpecTracer::Storage::Snapshot)
+      expect(tracker.finalize).to be_a(TestSift::Storage::Snapshot)
     end
 
     it 'persists env_snapshot for every tracked env key' do
@@ -339,7 +339,7 @@ RSpec.describe RSpecTracer::Engine do
 
     def prime_previous_cache_with(failed: [], flaky: [])
       ids = (Array(failed) + Array(flaky)).uniq
-      snapshot = RSpecTracer::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
+      snapshot = TestSift::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
         s.all_examples = ids.to_h { |id| [id, build_example(id)] }
         s.failed_examples = Set.new(Array(failed))
         s.flaky_examples = Set.new(Array(flaky))
@@ -349,7 +349,7 @@ RSpec.describe RSpecTracer::Engine do
                         digest: Digest::SHA256.file(dep_file).hexdigest }
         }
       end
-      RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
+      TestSift::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
         .save_graph(snapshot, schema_version: current_schema)
     end
 
@@ -430,13 +430,13 @@ RSpec.describe RSpecTracer::Engine do
         'overwritten' => { '/lib/a.rb' => { '0' => 9 } } }
     end
     let(:previous_snapshot) do
-      RSpecTracer::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
+      TestSift::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
         s.examples_coverage = previous_coverage
       end
     end
 
     def prime_previous_cache
-      backend = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
+      backend = TestSift::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
       backend.save_graph(previous_snapshot, schema_version: current_schema)
     end
 
@@ -537,10 +537,10 @@ RSpec.describe RSpecTracer::Engine do
     # whole_suite_invalidated and env_changed is suppressed by the
     # "stronger prior filter reason" guard.
     let(:current_wsi) do
-      RSpecTracer::Tracker::WholeSuiteInvalidators.new(root: root).digest_snapshot
+      TestSift::Tracker::WholeSuiteInvalidators.new(root: root).digest_snapshot
     end
     let(:previous_snapshot) do
-      RSpecTracer::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
+      TestSift::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
         s.all_examples = { 'ex1' => build_example('ex1'), 'ex2' => build_example('ex2') }
         # Non-empty dependency keeps Filter from marking every prev example
         # as :no_cache (Filter maps missing-from-graph to no_cache which
@@ -562,7 +562,7 @@ RSpec.describe RSpecTracer::Engine do
 
     def prime_previous_cache
       FileUtils.mkdir_p(prev_cache_path)
-      backend = RSpecTracer::Storage::JsonBackend.new(cache_path: prev_cache_path, logger: logger)
+      backend = TestSift::Storage::JsonBackend.new(cache_path: prev_cache_path, logger: logger)
       backend.save_graph(previous_snapshot, schema_version: current_schema)
     end
 
@@ -618,10 +618,10 @@ RSpec.describe RSpecTracer::Engine do
   describe 'config-level track_env DSL' do
     let(:prev_cache_path) { File.join(tmp_base, 'cache') }
     let(:current_wsi) do
-      RSpecTracer::Tracker::WholeSuiteInvalidators.new(root: root).digest_snapshot
+      TestSift::Tracker::WholeSuiteInvalidators.new(root: root).digest_snapshot
     end
     let(:previous_snapshot) do
-      RSpecTracer::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
+      TestSift::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |s|
         s.all_examples = {
           'ex1' => build_example('ex1'),
           'ex2' => build_example('ex2'),
@@ -648,7 +648,7 @@ RSpec.describe RSpecTracer::Engine do
 
     def prime_previous_cache
       FileUtils.mkdir_p(prev_cache_path)
-      backend = RSpecTracer::Storage::JsonBackend.new(cache_path: prev_cache_path, logger: logger)
+      backend = TestSift::Storage::JsonBackend.new(cache_path: prev_cache_path, logger: logger)
       backend.save_graph(previous_snapshot, schema_version: current_schema)
     end
 
@@ -821,7 +821,7 @@ RSpec.describe RSpecTracer::Engine do
       prior.finalize
 
       # New tracker picks up the previous snapshot and merges.
-      RSpecTracer::Tracker::IOHooks.uninstall
+      TestSift::Tracker::IOHooks.uninstall
       next_run = build_tracker.tap(&:setup)
 
       expect { next_run.merge_skipped_coverage(%w[ex1]) }.not_to raise_error
@@ -873,7 +873,7 @@ RSpec.describe RSpecTracer::Engine do
   describe 'attribution filters' do
     it 'evaluates the filters once per path across examples' do
       names = []
-      filter = RSpecTracer::Filter.register(->(source) { names.push(source[:file_name]).empty? })
+      filter = TestSift::Filter.register(->(source) { names.push(source[:file_name]).empty? })
       tracker = build_tracker(stub_configuration(filters: [filter])).tap(&:setup)
       a_path = File.join(root, 'lib/a.rb')
       stub_example_snapshots(tracker, { a_path => [0] }, { a_path => [1] })
@@ -889,7 +889,7 @@ RSpec.describe RSpecTracer::Engine do
       stub_example_snapshots(tracker, { a_path => [0] }, { a_path => [1] })
       tracker.tap(&:example_started).example_finished('ex1')
       File.write(a_path, "module A; VALUE = 2; end\n")
-      RSpecTracer::Tracker::FileDigest.reset!
+      TestSift::Tracker::FileDigest.reset!
 
       tracker.tap(&:example_started).example_finished('ex2')
 
@@ -903,13 +903,13 @@ RSpec.describe RSpecTracer::Engine do
   # exclude already-cached paths — producing split semantics where
   # add_filter only affects fresh attributions.
   describe 'carry-forward filter application (seed_*_from_previous)' do
-    let(:string_filter) { RSpecTracer::Filter.register('/excluded_dir/') }
+    let(:string_filter) { TestSift::Filter.register('/excluded_dir/') }
     let(:configuration_with_filter) do
       stub_configuration(filters: [string_filter])
     end
 
     let(:previous_snapshot) do
-      RSpecTracer::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |snap|
+      TestSift::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |snap|
         snap.all_files = {
           '/lib/keep.rb' => {
             file_name: '/lib/keep.rb',
@@ -934,7 +934,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     def prime_previous_cache
-      backend = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
+      backend = TestSift::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
       backend.save_graph(previous_snapshot, schema_version: current_schema)
     end
 
@@ -987,7 +987,7 @@ RSpec.describe RSpecTracer::Engine do
   # field testing across all five reason paths.
   describe 'register_example overwrites prior-run metadata on warm runs' do
     let(:previous_snapshot) do
-      RSpecTracer::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |snap|
+      TestSift::Storage::Snapshot.empty(schema_version: current_schema, run_id: 'prev').tap do |snap|
         snap.all_examples = {
           'ex_failed' => build_example('ex_failed').merge(run_reason: 'No cache')
         }
@@ -996,7 +996,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     def prime_previous_cache
-      backend = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
+      backend = TestSift::Storage::JsonBackend.new(cache_path: cache_path, logger: logger)
       backend.save_graph(previous_snapshot, schema_version: current_schema)
     end
 

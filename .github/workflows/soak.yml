@@ -105,7 +105,7 @@ jobs:
       # the gotcha for future maintainers reading the YAML alone.
       SOAK_ITERATIONS: ${{ inputs.iterations }}
     steps:
-      - name: Checkout rspec-tracer
+      - name: Checkout testsift
         uses: actions/checkout@v7
 
       - name: Setup Ruby

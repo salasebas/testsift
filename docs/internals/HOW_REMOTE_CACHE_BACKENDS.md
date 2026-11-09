@@ -7,7 +7,7 @@ the graceful-degradation contract.
 
 ## The protocol contract
 
-`RSpecTracer::RemoteCache::Backend` is a 6-method protocol every
+`TestSift::RemoteCache::Backend` is a 6-method protocol every
 backend implements:
 
 ```ruby
@@ -30,7 +30,7 @@ A backend is constructed with branch + default_branch state:
 ```ruby
 RemoteCache::S3Backend.new(
   bucket:         'my-bucket',
-  prefix:         'rspec-tracer',
+  prefix:         'testsift',
   branch:         'feat-new-thing',     # current build's branch
   default_branch: 'main',
   test_suite_id:  '3',                  # optional: from TEST_SUITE_ID
@@ -178,7 +178,7 @@ test suite (graceful degradation).
 ## Graceful-degradation contract
 
 Per `ARCHITECTURE.md`'s "Cache corruption recovery" + the
-`Storage::Backend` contract: **rspec-tracer must never propagate a
+`Storage::Backend` contract: **TestSift must never propagate a
 remote-cache failure into the user's test suite**.
 
 The `download!` orchestrator (in `RemoteCache::UserTasks`) wraps
@@ -190,7 +190,7 @@ The `upload!` path is similar: a failed upload is logged + warned
 but doesn't change exit status. The tests already passed (or
 already failed); the upload outcome shouldn't change that signal.
 
-The Rake tasks at `lib/rspec_tracer/remote_cache/Rakefile` mirror
+The Rake tasks at `lib/testsift/remote_cache/Rakefile` mirror
 this contract — they print the orchestrator's log line and exit 0
 even if the orchestrator returned false.
 
@@ -200,7 +200,7 @@ Beyond the hard "no candidate found" case, the cache also falls
 back to cold when:
 
 - `last_run.json`'s `schema_version` doesn't match the current
-  rspec-tracer version's expected schema. Logged as
+  TestSift version's expected schema. Logged as
   `"cold run: cache schema_version mismatch (got X, want Y)"`.
 - The downloaded archive's file count doesn't match the expected
   per-suite count (`1 + N` for the manifest + per-run files).
@@ -215,7 +215,7 @@ The protocol is small + the contract is well-specified. To register
 a custom backend:
 
 ```ruby
-RSpecTracer.configure do
+TestSift.configure do
   remote_cache_backend MyCustomBackend, my_opt: 'value'
 end
 ```
@@ -227,15 +227,15 @@ greenfield: backends never need to read 1.x layouts.
 
 ## Where to read code
 
-- `lib/rspec_tracer/remote_cache/backend.rb` — the protocol
+- `lib/testsift/remote_cache/backend.rb` — the protocol
   module + REQUIRED_METHODS.
-- `lib/rspec_tracer/remote_cache/s3_backend.rb` /
+- `lib/testsift/remote_cache/s3_backend.rb` /
   `local_fs_backend.rb` / `redis_backend.rb` — implementations.
-- `lib/rspec_tracer/remote_cache/git_ancestry.rb` — the candidate
+- `lib/testsift/remote_cache/git_ancestry.rb` — the candidate
   ref walk.
-- `lib/rspec_tracer/remote_cache/user_tasks.rb` — the
+- `lib/testsift/remote_cache/user_tasks.rb` — the
   orchestrator the rake tasks call.
-- `lib/rspec_tracer/remote_cache/Rakefile` — the user-facing
+- `lib/testsift/remote_cache/Rakefile` — the user-facing
   rake task surface.
 - `spec/integration/remote_cache_spec.rb` — S3 round-trip against
   LocalStack.

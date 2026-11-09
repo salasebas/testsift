@@ -4,9 +4,9 @@ require 'digest'
 require 'fileutils'
 require 'tmpdir'
 
-require 'rspec_tracer/rails/preset'
-require 'rspec_tracer/tracker/declared_globs'
-require 'rspec_tracer/tracker/loaded_files_tracker'
+require 'testsift/rails/preset'
+require 'testsift/tracker/declared_globs'
+require 'testsift/tracker/loaded_files_tracker'
 
 # Regression spec for the factory blind-spot. Factory
 # files live under `spec/factories/**/*.rb` and are plain Ruby, so they
@@ -22,7 +22,7 @@ require 'rspec_tracer/tracker/loaded_files_tracker'
 # so the factory-file path is mechanically verifiable end-to-end.
 # rubocop:disable RSpec/DescribeClass, RSpec/ExampleLength
 RSpec.describe 'Factory tracking regression' do
-  let(:tmpdir) { Dir.mktmpdir('rspec-tracer-factory') }
+  let(:tmpdir) { Dir.mktmpdir('testsift-factory') }
   let(:factory_path) { File.join(tmpdir, 'spec/factories/users.rb') }
 
   before do
@@ -40,8 +40,8 @@ RSpec.describe 'Factory tracking regression' do
 
   describe 'via DeclaredGlobs + Preset :factories' do
     it 'enumerates the factory file with kind :declared' do
-      globs = RSpecTracer::Rails::Preset::DEFAULTS[:factories]
-      declared = RSpecTracer::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
+      globs = TestSift::Rails::Preset::DEFAULTS[:factories]
+      declared = TestSift::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
 
       inputs = declared.walk
 
@@ -49,12 +49,12 @@ RSpec.describe 'Factory tracking regression' do
     end
 
     it 'emits a digest that flips when the factory contents change' do
-      globs = RSpecTracer::Rails::Preset::DEFAULTS[:factories]
-      declared_before = RSpecTracer::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
+      globs = TestSift::Rails::Preset::DEFAULTS[:factories]
+      declared_before = TestSift::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
       input_before = declared_before.walk.find { |i| i.path == File.expand_path(factory_path) }
 
       File.write(factory_path, "FactoryBot.define { factory :user do; email { 'changed@example.com' }; end }\n")
-      declared_after = RSpecTracer::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
+      declared_after = TestSift::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
       input_after = declared_after.walk.find { |i| i.path == File.expand_path(factory_path) }
 
       expect(input_after.digest).not_to eq(input_before.digest)
@@ -64,7 +64,7 @@ RSpec.describe 'Factory tracking regression' do
   describe 'via LoadedFilesTracker attribution' do
     let(:peek_result) { { factory_path => [1, 1, 1, 1] } }
     let(:tracker) do
-      RSpecTracer::Tracker::LoadedFilesTracker.new(
+      TestSift::Tracker::LoadedFilesTracker.new(
         root: tmpdir, peek: -> { peek_result.keys }
       )
     end
@@ -87,7 +87,7 @@ RSpec.describe 'Factory tracking regression' do
       digest_before = tracker.boot_set_digest_snapshot.values.first
 
       File.write(factory_path, "# changed\n")
-      fresh = RSpecTracer::Tracker::LoadedFilesTracker.new(
+      fresh = TestSift::Tracker::LoadedFilesTracker.new(
         root: tmpdir, peek: -> { peek_result.keys }
       )
       fresh.capture_boot_set!

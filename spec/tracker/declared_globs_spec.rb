@@ -4,9 +4,9 @@ require 'digest'
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/tracker/declared_globs'
+require 'testsift/tracker/declared_globs'
 
-RSpec.describe RSpecTracer::Tracker::DeclaredGlobs do
+RSpec.describe TestSift::Tracker::DeclaredGlobs do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
 

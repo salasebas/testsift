@@ -19,7 +19,7 @@ require 'fileutils'
 require 'tmpdir'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __dir__))
-require 'rspec_tracer'
+require 'testsift'
 
 ENGINE_ITERS = Integer(ENV.fetch('ENGINE_ITERS', '2_000'))
 ENGINE_FILES = Integer(ENV.fetch('ENGINE_FILES', '5'))
@@ -35,12 +35,12 @@ begin
 
   # Set root via the public Configuration DSL (already aliased by
   # load_config's require chain at gem-load time). Bypass
-  # `RSpecTracer.configure { ... }` because its caller-path gate only
+  # `TestSift.configure { ... }` because its caller-path gate only
   # accepts the three load_*_config.rb loaders. cache_path derives
   # from root + DEFAULT_CACHE_DIR; no explicit setter needed.
-  RSpecTracer.root(project_root)
+  TestSift.root(project_root)
 
-  engine = RSpecTracer::Engine.new(configuration: RSpecTracer)
+  engine = TestSift::Engine.new(configuration: TestSift)
   engine.setup
 
   ENGINE_ITERS.times do |i|

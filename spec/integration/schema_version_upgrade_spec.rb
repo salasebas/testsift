@@ -5,8 +5,8 @@ require 'fileutils'
 require 'json'
 require 'tmpdir'
 
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/schema'
 
 # 1.x -> 2.0 cache schema-version cold-run integration spec.
 #
@@ -36,8 +36,8 @@ require 'rspec_tracer/storage/schema'
 # rubocop:disable RSpec/DescribeClass, RSpec/InstanceVariable, RSpec/ContextWording
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
 RSpec.describe 'Storage::JsonBackend 1.x -> 2.0 cache schema cold-run upgrade ceremony' do
-  let(:logger) { instance_double(RSpecTracer::Logger, debug: nil, info: nil, warn: nil, error: nil) }
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:logger) { instance_double(TestSift::Logger, debug: nil, info: nil, warn: nil, error: nil) }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
   around do |example|
     Dir.mktmpdir do |dir|
@@ -58,7 +58,7 @@ RSpec.describe 'Storage::JsonBackend 1.x -> 2.0 cache schema cold-run upgrade ce
   end
 
   def build_backend
-    RSpecTracer::Storage::JsonBackend.new(
+    TestSift::Storage::JsonBackend.new(
       cache_path: @cache_path,
       logger: logger
     )
@@ -170,7 +170,7 @@ RSpec.describe 'Storage::JsonBackend 1.x -> 2.0 cache schema cold-run upgrade ce
     # first run after upgrade is silent cold, second run is warm
     # against the 2.0 schema.
     it 'allows save_graph to write a fresh 2.0 manifest on the next run' do
-      empty_snapshot = RSpecTracer::Storage::Snapshot.empty(
+      empty_snapshot = TestSift::Storage::Snapshot.empty(
         schema_version: current_schema, run_id: current_run_id
       )
 

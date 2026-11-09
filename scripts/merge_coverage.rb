@@ -45,10 +45,10 @@ SimpleCov.collate(resultsets) do
   add_filter '/vendor/'
   add_filter '/tmp/'
   add_filter '/coverage/'
-  add_filter %r{/lib/rspec_tracer/reporters/html/}
+  add_filter %r{/lib/testsift/reporters/html/}
   # Metadata-only file (single VERSION constant). Mirrors the
   # codecov.yml + spec_helper.rb ignore lists.
-  add_filter %r{/lib/rspec_tracer/version\.rb\z}
+  add_filter %r{/lib/testsift/version\.rb\z}
 
   formatter SimpleCov::Formatter::MultiFormatter.new([
     SimpleCov::Formatter::HTMLFormatter,

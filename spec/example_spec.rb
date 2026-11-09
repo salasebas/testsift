@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer'
+require 'testsift'
 
-# Unit coverage for RSpecTracer::Example.from — the identity-hash
+# Unit coverage for TestSift::Example.from — the identity-hash
 # payload builder. The load-bearing contract (see the module's
-# stability-contract YARD comment in lib/rspec_tracer/example.rb):
+# stability-contract YARD comment in lib/testsift/example.rb):
 # example_id is the MD5 of a STABLE SUBSET of the payload
 # (example_group description, description, full_description,
 # line-stripped shared_group, file_name). line_number / rerun_*
@@ -21,7 +21,7 @@ require 'rspec_tracer'
 # independence, within-group uniqueness, and the reorder carve-out.
 #
 # rubocop:disable RSpec/VerifiedDoubles, RSpec/MultipleExpectations, RSpec/ExampleLength
-RSpec.describe RSpecTracer::Example do
+RSpec.describe TestSift::Example do
   # An RSpec::Core::Example-shaped double. The overrides Hash lets
   # each test vary exactly one identity input (engine_spec's
   # stub_configuration pattern). The example_group double responds

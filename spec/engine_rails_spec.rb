@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/engine'
+require 'testsift/engine'
 require_relative 'support/engine_context'
 
 # rubocop:disable RSpec/ExampleLength
-RSpec.describe RSpecTracer::Engine do
+RSpec.describe TestSift::Engine do
   include_context 'with engine configuration'
 
   describe 'Rails observer wiring' do
@@ -41,18 +41,18 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     after do
-      if defined?(RSpecTracer::Rails::Notifications) && RSpecTracer::Rails::Notifications.installed?
-        RSpecTracer::Rails::Notifications.uninstall
+      if defined?(TestSift::Rails::Notifications) && TestSift::Rails::Notifications.installed?
+        TestSift::Rails::Notifications.uninstall
       end
-      if defined?(RSpecTracer::Rails::I18nTracking) && RSpecTracer::Rails::I18nTracking.installed?
-        RSpecTracer::Rails::I18nTracking.uninstall
+      if defined?(TestSift::Rails::I18nTracking) && TestSift::Rails::I18nTracking.installed?
+        TestSift::Rails::I18nTracking.uninstall
       end
     end
 
     it 'installs the Rails notification observers when rails? is true' do
       tracker = build_tracker(stub_configuration(rails?: true)).tap(&:setup)
 
-      expect(RSpecTracer::Rails::Notifications).to be_installed
+      expect(TestSift::Rails::Notifications).to be_installed
     ensure
       tracker&.finalize
     end
@@ -60,8 +60,8 @@ RSpec.describe RSpecTracer::Engine do
     it 'skips observer install when rails? is false' do
       build_tracker.tap(&:setup)
 
-      expect(defined?(RSpecTracer::Rails::Notifications) &&
-        RSpecTracer::Rails::Notifications.installed?).to be_falsey
+      expect(defined?(TestSift::Rails::Notifications) &&
+        TestSift::Rails::Notifications.installed?).to be_falsey
     end
 
     it 'routes notification bucket through example_started / example_finished' do
@@ -86,7 +86,7 @@ RSpec.describe RSpecTracer::Engine do
 
       tracker.finalize
 
-      expect(RSpecTracer::Rails::Notifications).not_to be_installed
+      expect(TestSift::Rails::Notifications).not_to be_installed
     end
 
     it 'installs the AR subscriber when track_ar_schema_notifications is true' do
@@ -101,7 +101,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     it 'swallows errors raised during Rails observer install' do
-      allow(RSpecTracer::Rails::Notifications).to receive(:install)
+      allow(TestSift::Rails::Notifications).to receive(:install)
         .and_raise(StandardError.new('boom'))
 
       expect do

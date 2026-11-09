@@ -1,5 +1,5 @@
 # Legacy-style Rails fixtures — the YAML-driven alternative to FactoryBot.
-# Both styles ship so rspec-tracer can observe either dependency shape
+# Both styles ship so testsift can observe either dependency shape
 # (file reads on .yml vs AR model instantiation via factory).
 
 seed_admin:

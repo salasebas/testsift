@@ -6,11 +6,11 @@
 # invalidate the specs that rendered them, leading to stale-cache
 # false-greens. The 1.x architecture was Coverage-only, which doesn't
 # observe template renders; the only workaround in 1.x was to clear
-# `rspec_tracer_cache/*` manually before each run.
+# `testsift_cache/*` manually before each run.
 #
 # The 2.0 architecture closes the gap via the
 # `render_template.action_view` ActiveSupport::Notifications
-# subscriber (lib/rspec_tracer/rails/notifications.rb #record_template).
+# subscriber (lib/testsift/rails/notifications.rb #record_template).
 # When a controller spec renders a template, the subscriber fires +
 # emits a `:template`-kind Input attributing the rendered file to
 # that example's bucket. A subsequent edit of the template
@@ -26,7 +26,7 @@
 #      example IDs that depend on the mutated template - no more,
 #      no fewer.
 #
-# The fixture's `.rspec-tracer` opts out of the `:views` declared
+# The fixture's `.testsift` opts out of the `:views` declared
 # glob (`track_rails_defaults except: [:views, :schema]`), so the
 # subscriber path is the ONLY mechanism observing template changes -
 # matching the real-user fix path the 2.0 architecture provides.
@@ -38,11 +38,11 @@ require 'set'
 require_relative '../support/fixture_bundle_helper'
 
 module TemplateChangeInvalidatesDependentsSpecHelpers
-  TRACER_ENV = { 'RSPEC_TRACER' => '1' }.freeze
+  TRACER_ENV = { 'TESTSIFT' => '1' }.freeze
   SUBPROCESS_BUNDLE_ENV = { 'BUNDLE_FROZEN' => '1' }.freeze
   TEMPLATE_PATH = 'app/views/users/show.html.erb'
   TEMPLATE_CACHE_KEY = '/app/views/users/show.html.erb'
-  MUTATION_MARKER = "\n<!-- rspec-tracer regression #66 mutation marker -->\n"
+  MUTATION_MARKER = "\n<!-- testsift regression #66 mutation marker -->\n"
 
   module_function
 

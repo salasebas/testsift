@@ -5,28 +5,28 @@ require 'stringio'
 require 'tmpdir'
 require 'set'
 
-require 'rspec_tracer/cli'
-require 'rspec_tracer/cli/blast_radius'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/storage/schema'
+require 'testsift/cli'
+require 'testsift/cli/blast_radius'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
+require 'testsift/storage/schema'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations, RSpec/InstanceVariable
-RSpec.describe RSpecTracer::CLI::BlastRadius do
+RSpec.describe TestSift::CLI::BlastRadius do
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
   describe '.run' do
     it 'prints help when no args given' do
       expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
-      expect(stdout.string).to include('Usage: rspec-tracer blast-radius')
+      expect(stdout.string).to include('Usage: testsift blast-radius')
     end
 
     it 'prints help on -h / --help' do
       %w[-h --help].each do |flag|
         out = StringIO.new
         expect(described_class.run([flag], stdout: out, stderr: stderr)).to eq(0)
-        expect(out.string).to include('Usage: rspec-tracer blast-radius')
+        expect(out.string).to include('Usage: testsift blast-radius')
         expect(out.string).to include('git diff --name-only')
         expect(out.string).to include('are not included')
       end
@@ -35,18 +35,18 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
     it 'returns 1 when only flags and no file paths are given' do
       expect(described_class.run(%w[--list], stdout: stdout, stderr: stderr)).to eq(1)
       expect(stderr.string).to include('blast-radius: no file paths given')
-      expect(stderr.string).to include('usage: rspec-tracer blast-radius')
+      expect(stderr.string).to include('usage: testsift blast-radius')
     end
 
     it 'returns 1 on an unknown option instead of treating it as a file path' do
       expect(described_class.run(%w[--josn lib/foo.rb], stdout: stdout, stderr: stderr)).to eq(1)
       expect(stderr.string).to include('blast-radius: unknown option "--josn"')
-      expect(stderr.string).to include('usage: rspec-tracer blast-radius')
+      expect(stderr.string).to include('usage: testsift blast-radius')
     end
 
     it 'returns 1 with a clear error when no cache exists' do
       Dir.mktmpdir do |dir|
-        allow(RSpecTracer).to receive_messages(cache_path: dir, root: dir, storage_backend: :json)
+        allow(TestSift).to receive_messages(cache_path: dir, root: dir, storage_backend: :json)
         expect(described_class.run(%w[lib/foo.rb], stdout: stdout, stderr: stderr)).to eq(1)
         expect(stderr.string).to include('no cache yet')
       end
@@ -56,14 +56,14 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, 'last_run.json'),
                    JSON.dump('schema_version' => 9999, 'run_id' => 'stale_run'))
-        allow(RSpecTracer).to receive_messages(cache_path: dir, root: dir, storage_backend: :json)
+        allow(TestSift).to receive_messages(cache_path: dir, root: dir, storage_backend: :json)
         expect(described_class.run(%w[lib/foo.rb], stdout: stdout, stderr: stderr)).to eq(1)
         expect(stderr.string).to include('incompatible')
       end
     end
 
     it 'rescues StandardError and returns 1' do
-      allow(RSpecTracer).to receive(:cache_path).and_raise(StandardError, 'cache resolve boom')
+      allow(TestSift).to receive(:cache_path).and_raise(StandardError, 'cache resolve boom')
 
       expect(described_class.run(%w[lib/foo.rb], stdout: stdout, stderr: stderr)).to eq(1)
       expect(stderr.string).to include('blast-radius:')
@@ -112,8 +112,8 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
       before do
         @tmp_dir = Dir.mktmpdir
         @root_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: run_id
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: run_id
         )
         snapshot.all_examples = all_examples
         snapshot.reverse_dependency = reverse_dependency
@@ -123,10 +123,10 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
           '/lib/nodeps.rb' => { 'file_name' => '/lib/nodeps.rb' }
         }
         snapshot.boot_set = { 'spec/spec_helper.rb' => 'a' * 64 }
-        RSpecTracer::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(
+        allow(TestSift).to receive_messages(
           cache_path: @tmp_dir, root: @root_dir, storage_backend: :json
         )
       end
@@ -240,24 +240,24 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
         # `storage_backend :sqlite` and the sqlite3 gem unavailable
         # (every JRuby invocation; MRI without the gem installed),
         # Storage::Backend.build rescues SqliteBackendError, warns
-        # through RSpecTracer.logger, and falls back to :json. The
+        # through TestSift.logger, and falls back to :json. The
         # logger's default destination is stdout, so before the CLI
         # dispatch layer rebound it to stderr the warning printed
         # AHEAD of the --json document and broke `... --json | jq`.
         before do
-          allow(RSpecTracer).to receive(:storage_backend).and_return(:sqlite)
+          allow(TestSift).to receive(:storage_backend).and_return(:sqlite)
           fallback_error = Class.new(StandardError)
           fake_sqlite = Class.new
           fake_sqlite.const_set(:SqliteBackendError, fallback_error)
           allow(fake_sqlite).to receive(:new).and_raise(
             fallback_error, 'sqlite3 gem not available: cannot load such file -- sqlite3'
           )
-          stub_const('RSpecTracer::Storage::SqliteBackend', fake_sqlite)
+          stub_const('TestSift::Storage::SqliteBackend', fake_sqlite)
         end
 
         it 'emits exactly one parseable JSON document on stdout and the fallback warning on stderr' do
           args = %w[blast-radius --json lib/foo.rb]
-          expect(RSpecTracer::CLI.run(args, stdout: stdout, stderr: stderr)).to eq(0)
+          expect(TestSift::CLI.run(args, stdout: stdout, stderr: stderr)).to eq(0)
           # JSON.parse over the WHOLE stdout capture is the contract
           # check: it raises if any diagnostic line precedes or
           # follows the single JSON document.
@@ -276,8 +276,8 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
         skip 'sqlite backend unavailable on this Ruby' unless sqlite_available?
         @tmp_dir = Dir.mktmpdir
         @root_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: run_id
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: run_id
         )
         snapshot.all_examples = {
           'spec/foo_spec.rb[1:1]' => {
@@ -291,10 +291,10 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
         # table at read time, so the fixture seeds the forward map.
         snapshot.dependency = { 'spec/foo_spec.rb[1:1]' => Set.new(['/lib/foo.rb']) }
         snapshot.reverse_dependency = { '/lib/foo.rb' => Set.new(['spec/foo_spec.rb[1:1]']) }
-        RSpecTracer::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(
+        allow(TestSift).to receive_messages(
           cache_path: @tmp_dir, root: @root_dir, storage_backend: :sqlite
         )
       end
@@ -316,7 +316,7 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
         return false unless RUBY_ENGINE == 'ruby'
 
         require 'sqlite3'
-        require 'rspec_tracer/storage/sqlite_backend'
+        require 'testsift/storage/sqlite_backend'
         true
       rescue LoadError
         false
@@ -339,7 +339,7 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
 
   describe '.normalize_file_name' do
     before do
-      allow(RSpecTracer).to receive(:root).and_return('/projects/app')
+      allow(TestSift).to receive(:root).and_return('/projects/app')
     end
 
     it 'expands a relative path against the project root with a leading slash' do
@@ -359,7 +359,7 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
   describe '.radius_for' do
     let(:snapshot) do
       instance_double(
-        RSpecTracer::Storage::Snapshot,
+        TestSift::Storage::Snapshot,
         all_examples: { 'ex1' => { 'full_description' => 'x' } },
         reverse_dependency: { '/lib/foo.rb' => Set.new(%w[ex1]) },
         all_files: { '/lib/foo.rb' => {}, '/lib/nodeps.rb' => {} },
@@ -368,7 +368,7 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
     end
 
     before do
-      allow(RSpecTracer).to receive(:root).and_return('/projects/app')
+      allow(TestSift).to receive(:root).and_return('/projects/app')
     end
 
     it 'classifies a whole-suite invalidator watch file first' do
@@ -447,7 +447,7 @@ RSpec.describe RSpecTracer::CLI::BlastRadius do
 
   describe '.json_payload' do
     let(:snapshot) do
-      instance_double(RSpecTracer::Storage::Snapshot, all_examples: { 'e1' => {}, 'e2' => {} })
+      instance_double(TestSift::Storage::Snapshot, all_examples: { 'e1' => {}, 'e2' => {} })
     end
 
     it 'builds sorted per-file entries plus a dedup total' do

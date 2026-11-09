@@ -8,7 +8,7 @@ version: '3'
 tasks:
   reporters:html:install:
     desc: Install npm dependencies for the HTML reporter frontend
-    dir: lib/rspec_tracer/reporters/html
+    dir: lib/testsift/reporters/html
     preconditions:
       - sh: command -v npm >/dev/null 2>&1
         msg: "npm not found; install Node.js 20+ (nodejs.org)"
@@ -19,7 +19,7 @@ tasks:
 
   reporters:html:build:
     desc: Rebuild the committed HTML reporter bundle (dist/ is source of truth for the gem)
-    dir: lib/rspec_tracer/reporters/html
+    dir: lib/testsift/reporters/html
     deps: [reporters:html:install]
     cmds:
       - npm run build
@@ -31,6 +31,6 @@ tasks:
       rebuilding fails here rather than at release time.
     deps: [reporters:html:build]
     cmds:
-      - git diff --exit-code lib/rspec_tracer/reporters/html/dist
+      - git diff --exit-code lib/testsift/reporters/html/dist
 
   # ── Gem release ────────────────────────────────────────

@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 # Constants-only file. Intentionally has no methods — just frozen data.
-# 1.x rspec-tracer doesn't observe this file's role as a dependency of any
+# 1.x testsift doesn't observe this file's role as a dependency of any
 # example that reads these constants, because `Coverage` on a constants-only
 # file only reports load-time execution (which any autoloaded class does).
 # 2.0's boot-time snapshot + refinements-aware observers should catch it.

@@ -27,7 +27,7 @@ tasks:
       Tracker::LoadedFilesTracker, Rails::Preset, Tracker::EnvSnapshot,
       Tracker::EnvMatcher) must each hit >= 90% (< 2 min budget)
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       # mutant requires MRI >= 3.2; skip quietly on Ruby 3.1 / JRuby / any env
       # where the Gemfile's install_if guard kept the gem out.
@@ -63,50 +63,50 @@ tasks:
 
         fail=0
         run_mutant_subject "TimeFormatter.format_time" \
-          "rspec_tracer/time_formatter" \
-          "RSpecTracer::TimeFormatter.format_time" || fail=1
+          "testsift/time_formatter" \
+          "TestSift::TimeFormatter.format_time" || fail=1
         run_mutant_subject "Example" \
-          "rspec_tracer/example" \
-          "RSpecTracer::Example*" || fail=1
+          "testsift/example" \
+          "TestSift::Example*" || fail=1
         run_mutant_subject "Tracker::Input" \
-          "rspec_tracer/tracker/input" \
-          "RSpecTracer::Tracker::Input*" || fail=1
+          "testsift/tracker/input" \
+          "TestSift::Tracker::Input*" || fail=1
         run_mutant_subject "Tracker::DeclaredGlobs" \
-          "rspec_tracer/tracker/declared_globs" \
-          "RSpecTracer::Tracker::DeclaredGlobs*" || fail=1
+          "testsift/tracker/declared_globs" \
+          "TestSift::Tracker::DeclaredGlobs*" || fail=1
         run_mutant_subject "Tracker::WholeSuiteInvalidators" \
-          "rspec_tracer/tracker/whole_suite_invalidators" \
-          "RSpecTracer::Tracker::WholeSuiteInvalidators*" || fail=1
+          "testsift/tracker/whole_suite_invalidators" \
+          "TestSift::Tracker::WholeSuiteInvalidators*" || fail=1
         run_mutant_subject "Storage::Schema" \
-          "rspec_tracer/storage/schema" \
-          "RSpecTracer::Storage::Schema*" || fail=1
+          "testsift/storage/schema" \
+          "TestSift::Storage::Schema*" || fail=1
         run_mutant_subject "Storage::Snapshot" \
-          "rspec_tracer/storage/snapshot" \
-          "RSpecTracer::Storage::Snapshot*" || fail=1
+          "testsift/storage/snapshot" \
+          "TestSift::Storage::Snapshot*" || fail=1
         run_mutant_subject "Storage::Backend" \
-          "rspec_tracer/storage/backend" \
-          "RSpecTracer::Storage::Backend*" || fail=1
+          "testsift/storage/backend" \
+          "TestSift::Storage::Backend*" || fail=1
         run_mutant_subject "Tracker::DependencyGraph" \
-          "rspec_tracer/tracker/dependency_graph" \
-          "RSpecTracer::Tracker::DependencyGraph*" || fail=1
+          "testsift/tracker/dependency_graph" \
+          "TestSift::Tracker::DependencyGraph*" || fail=1
         run_mutant_subject "Tracker::ExampleRegistry" \
-          "rspec_tracer/tracker/example_registry" \
-          "RSpecTracer::Tracker::ExampleRegistry*" || fail=1
+          "testsift/tracker/example_registry" \
+          "TestSift::Tracker::ExampleRegistry*" || fail=1
         run_mutant_subject "Tracker::Filter" \
-          "rspec_tracer/tracker/filter" \
-          "RSpecTracer::Tracker::Filter*" || fail=1
+          "testsift/tracker/filter" \
+          "TestSift::Tracker::Filter*" || fail=1
         run_mutant_subject "Tracker::LoadedFilesTracker" \
-          "rspec_tracer/tracker/loaded_files_tracker" \
-          "RSpecTracer::Tracker::LoadedFilesTracker*" || fail=1
+          "testsift/tracker/loaded_files_tracker" \
+          "TestSift::Tracker::LoadedFilesTracker*" || fail=1
         run_mutant_subject "Rails::Preset" \
-          "rspec_tracer/rails/preset" \
-          "RSpecTracer::Rails::Preset*" || fail=1
+          "testsift/rails/preset" \
+          "TestSift::Rails::Preset*" || fail=1
         run_mutant_subject "Tracker::EnvSnapshot" \
-          "rspec_tracer/tracker/env_snapshot" \
-          "RSpecTracer::Tracker::EnvSnapshot*" || fail=1
+          "testsift/tracker/env_snapshot" \
+          "TestSift::Tracker::EnvSnapshot*" || fail=1
         run_mutant_subject "Tracker::EnvMatcher" \
-          "rspec_tracer/tracker/env_matcher" \
-          "RSpecTracer::Tracker::EnvMatcher*" || fail=1
+          "testsift/tracker/env_matcher" \
+          "TestSift::Tracker::EnvMatcher*" || fail=1
         # Rails::Notifications deferred from this gate - the subscribe-side
         # surface (ActiveSupport::Notifications stubs + thread-local
         # bucket lifecycle) yields a large population of alive
@@ -130,7 +130,7 @@ tasks:
       WholeSuiteInvalidators, DependencyGraph, ExampleRegistry, Filter,
       LoadedFilesTracker, EnvSnapshot) stay in test:mutation:smoke.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -164,11 +164,11 @@ tasks:
         # variance between environments does not flip a passing
         # subject red.
         run_mutant_gate "Tracker::CoverageAdapter" \
-          "rspec_tracer/tracker/coverage_adapter" \
-          "RSpecTracer::Tracker::CoverageAdapter*" 87 || fail=1
+          "testsift/tracker/coverage_adapter" \
+          "TestSift::Tracker::CoverageAdapter*" 87 || fail=1
         run_mutant_gate "Tracker::NewFileDetector" \
-          "rspec_tracer/tracker/new_file_detector" \
-          "RSpecTracer::Tracker::NewFileDetector*" 82 || fail=1
+          "testsift/tracker/new_file_detector" \
+          "TestSift::Tracker::NewFileDetector*" 82 || fail=1
         # IOHooks gate dropped from 77 to 72 after the hot-path
         # inline `if Thread.current[BUCKET_KEY]` guard at each
         # prepended-method entry created equivalent-mutations against
@@ -182,8 +182,8 @@ tasks:
         # for local-vs-CI run variance (gates are sized from CI
         # numbers, never local).
         run_mutant_gate "Tracker::IOHooks" \
-          "rspec_tracer/tracker/io_hooks" \
-          "RSpecTracer::Tracker::IOHooks*" 72 || fail=1
+          "testsift/tracker/io_hooks" \
+          "TestSift::Tracker::IOHooks*" 72 || fail=1
         exit "$fail"
 
   test:mutation:storage:
@@ -222,7 +222,7 @@ tasks:
       Combined CI wall clock under 2 min. Same gates as the parent
       test:mutation:storage entry.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -257,14 +257,14 @@ tasks:
         # (test-ordering + parallelism differences shift alive counts
         # several pp between machines; gates are sized from CI numbers).
         run_mutant_gate "Storage::LazySnapshot" \
-          "rspec_tracer/storage/lazy_snapshot" 85 \
-          "RSpecTracer::Storage::LazySnapshot*" || fail=1
+          "testsift/storage/lazy_snapshot" 85 \
+          "TestSift::Storage::LazySnapshot*" || fail=1
         run_mutant_gate "Storage::Serializer::Json" \
-          "rspec_tracer/storage/serializer/json" 85 \
-          "RSpecTracer::Storage::Serializer::Json*" || fail=1
+          "testsift/storage/serializer/json" 85 \
+          "TestSift::Storage::Serializer::Json*" || fail=1
         run_mutant_gate "Storage::Serializer::Msgpack" \
-          "rspec_tracer/storage/serializer/msgpack" 65 \
-          "RSpecTracer::Storage::Serializer::Msgpack*" || fail=1
+          "testsift/storage/serializer/msgpack" 65 \
+          "TestSift::Storage::Serializer::Msgpack*" || fail=1
         exit "$fail"
 
   test:mutation:storage:json-backend:
@@ -306,7 +306,7 @@ tasks:
       formatters). Lighter-weight read/parse helpers; default
       `--mutation-timeout 5` with `--jobs 8`.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -316,17 +316,17 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend#clear!" \
-          "RSpecTracer::Storage::JsonBackend#collect_run_dirs" \
-          "RSpecTracer::Storage::JsonBackend#decode_field" \
-          "RSpecTracer::Storage::JsonBackend#deep_intern" \
-          "RSpecTracer::Storage::JsonBackend#deserialize_dependency" \
-          "RSpecTracer::Storage::JsonBackend#deserialize_dupe_examples" \
-          "RSpecTracer::Storage::JsonBackend#deserialize_id_set" \
-          "RSpecTracer::Storage::JsonBackend#deserialize_plain_hash" \
-          "RSpecTracer::Storage::JsonBackend#deserialize_symbolized" \
-          "RSpecTracer::Storage::JsonBackend#field_filename" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend#clear!" \
+          "TestSift::Storage::JsonBackend#collect_run_dirs" \
+          "TestSift::Storage::JsonBackend#decode_field" \
+          "TestSift::Storage::JsonBackend#deep_intern" \
+          "TestSift::Storage::JsonBackend#deserialize_dependency" \
+          "TestSift::Storage::JsonBackend#deserialize_dupe_examples" \
+          "TestSift::Storage::JsonBackend#deserialize_id_set" \
+          "TestSift::Storage::JsonBackend#deserialize_plain_hash" \
+          "TestSift::Storage::JsonBackend#deserialize_symbolized" \
+          "TestSift::Storage::JsonBackend#field_filename" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -349,7 +349,7 @@ tasks:
       3:52 CI (only 8s margin under 4-min cap); split into 2 + 7
       for jitter headroom.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -359,16 +359,16 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend#format_mib" \
-          "RSpecTracer::Storage::JsonBackend#info" \
-          "RSpecTracer::Storage::JsonBackend#initialize" \
-          "RSpecTracer::Storage::JsonBackend#last_run_id" \
-          "RSpecTracer::Storage::JsonBackend#last_run_path" \
-          "RSpecTracer::Storage::JsonBackend#load_graph" \
-          "RSpecTracer::Storage::JsonBackend#lock_path" \
-          "RSpecTracer::Storage::JsonBackend#maybe_prune_after_save" \
-          "RSpecTracer::Storage::JsonBackend#maybe_warn_size_budget" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend#format_mib" \
+          "TestSift::Storage::JsonBackend#info" \
+          "TestSift::Storage::JsonBackend#initialize" \
+          "TestSift::Storage::JsonBackend#last_run_id" \
+          "TestSift::Storage::JsonBackend#last_run_path" \
+          "TestSift::Storage::JsonBackend#load_graph" \
+          "TestSift::Storage::JsonBackend#lock_path" \
+          "TestSift::Storage::JsonBackend#maybe_prune_after_save" \
+          "TestSift::Storage::JsonBackend#maybe_warn_size_budget" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -390,7 +390,7 @@ tasks:
       read_field, resolve_serializer + FieldReader nested class
       (initialize, read). Split out from shard-2 for cap headroom.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -400,16 +400,16 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend#merge_from_peers" \
-          "RSpecTracer::Storage::JsonBackend#msgpack_unavailable_fallback" \
-          "RSpecTracer::Storage::JsonBackend#partition_dirs_to_prune" \
-          "RSpecTracer::Storage::JsonBackend#per_file_glob" \
-          "RSpecTracer::Storage::JsonBackend#positive_threshold?" \
-          "RSpecTracer::Storage::JsonBackend#read_field" \
-          "RSpecTracer::Storage::JsonBackend#resolve_serializer" \
-          "RSpecTracer::Storage::JsonBackend::FieldReader#initialize" \
-          "RSpecTracer::Storage::JsonBackend::FieldReader#read" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend#merge_from_peers" \
+          "TestSift::Storage::JsonBackend#msgpack_unavailable_fallback" \
+          "TestSift::Storage::JsonBackend#partition_dirs_to_prune" \
+          "TestSift::Storage::JsonBackend#per_file_glob" \
+          "TestSift::Storage::JsonBackend#positive_threshold?" \
+          "TestSift::Storage::JsonBackend#read_field" \
+          "TestSift::Storage::JsonBackend#resolve_serializer" \
+          "TestSift::Storage::JsonBackend::FieldReader#initialize" \
+          "TestSift::Storage::JsonBackend::FieldReader#read" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -434,7 +434,7 @@ tasks:
       itself drifts past the per-shard step cap (5-min after
       the headroom bump).
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -444,14 +444,14 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend#save_graph" \
-          "RSpecTracer::Storage::JsonBackend#transactional_save" \
-          "RSpecTracer::Storage::JsonBackend#write_json_atomic" \
-          "RSpecTracer::Storage::JsonBackend#write_last_run_atomic" \
-          "RSpecTracer::Storage::JsonBackend#write_payload_atomic" \
-          "RSpecTracer::Storage::JsonBackend#write_run_field" \
-          "RSpecTracer::Storage::JsonBackend#write_run_files" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend#save_graph" \
+          "TestSift::Storage::JsonBackend#transactional_save" \
+          "TestSift::Storage::JsonBackend#write_json_atomic" \
+          "TestSift::Storage::JsonBackend#write_last_run_atomic" \
+          "TestSift::Storage::JsonBackend#write_payload_atomic" \
+          "TestSift::Storage::JsonBackend#write_run_field" \
+          "TestSift::Storage::JsonBackend#write_run_files" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -480,7 +480,7 @@ tasks:
       read_run_file, serialize_dependency, serialize_id_set,
       total_cache_size_bytes. Mixed I/O density.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -490,14 +490,14 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend#prune_run_dirs!" \
-          "RSpecTracer::Storage::JsonBackend#read_json" \
-          "RSpecTracer::Storage::JsonBackend#read_last_run_manifest" \
-          "RSpecTracer::Storage::JsonBackend#read_run_file" \
-          "RSpecTracer::Storage::JsonBackend#serialize_dependency" \
-          "RSpecTracer::Storage::JsonBackend#serialize_id_set" \
-          "RSpecTracer::Storage::JsonBackend#total_cache_size_bytes" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend#prune_run_dirs!" \
+          "TestSift::Storage::JsonBackend#read_json" \
+          "TestSift::Storage::JsonBackend#read_last_run_manifest" \
+          "TestSift::Storage::JsonBackend#read_run_file" \
+          "TestSift::Storage::JsonBackend#serialize_dependency" \
+          "TestSift::Storage::JsonBackend#serialize_id_set" \
+          "TestSift::Storage::JsonBackend#total_cache_size_bytes" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -525,7 +525,7 @@ tasks:
       split into 5 + 8 isolating Merger.absorb/call (which have
       denser hash-walk mutations) into shard-8.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -535,9 +535,9 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend#warn_oversized_cache_total" \
-          "RSpecTracer::Storage::JsonBackend#warn_oversized_run_files" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend#warn_oversized_cache_total" \
+          "TestSift::Storage::JsonBackend#warn_oversized_run_files" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -566,7 +566,7 @@ tasks:
       Merger.absorb does the actual hash absorption — many mutations
       walk the nested-hash structure and take time to kill.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -576,8 +576,8 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend::Merger.absorb" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend::Merger.absorb" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -600,7 +600,7 @@ tasks:
       from call to keep the orchestration method under the AbcSize cap.
       Split out from shard-8; both are entry-point density.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -610,9 +610,9 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend::Merger.call" \
-          "RSpecTracer::Storage::JsonBackend::Merger.build_merged_snapshot" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend::Merger.call" \
+          "TestSift::Storage::JsonBackend::Merger.build_merged_snapshot" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -641,7 +641,7 @@ tasks:
       from shard-5 to enforce the per-shard step cap (4-min when
       decided, 5-min after the headroom bump).
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -651,12 +651,12 @@ tasks:
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/storage/json_backend \
-          "RSpecTracer::Storage::JsonBackend::Merger.empty_state" \
-          "RSpecTracer::Storage::JsonBackend::Merger.merge_env_dependency!" \
-          "RSpecTracer::Storage::JsonBackend::Merger.merge_examples_coverage!" \
-          "RSpecTracer::Storage::JsonBackend::Merger.merge_filtered_examples!" \
-          "RSpecTracer::Storage::JsonBackend::Merger.reverse_of" 2>&1 || true)
+          --include lib --require testsift/storage/json_backend \
+          "TestSift::Storage::JsonBackend::Merger.empty_state" \
+          "TestSift::Storage::JsonBackend::Merger.merge_env_dependency!" \
+          "TestSift::Storage::JsonBackend::Merger.merge_examples_coverage!" \
+          "TestSift::Storage::JsonBackend::Merger.merge_filtered_examples!" \
+          "TestSift::Storage::JsonBackend::Merger.reverse_of" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -686,7 +686,7 @@ tasks:
       The original split into 3 shards was over-sharded post-first-CI
       (each ~1-2 min); collapsed to 2 balanced shards (read / write+util).
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -695,22 +695,22 @@ tasks:
         fi
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
-          --include lib --require "rspec_tracer/storage/sqlite_backend" \
-          "RSpecTracer::Storage::SqliteBackend#last_run_id" \
-          "RSpecTracer::Storage::SqliteBackend#load_graph" \
-          "RSpecTracer::Storage::SqliteBackend#read_field" \
-          "RSpecTracer::Storage::SqliteBackend#read_all_examples" \
-          "RSpecTracer::Storage::SqliteBackend#read_all_files" \
-          "RSpecTracer::Storage::SqliteBackend#read_dependency" \
-          "RSpecTracer::Storage::SqliteBackend#read_digest_map" \
-          "RSpecTracer::Storage::SqliteBackend#read_duplicate_examples" \
-          "RSpecTracer::Storage::SqliteBackend#read_env_dependency" \
-          "RSpecTracer::Storage::SqliteBackend#read_examples_coverage" \
-          "RSpecTracer::Storage::SqliteBackend#read_id_set" \
-          "RSpecTracer::Storage::SqliteBackend#read_reverse_dependency" \
-          "RSpecTracer::Storage::SqliteBackend#dispatch_read" \
-          "RSpecTracer::Storage::SqliteBackend#dispatch_read_grouped" \
-          "RSpecTracer::Storage::SqliteBackend::SqliteFieldReader#read" 2>&1 || true)
+          --include lib --require "testsift/storage/sqlite_backend" \
+          "TestSift::Storage::SqliteBackend#last_run_id" \
+          "TestSift::Storage::SqliteBackend#load_graph" \
+          "TestSift::Storage::SqliteBackend#read_field" \
+          "TestSift::Storage::SqliteBackend#read_all_examples" \
+          "TestSift::Storage::SqliteBackend#read_all_files" \
+          "TestSift::Storage::SqliteBackend#read_dependency" \
+          "TestSift::Storage::SqliteBackend#read_digest_map" \
+          "TestSift::Storage::SqliteBackend#read_duplicate_examples" \
+          "TestSift::Storage::SqliteBackend#read_env_dependency" \
+          "TestSift::Storage::SqliteBackend#read_examples_coverage" \
+          "TestSift::Storage::SqliteBackend#read_id_set" \
+          "TestSift::Storage::SqliteBackend#read_reverse_dependency" \
+          "TestSift::Storage::SqliteBackend#dispatch_read" \
+          "TestSift::Storage::SqliteBackend#dispatch_read_grouped" \
+          "TestSift::Storage::SqliteBackend::SqliteFieldReader#read" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -743,7 +743,7 @@ tasks:
       decode_hash_with_sym_keys, fetch_hash, info, plus
       SqliteFieldReader#initialize (14 subjects).
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -752,37 +752,37 @@ tasks:
         fi
 
         out=$(bundle exec mutant run --use rspec --usage opensource \
-          --include lib --require "rspec_tracer/storage/sqlite_backend" \
-          "RSpecTracer::Storage::SqliteBackend#save_graph" \
-          "RSpecTracer::Storage::SqliteBackend#transactional_save" \
-          "RSpecTracer::Storage::SqliteBackend#clear!" \
-          "RSpecTracer::Storage::SqliteBackend#write_all_tables" \
-          "RSpecTracer::Storage::SqliteBackend#write_example_rows" \
-          "RSpecTracer::Storage::SqliteBackend#write_graph_rows" \
-          "RSpecTracer::Storage::SqliteBackend#write_grouped_rows" \
-          "RSpecTracer::Storage::SqliteBackend#insert_all_files" \
-          "RSpecTracer::Storage::SqliteBackend#insert_dependency" \
-          "RSpecTracer::Storage::SqliteBackend#insert_digest_map" \
-          "RSpecTracer::Storage::SqliteBackend#insert_duplicate_examples" \
-          "RSpecTracer::Storage::SqliteBackend#insert_env_dependency" \
-          "RSpecTracer::Storage::SqliteBackend#insert_examples" \
-          "RSpecTracer::Storage::SqliteBackend#insert_examples_coverage" \
-          "RSpecTracer::Storage::SqliteBackend#insert_id_set" \
-          "RSpecTracer::Storage::SqliteBackend#iterate_line_entries" \
-          "RSpecTracer::Storage::SqliteBackend#initialize" \
-          "RSpecTracer::Storage::SqliteBackend#with_connection" \
-          "RSpecTracer::Storage::SqliteBackend#with_write_connection" \
-          "RSpecTracer::Storage::SqliteBackend#db_path" \
-          "RSpecTracer::Storage::SqliteBackend#load_sqlite_driver!" \
-          "RSpecTracer::Storage::SqliteBackend#configure_connection" \
-          "RSpecTracer::Storage::SqliteBackend#reset_corrupt_db_file!" \
-          "RSpecTracer::Storage::SqliteBackend#meta_table_exists?" \
-          "RSpecTracer::Storage::SqliteBackend#ensure_schema!" \
-          "RSpecTracer::Storage::SqliteBackend#empty_default_for" \
-          "RSpecTracer::Storage::SqliteBackend#decode_hash_with_sym_keys" \
-          "RSpecTracer::Storage::SqliteBackend#fetch_hash" \
-          "RSpecTracer::Storage::SqliteBackend#info" \
-          "RSpecTracer::Storage::SqliteBackend::SqliteFieldReader#initialize" 2>&1 || true)
+          --include lib --require "testsift/storage/sqlite_backend" \
+          "TestSift::Storage::SqliteBackend#save_graph" \
+          "TestSift::Storage::SqliteBackend#transactional_save" \
+          "TestSift::Storage::SqliteBackend#clear!" \
+          "TestSift::Storage::SqliteBackend#write_all_tables" \
+          "TestSift::Storage::SqliteBackend#write_example_rows" \
+          "TestSift::Storage::SqliteBackend#write_graph_rows" \
+          "TestSift::Storage::SqliteBackend#write_grouped_rows" \
+          "TestSift::Storage::SqliteBackend#insert_all_files" \
+          "TestSift::Storage::SqliteBackend#insert_dependency" \
+          "TestSift::Storage::SqliteBackend#insert_digest_map" \
+          "TestSift::Storage::SqliteBackend#insert_duplicate_examples" \
+          "TestSift::Storage::SqliteBackend#insert_env_dependency" \
+          "TestSift::Storage::SqliteBackend#insert_examples" \
+          "TestSift::Storage::SqliteBackend#insert_examples_coverage" \
+          "TestSift::Storage::SqliteBackend#insert_id_set" \
+          "TestSift::Storage::SqliteBackend#iterate_line_entries" \
+          "TestSift::Storage::SqliteBackend#initialize" \
+          "TestSift::Storage::SqliteBackend#with_connection" \
+          "TestSift::Storage::SqliteBackend#with_write_connection" \
+          "TestSift::Storage::SqliteBackend#db_path" \
+          "TestSift::Storage::SqliteBackend#load_sqlite_driver!" \
+          "TestSift::Storage::SqliteBackend#configure_connection" \
+          "TestSift::Storage::SqliteBackend#reset_corrupt_db_file!" \
+          "TestSift::Storage::SqliteBackend#meta_table_exists?" \
+          "TestSift::Storage::SqliteBackend#ensure_schema!" \
+          "TestSift::Storage::SqliteBackend#empty_default_for" \
+          "TestSift::Storage::SqliteBackend#decode_hash_with_sym_keys" \
+          "TestSift::Storage::SqliteBackend#fetch_hash" \
+          "TestSift::Storage::SqliteBackend#info" \
+          "TestSift::Storage::SqliteBackend::SqliteFieldReader#initialize" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
@@ -815,7 +815,7 @@ tasks:
       ParallelTests (>= 78%) carve-out for module-helper describe
       mapping (mutant credits only `.method` describes).
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -847,25 +847,25 @@ tasks:
         # CI margin (~3 pp under local baseline; same rationale as
         # mutation:tracker / mutation:storage above).
         run_mutant_gate "RSpec::Installation" \
-          "rspec_tracer/rspec/installation" \
-          "RSpecTracer::RSpec::Installation*" 70 || fail=1
+          "testsift/rspec/installation" \
+          "TestSift::RSpec::Installation*" 70 || fail=1
         run_mutant_gate "RSpec::ParallelTests" \
-          "rspec_tracer/rspec/parallel_tests" \
-          "RSpecTracer::RSpec::ParallelTests*" 75 || fail=1
+          "testsift/rspec/parallel_tests" \
+          "TestSift::RSpec::ParallelTests*" 75 || fail=1
         run_mutant_gate "RSpec::Metadata" \
-          "rspec_tracer/rspec/metadata" \
-          "RSpecTracer::RSpec::Metadata*" 85 || fail=1
+          "testsift/rspec/metadata" \
+          "TestSift::RSpec::Metadata*" 85 || fail=1
         run_mutant_gate "RSpec::RunnerHook" \
-          "rspec_tracer/rspec/runner_hook" \
-          "RSpecTracer::RSpec::RunnerHook*" 85 || fail=1
+          "testsift/rspec/runner_hook" \
+          "TestSift::RSpec::RunnerHook*" 85 || fail=1
         run_mutant_gate "RSpec::ReporterHook" \
-          "rspec_tracer/rspec/reporter_hook" \
-          "RSpecTracer::RSpec::ReporterHook*" 85 || fail=1
+          "testsift/rspec/reporter_hook" \
+          "TestSift::RSpec::ReporterHook*" 85 || fail=1
         exit "$fail"
 
   test:mutation:top-level:
     desc: >-
-      Mutation pass on top-level RSpecTracer module's 17 class
+      Mutation pass on top-level TestSift module's 17 class
       methods. Split into 3 shards to enforce the 4-min per-shard
       hard cap (initial 2-way split had top-level-b at 4:43 CI because
       its setup-path methods like `start` / `setup_coverage` /
@@ -886,7 +886,7 @@ tasks:
       projects to ~3-4 min CI (half the 7-8 min projection of the
       whole-module run).
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -894,29 +894,29 @@ tasks:
           exit 0
         fi
 
-        echo "=== mutation:top-level [RSpecTracer shard-a] ==="
+        echo "=== mutation:top-level [TestSift shard-a] ==="
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer \
-          "RSpecTracer.at_exit_behavior" \
-          "RSpecTracer.build_run_metadata" \
-          "RSpecTracer.coverage_reporter" \
-          "RSpecTracer.emit_reporters" \
-          "RSpecTracer.engine" \
-          "RSpecTracer.initial_setup" \
-          "RSpecTracer.parallel_tests?" \
-          "RSpecTracer.rails?" 2>&1 || true)
+          --include lib --require testsift \
+          "TestSift.at_exit_behavior" \
+          "TestSift.build_run_metadata" \
+          "TestSift.coverage_reporter" \
+          "TestSift.emit_reporters" \
+          "TestSift.engine" \
+          "TestSift.initial_setup" \
+          "TestSift.parallel_tests?" \
+          "TestSift.rails?" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
-          echo "ERROR [RSpecTracer shard-a]: could not parse mutant coverage"
+          echo "ERROR [TestSift shard-a]: could not parse mutant coverage"
           exit 1
         fi
         if awk "BEGIN { exit ($cov >= 80) ? 0 : 1 }"; then
-          echo "mutation:top-level [RSpecTracer shard-a] PASS (coverage $cov% >= 80%)"
+          echo "mutation:top-level [TestSift shard-a] PASS (coverage $cov% >= 80%)"
           exit 0
         fi
-        echo "mutation:top-level [RSpecTracer shard-a] FAIL (coverage $cov% < 80%)"
+        echo "mutation:top-level [TestSift shard-a] FAIL (coverage $cov% < 80%)"
         exit 1
 
   test:mutation:top-level-b:
@@ -929,7 +929,7 @@ tasks:
       setup-path method's mutations cause spec_helper boot hangs at
       the full 5s timeout each.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -937,26 +937,26 @@ tasks:
           exit 0
         fi
 
-        echo "=== mutation:top-level [RSpecTracer shard-b] ==="
+        echo "=== mutation:top-level [TestSift shard-b] ==="
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer \
-          "RSpecTracer.run_coverage_exit_task" \
-          "RSpecTracer.run_elapsed_seconds" \
-          "RSpecTracer.run_exit_tasks" \
-          "RSpecTracer.run_finalize" \
-          "RSpecTracer.run_simplecov_exit_task" 2>&1 || true)
+          --include lib --require testsift \
+          "TestSift.run_coverage_exit_task" \
+          "TestSift.run_elapsed_seconds" \
+          "TestSift.run_exit_tasks" \
+          "TestSift.run_finalize" \
+          "TestSift.run_simplecov_exit_task" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
-          echo "ERROR [RSpecTracer shard-b]: could not parse mutant coverage"
+          echo "ERROR [TestSift shard-b]: could not parse mutant coverage"
           exit 1
         fi
         if awk "BEGIN { exit ($cov >= 80) ? 0 : 1 }"; then
-          echo "mutation:top-level [RSpecTracer shard-b] PASS (coverage $cov% >= 80%)"
+          echo "mutation:top-level [TestSift shard-b] PASS (coverage $cov% >= 80%)"
           exit 0
         fi
-        echo "mutation:top-level [RSpecTracer shard-b] FAIL (coverage $cov% < 80%)"
+        echo "mutation:top-level [TestSift shard-b] FAIL (coverage $cov% < 80%)"
         exit 1
 
   test:mutation:top-level-c:
@@ -965,7 +965,7 @@ tasks:
       setup_coverage, setup_rails, simplecov?, start. Split out from
       top-level-b after the 9-method shard hit the 4-min cap on CI.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -973,25 +973,25 @@ tasks:
           exit 0
         fi
 
-        echo "=== mutation:top-level [RSpecTracer shard-c] ==="
+        echo "=== mutation:top-level [TestSift shard-c] ==="
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer \
-          "RSpecTracer.setup_coverage" \
-          "RSpecTracer.setup_rails" \
-          "RSpecTracer.simplecov?" \
-          "RSpecTracer.start" 2>&1 || true)
+          --include lib --require testsift \
+          "TestSift.setup_coverage" \
+          "TestSift.setup_rails" \
+          "TestSift.simplecov?" \
+          "TestSift.start" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then
-          echo "ERROR [RSpecTracer shard-c]: could not parse mutant coverage"
+          echo "ERROR [TestSift shard-c]: could not parse mutant coverage"
           exit 1
         fi
         if awk "BEGIN { exit ($cov >= 80) ? 0 : 1 }"; then
-          echo "mutation:top-level [RSpecTracer shard-c] PASS (coverage $cov% >= 80%)"
+          echo "mutation:top-level [TestSift shard-c] PASS (coverage $cov% >= 80%)"
           exit 0
         fi
-        echo "mutation:top-level [RSpecTracer shard-c] FAIL (coverage $cov% < 80%)"
+        echo "mutation:top-level [TestSift shard-c] FAIL (coverage $cov% < 80%)"
         exit 1
 
   test:mutation:remote-cache:
@@ -1008,7 +1008,7 @@ tasks:
       restructuring or mutation-bait additions per the standing
       no-anti-pattern-test-org rule.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -1048,20 +1048,20 @@ tasks:
         # the same mutations don't hang). Same shape as the earlier
         # 154ec27 post-merge widening.
         run_mutant_gate "RemoteCache::Backend" \
-          "rspec_tracer/remote_cache/backend" \
-          "RSpecTracer::RemoteCache::Backend*" 95 || fail=1
+          "testsift/remote_cache/backend" \
+          "TestSift::RemoteCache::Backend*" 95 || fail=1
         run_mutant_gate "RemoteCache::Validator" \
-          "rspec_tracer/remote_cache/validator" \
-          "RSpecTracer::RemoteCache::Validator*" 85 || fail=1
+          "testsift/remote_cache/validator" \
+          "TestSift::RemoteCache::Validator*" 85 || fail=1
         run_mutant_gate "RemoteCache::Archive" \
-          "rspec_tracer/remote_cache/archive" \
-          "RSpecTracer::RemoteCache::Archive*" 83 || fail=1
+          "testsift/remote_cache/archive" \
+          "TestSift::RemoteCache::Archive*" 83 || fail=1
         # GitAncestry: CI baseline 72.68% (vs 94.59% local; 305 local
         # timeouts on git shell-out are 0 on CI because Linux git is
         # faster). 4 pp under CI = 68% gate.
         run_mutant_gate "RemoteCache::GitAncestry" \
-          "rspec_tracer/remote_cache/git_ancestry" \
-          "RSpecTracer::RemoteCache::GitAncestry*" 68 || fail=1
+          "testsift/remote_cache/git_ancestry" \
+          "TestSift::RemoteCache::GitAncestry*" 68 || fail=1
         # UserTasks / LocalFsBackend / RedisBackend / S3Backend share
         # the same describe-label ceiling as Storage::SqliteBackend:
         # 4-7x more
@@ -1074,17 +1074,17 @@ tasks:
         # show as alive. Restructuring describes for coverage is the
         # test-organization-for-coverage anti-pattern.
         run_mutant_gate "RemoteCache::UserTasks" \
-          "rspec_tracer/remote_cache/user_tasks" \
-          "RSpecTracer::RemoteCache::UserTasks*" 73 || fail=1
+          "testsift/remote_cache/user_tasks" \
+          "TestSift::RemoteCache::UserTasks*" 73 || fail=1
         run_mutant_gate "RemoteCache::LocalFsBackend" \
-          "rspec_tracer/remote_cache/local_fs_backend" \
-          "RSpecTracer::RemoteCache::LocalFsBackend*" 73 || fail=1
+          "testsift/remote_cache/local_fs_backend" \
+          "TestSift::RemoteCache::LocalFsBackend*" 73 || fail=1
         run_mutant_gate "RemoteCache::RedisBackend" \
-          "rspec_tracer/remote_cache/redis_backend" \
-          "RSpecTracer::RemoteCache::RedisBackend*" 72 || fail=1
+          "testsift/remote_cache/redis_backend" \
+          "TestSift::RemoteCache::RedisBackend*" 72 || fail=1
         run_mutant_gate "RemoteCache::S3Backend" \
-          "rspec_tracer/remote_cache/s3_backend" \
-          "RSpecTracer::RemoteCache::S3Backend*" 65 || fail=1
+          "testsift/remote_cache/s3_backend" \
+          "TestSift::RemoteCache::S3Backend*" 65 || fail=1
         exit "$fail"
 
   test:mutation:rails:
@@ -1105,7 +1105,7 @@ tasks:
       don't map to mutant's first-token Klass.method scheme. Rails::Preset
       stays in test:mutation:smoke at >= 90%.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -1180,8 +1180,8 @@ tasks:
         # describes for coverage rejected -- test organization exists to
         # document behavior, not to satisfy the mutation tool.
         run_mutant_gate "Rails::Notifications" \
-          "rspec_tracer/rails/notifications" \
-          "RSpecTracer::Rails::Notifications*" 75 || fail=1
+          "testsift/rails/notifications" \
+          "TestSift::Rails::Notifications*" 75 || fail=1
         # I18nTracking local 67.77%: 7 subjects, 24 selected tests. Same
         # combined-describe ceiling on `.installed?` + `.uninstall` PLUS the
         # `LoadTranslationsHook integration` prose describe (no first-token
@@ -1195,20 +1195,20 @@ tasks:
         # interacts unpredictably with test ordering on CI. Below the
         # canonical brief's 70% best-effort target; carve-out documented.
         run_mutant_gate "Rails::I18nTracking" \
-          "rspec_tracer/rails/i18n_tracking" \
-          "RSpecTracer::Rails::I18nTracking*" 62 || fail=1
+          "testsift/rails/i18n_tracking" \
+          "TestSift::Rails::I18nTracking*" 62 || fail=1
         # Railtie has 0 mutation subjects (the class declaration registers
         # one initializer block at class-define time but defines no methods
         # of its own). Mutant returns 100% trivially. Boot helper at
         # spec/support/rails_railtie_stub.rb stubs ::Rails::Railtie since
         # the dev Gemfile does not include Rails. Spec restructured to a
-        # top-level string-form `describe 'RSpecTracer::Rails::Railtie'`
+        # top-level string-form `describe 'TestSift::Rails::Railtie'`
         # so that any future Railtie methods receive credit via mutant
         # first-token mapping. Gate at 90% to assert the boot path stays
         # clean as the file evolves.
         run_mutant_gate_with_includes "Rails::Railtie" \
           "support/rails_railtie_stub" \
-          "RSpecTracer::Rails::Railtie*" 90 || fail=1
+          "TestSift::Rails::Railtie*" 90 || fail=1
         exit "$fail"
 
   test:mutation:reporters:
@@ -1227,7 +1227,7 @@ tasks:
       describes for coverage rejected -- test organization documents
       behavior, it is not reshaped to satisfy the mutation tool.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -1266,15 +1266,15 @@ tasks:
         # / `#generate` / `#no_op?` describes map perfectly. The 2 alive
         # mutations are constructor opts-default / nil-coercion equivalents.
         run_mutant_gate "Reporters::Base" \
-          "rspec_tracer/reporters/base" \
-          "RSpecTracer::Reporters::Base*" 93 || fail=1
+          "testsift/reporters/base" \
+          "TestSift::Reporters::Base*" 93 || fail=1
         # JsonReporter local 91.30%: 2 subjects, 17 selected; `#generate`
         # populated/no-op describes credit the public path; the prose
         # `SCHEMA_VERSION constant` + `FILENAME constant` describes plus
         # the private `#build_payload` delegation account for the alive 6.
         run_mutant_gate "Reporters::JsonReporter" \
-          "rspec_tracer/reporters/json_reporter" \
-          "RSpecTracer::Reporters::JsonReporter*" 88 || fail=1
+          "testsift/reporters/json_reporter" \
+          "TestSift::Reporters::JsonReporter*" 88 || fail=1
         # TerminalReporter local 88.34%: 13 subjects, 34 selected; `#generate`
         # describes credit the line-emission path. Prose `color policy`,
         # `cache-percent edge cases`, `output_stream default` ceilings
@@ -1282,8 +1282,8 @@ tasks:
         # `report_line` / `header_color` / `run_count` / `duplicate_count`
         # / `paint` / `use_color?` mutations partially uncovered.
         run_mutant_gate "Reporters::TerminalReporter" \
-          "rspec_tracer/reporters/terminal_reporter" \
-          "RSpecTracer::Reporters::TerminalReporter*" 85 || fail=1
+          "testsift/reporters/terminal_reporter" \
+          "TestSift::Reporters::TerminalReporter*" 85 || fail=1
         # HtmlReporter local 83.38%: 18 subjects, 39 selected; biggest in
         # subdir at 218 LOC + 14 private fallback-rendering helpers. The
         # `payload embedding` / `fallback rendering` / `duration formatting
@@ -1294,8 +1294,8 @@ tasks:
         # mapping. Behavior IS exercised end-to-end via `#generate` output
         # assertions; carve-out for the describe-label ceiling.
         run_mutant_gate "Reporters::HtmlReporter" \
-          "rspec_tracer/reporters/html_reporter" \
-          "RSpecTracer::Reporters::HtmlReporter*" 80 || fail=1
+          "testsift/reporters/html_reporter" \
+          "TestSift::Reporters::HtmlReporter*" 80 || fail=1
         # PayloadBuilder local 86.39%: 15 subjects, 61 selected; densest
         # test surface (every report-shape branch tested). Prose `envelope`
         # / `summary block` / `all_examples report` / `duplicate_examples
@@ -1305,8 +1305,8 @@ tasks:
         # / `count_status` / `aggregate_spec_counts` / `normalize_execution_result`
         # / `stringify_time` / `summary_block` / per-report builders).
         run_mutant_gate "Reporters::PayloadBuilder" \
-          "rspec_tracer/reporters/payload_builder" \
-          "RSpecTracer::Reporters::PayloadBuilder*" 83 || fail=1
+          "testsift/reporters/payload_builder" \
+          "TestSift::Reporters::PayloadBuilder*" 83 || fail=1
         # Registry local 89.40%: 9 subjects, 20 selected; `.emit_all` class-
         # method shortcut maps cleanly. Prose `default resolution` / `empty-
         # snapshot short-circuit` / `explicit reporter resolution` / `per-
@@ -1315,8 +1315,8 @@ tasks:
         # `emit_one` / `warn_continue` / `logger` / `empty_snapshot?` helpers
         # uncredited under first-token mapping.
         run_mutant_gate "Reporters::Registry" \
-          "rspec_tracer/reporters/registry" \
-          "RSpecTracer::Reporters::Registry*" 86 || fail=1
+          "testsift/reporters/registry" \
+          "TestSift::Reporters::Registry*" 86 || fail=1
         exit "$fail"
 
   test:mutation:cli:
@@ -1332,7 +1332,7 @@ tasks:
       computes the re-run prediction users act on, and SnapshotHelpers
       rides along as its (and Explain's) shared loading/lookup core.
     env:
-      RSPEC_TRACER_DISABLE: '1'
+      TESTSIFT_DISABLE: '1'
     cmds:
       - |
         if ! bundle show mutant >/dev/null 2>&1; then
@@ -1343,9 +1343,9 @@ tasks:
         echo "=== mutation:cli [CLI::BlastRadius + CLI::SnapshotHelpers] ==="
         out=$(bundle exec mutant run --use rspec --usage opensource \
           --jobs 8 \
-          --include lib --require rspec_tracer/cli/blast_radius \
-          "RSpecTracer::CLI::BlastRadius*" \
-          "RSpecTracer::CLI::SnapshotHelpers*" 2>&1 || true)
+          --include lib --require testsift/cli/blast_radius \
+          "TestSift::CLI::BlastRadius*" \
+          "TestSift::CLI::SnapshotHelpers*" 2>&1 || true)
         echo "$out"
         cov=$(echo "$out" | awk '/^Coverage:/ { gsub(/%/, "", $2); print $2 }' | tail -1)
         if [ -z "$cov" ]; then

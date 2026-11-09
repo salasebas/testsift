@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Microbenchmark for RSpecTracer::Tracker::CoverageAdapter#compute_diff.
+# Microbenchmark for TestSift::Tracker::CoverageAdapter#compute_diff.
 #
 # Builds synthetic ::Coverage-shaped before/after hashes across 100
 # files (each LINES_PER_FILE lines, with one deterministic line-count
@@ -16,7 +16,7 @@ require 'fileutils'
 require 'tmpdir'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __dir__))
-require 'rspec_tracer/tracker/coverage_adapter'
+require 'testsift/tracker/coverage_adapter'
 
 ITERATIONS = Integer(ENV.fetch('ITERATIONS', '1000'))
 FILE_COUNT = Integer(ENV.fetch('FILE_COUNT', '100'))
@@ -35,7 +35,7 @@ begin
   before = paths.to_h { |p| [p, zeros] }
   after = paths.to_h { |p| [p, ones_first] }
 
-  adapter = RSpecTracer::Tracker::CoverageAdapter.new(root: root)
+  adapter = TestSift::Tracker::CoverageAdapter.new(root: root)
   # Warm once — pays the first-time require/JIT tax outside the timed loop.
   adapter.compute_diff(before, after)
 

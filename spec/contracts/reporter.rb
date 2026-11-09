@@ -1,17 +1,17 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/base'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/base'
 
-# Shared-examples contract for RSpecTracer::Reporters::Base subclasses.
+# Shared-examples contract for TestSift::Reporters::Base subclasses.
 # Each reporter's spec includes this with `it_behaves_like 'a Reporters::Base'`
 # after binding:
 #
 #   let(:reporter_class) { described_class }
 #   let(:report_dir)     { Dir.mktmpdir }
 #   let(:snapshot)       { # populated snapshot (non-empty all_examples)  }
-#   let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(...) }
+#   let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(...) }
 #   let(:run_metadata)   { {} }
 #
 # Reporters that break these assertions are non-conformant even if

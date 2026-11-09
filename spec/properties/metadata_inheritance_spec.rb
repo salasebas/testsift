@@ -14,7 +14,7 @@
 # rubocop:disable RSpec/DescribeClass
 require 'set'
 require 'rantly/rspec_extensions'
-require 'rspec_tracer/rspec/metadata'
+require 'testsift/rspec/metadata'
 
 PROPERTY_FILES_POOL = %w[
   app/**/*.rb config/**/*.yml lib/tasks/*.rake db/schema.rb
@@ -89,7 +89,7 @@ module MetadataCascadeFakes
   end
 end
 
-RSpec.describe 'RSpecTracer::RSpec::Metadata cascade invariants' do
+RSpec.describe 'TestSift::RSpec::Metadata cascade invariants' do
   # Expected union computed independently - same normalization as
   # the walker uses (String => [String], Array => flattened strings,
   # empty/nil filtered).
@@ -123,7 +123,7 @@ RSpec.describe 'RSpecTracer::RSpec::Metadata cascade invariants' do
   it 'unions :files across every ancestor plus the leaf' do
     property_of { MetadataCascadeGen.build_example(self) }.check(200) do |example|
       expected = expected_union(example)
-      actual = RSpecTracer::RSpec::Metadata.tracks_for(example)
+      actual = TestSift::RSpec::Metadata.tracks_for(example)
 
       expect(actual[:files]).to eq(expected[:files])
     end
@@ -132,7 +132,7 @@ RSpec.describe 'RSpecTracer::RSpec::Metadata cascade invariants' do
   it 'unions :env across every ancestor plus the leaf' do
     property_of { MetadataCascadeGen.build_example(self) }.check(200) do |example|
       expected = expected_union(example)
-      actual = RSpecTracer::RSpec::Metadata.tracks_for(example)
+      actual = TestSift::RSpec::Metadata.tracks_for(example)
 
       expect(actual[:env]).to eq(expected[:env])
     end

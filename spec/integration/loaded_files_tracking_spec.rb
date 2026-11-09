@@ -16,8 +16,8 @@ RSpec.describe 'loaded-file attribution in real RSpec runs' do
   let(:first_run_files) { %w[/lib/boot_dep.rb /lib/setup_dep.rb /lib/body_dep.rb /lib/teardown_dep.rb] }
 
   before do
-    File.write(File.join(root, '.rspec-tracer'), <<~RUBY)
-      RSpecTracer.configure do
+    File.write(File.join(root, '.testsift'), <<~RUBY)
+      TestSift.configure do
         run_all_examples false
         transitive_load_tracking true
         add_filter '/vendor/'
@@ -28,8 +28,8 @@ RSpec.describe 'loaded-file attribution in real RSpec runs' do
     end
     write('vendor/filtered_dep.rb', "module FilteredDep; end\n")
     write('loading_spec.rb', <<~RUBY)
-      require 'rspec_tracer'
-      RSpecTracer.start
+      require 'testsift'
+      TestSift.start
       require 'rspec/retry'
       require_relative 'lib/boot_dep'
       autoload :LazyDep, File.join(__dir__, 'lib/lazy_dep.rb')
@@ -89,7 +89,7 @@ RSpec.describe 'loaded-file attribution in real RSpec runs' do
   end
 
   def cache(name)
-    cache_root = File.join(root, 'rspec_tracer_cache')
+    cache_root = File.join(root, 'testsift_cache')
     manifest = JSON.parse(File.read(File.join(cache_root, 'last_run.json')))
     JSON.parse(File.read(File.join(cache_root, manifest.fetch('run_id'), "#{name}.json")))
   end
@@ -119,12 +119,12 @@ RSpec.describe 'loaded-file attribution in real RSpec runs' do
   end
 
   it 'finishes a run without examples' do
-    write('empty_spec.rb', "require 'rspec_tracer'\nRSpecTracer.start\nRSpec.describe('nothing') {}\n")
+    write('empty_spec.rb', "require 'testsift'\nTestSift.start\nRSpec.describe('nothing') {}\n")
 
     output, status = run_project('empty_spec.rb')
 
     expect(status.exitstatus).to eq(0), output
-    expect(File).not_to exist(File.join(root, 'rspec_tracer_cache', 'last_run.json'))
+    expect(File).not_to exist(File.join(root, 'testsift_cache', 'last_run.json'))
   end
 
   it 'reselects only the examples that observed a file loaded between examples' do

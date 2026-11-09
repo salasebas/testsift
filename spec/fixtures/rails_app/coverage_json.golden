@@ -1,5 +1,5 @@
 {
-  "RSpecTracer": {
+  "TestSift": {
     "coverage": {
       "app/channels/application_cable/channel.rb": [
         1,

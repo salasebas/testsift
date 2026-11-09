@@ -5,10 +5,10 @@ require 'stringio'
 require 'tmpdir'
 require 'fileutils'
 
-require 'rspec_tracer/cli/cache_clear'
+require 'testsift/cli/cache_clear'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::CLI::CacheClear do
+RSpec.describe TestSift::CLI::CacheClear do
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
@@ -17,7 +17,7 @@ RSpec.describe RSpecTracer::CLI::CacheClear do
       %w[-h --help].each do |flag|
         out = StringIO.new
         expect(described_class.run([flag], stdout: out, stderr: stderr)).to eq(0)
-        expect(out.string).to include('Usage: rspec-tracer cache:clear')
+        expect(out.string).to include('Usage: testsift cache:clear')
       end
     end
 
@@ -30,7 +30,7 @@ RSpec.describe RSpecTracer::CLI::CacheClear do
 
     it 'reports nothing-to-remove when no directories exist' do
       Dir.mktmpdir do |dir|
-        allow(RSpecTracer).to receive_messages(
+        allow(TestSift).to receive_messages(
           cache_path: File.join(dir, 'a'), coverage_path: File.join(dir, 'b'), report_path: File.join(dir, 'c')
         )
         expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
@@ -44,7 +44,7 @@ RSpec.describe RSpecTracer::CLI::CacheClear do
         coverage = File.join(dir, 'coverage')
         report = File.join(dir, 'report')
         [cache, coverage, report].each { |p| FileUtils.mkdir_p(p) }
-        allow(RSpecTracer).to receive_messages(cache_path: cache, coverage_path: coverage, report_path: report)
+        allow(TestSift).to receive_messages(cache_path: cache, coverage_path: coverage, report_path: report)
 
         expect(described_class.run(%w[--yes], stdout: stdout, stderr: stderr)).to eq(0)
         expect(File.directory?(cache)).to be(false)
@@ -61,7 +61,7 @@ RSpec.describe RSpecTracer::CLI::CacheClear do
           coverage = File.join(dir, 'coverage')
           report = File.join(dir, 'report')
           [cache, coverage, report].each { |p| FileUtils.mkdir_p(p) }
-          allow(RSpecTracer).to receive_messages(
+          allow(TestSift).to receive_messages(
             cache_path: cache, coverage_path: coverage, report_path: report
           )
           out = StringIO.new
@@ -84,7 +84,7 @@ RSpec.describe RSpecTracer::CLI::CacheClear do
       Dir.mktmpdir do |dir|
         cache = File.join(dir, 'cache')
         FileUtils.mkdir_p(cache)
-        allow(RSpecTracer).to receive_messages(cache_path: cache, coverage_path: '/x', report_path: '/y')
+        allow(TestSift).to receive_messages(cache_path: cache, coverage_path: '/x', report_path: '/y')
         allow($stdin).to receive(:gets).and_return("n\n")
 
         expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
@@ -97,7 +97,7 @@ RSpec.describe RSpecTracer::CLI::CacheClear do
       Dir.mktmpdir do |dir|
         cache = File.join(dir, 'cache')
         FileUtils.mkdir_p(cache)
-        allow(RSpecTracer).to receive_messages(cache_path: cache, coverage_path: '/x', report_path: '/y')
+        allow(TestSift).to receive_messages(cache_path: cache, coverage_path: '/x', report_path: '/y')
         allow($stdin).to receive(:gets).and_return("y\n")
 
         expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
@@ -106,7 +106,7 @@ RSpec.describe RSpecTracer::CLI::CacheClear do
     end
 
     it 'rescues StandardError and returns 1' do
-      allow(RSpecTracer).to receive(:cache_path).and_raise(StandardError, 'config boom')
+      allow(TestSift).to receive(:cache_path).and_raise(StandardError, 'config boom')
 
       expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(1)
       expect(stderr.string).to include('cache:clear:')

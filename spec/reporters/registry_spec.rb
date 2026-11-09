@@ -2,23 +2,23 @@
 
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/base'
-require 'rspec_tracer/reporters/json_reporter'
-require 'rspec_tracer/reporters/terminal_reporter'
-require 'rspec_tracer/reporters/registry'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/base'
+require 'testsift/reporters/json_reporter'
+require 'testsift/reporters/terminal_reporter'
+require 'testsift/reporters/registry'
 
 # rubocop:disable RSpec/MultipleMemoizedHelpers, RSpec/MultipleExpectations, RSpec/ExampleLength
-RSpec.describe RSpecTracer::Reporters::Registry do
+RSpec.describe TestSift::Reporters::Registry do
   let(:tmp) { Dir.mktmpdir }
-  let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'r') }
+  let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'r') }
   let(:snapshot) do
-    RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'r').tap do |s|
+    TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'r').tap do |s|
       s.all_examples = { 'ex1' => { id: 'ex1' } }
     end
   end
   let(:run_metadata) { {} }
-  let(:logger) { instance_double(RSpecTracer::Logger, warn: nil, debug: nil) }
+  let(:logger) { instance_double(TestSift::Logger, warn: nil, debug: nil) }
   let(:report_dir) { File.join(tmp, 'report') }
 
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
@@ -46,10 +46,10 @@ RSpec.describe RSpecTracer::Reporters::Registry do
       terminal_class = instance_spy(Class)
       json_class = instance_spy(Class)
 
-      stub_const('RSpecTracer::Reporters::TerminalReporter', terminal_class)
-      stub_const('RSpecTracer::Reporters::JsonReporter', json_class)
-      allow(terminal_class).to receive(:new).and_return(instance_double(RSpecTracer::Reporters::Base, generate: nil))
-      allow(json_class).to receive(:new).and_return(instance_double(RSpecTracer::Reporters::Base, generate: nil))
+      stub_const('TestSift::Reporters::TerminalReporter', terminal_class)
+      stub_const('TestSift::Reporters::JsonReporter', json_class)
+      allow(terminal_class).to receive(:new).and_return(instance_double(TestSift::Reporters::Base, generate: nil))
+      allow(json_class).to receive(:new).and_return(instance_double(TestSift::Reporters::Base, generate: nil))
 
       described_class.new(configuration: fake_config).emit_all(
         snapshot: snapshot, report_dir: report_dir, run_metadata: run_metadata
@@ -99,7 +99,7 @@ RSpec.describe RSpecTracer::Reporters::Registry do
     end
 
     it 'returns [] when snapshot.all_examples is nil' do
-      snap = RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'r')
+      snap = TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'r')
       snap.all_examples = nil
 
       result = described_class.new(configuration: fake_config).emit_all(
@@ -119,7 +119,7 @@ RSpec.describe RSpecTracer::Reporters::Registry do
     end
 
     it 'returns [] without inspecting snapshot when entries resolve empty (defensive guard)' do
-      stub_const('RSpecTracer::Reporters::Registry::DEFAULTS', [].freeze)
+      stub_const('TestSift::Reporters::Registry::DEFAULTS', [].freeze)
       config = fake_config(reporters: nil)
 
       result = described_class.new(configuration: config).emit_all(
@@ -152,7 +152,7 @@ RSpec.describe RSpecTracer::Reporters::Registry do
     end
 
     it 'accepts a Class directly' do
-      spy_class = Class.new(RSpecTracer::Reporters::Base) do
+      spy_class = Class.new(TestSift::Reporters::Base) do
         attr_reader :generated
 
         def generate
@@ -166,12 +166,12 @@ RSpec.describe RSpecTracer::Reporters::Registry do
       )
 
       # Indirect check: the spy class constructed + generate ran without exception.
-      expect(spy_class.ancestors).to include(RSpecTracer::Reporters::Base)
+      expect(spy_class.ancestors).to include(TestSift::Reporters::Base)
     end
 
     it 'forwards **opts to the reporter initializer' do
       captured = nil
-      spy_class = Class.new(RSpecTracer::Reporters::Base) do
+      spy_class = Class.new(TestSift::Reporters::Base) do
         define_method(:generate) do
           captured = options
         end
@@ -186,7 +186,7 @@ RSpec.describe RSpecTracer::Reporters::Registry do
     end
 
     it 'tolerates a nil opts entry (legacy shape)' do
-      spy_class = Class.new(RSpecTracer::Reporters::Base) do
+      spy_class = Class.new(TestSift::Reporters::Base) do
         def generate
           :ok
         end
@@ -203,12 +203,12 @@ RSpec.describe RSpecTracer::Reporters::Registry do
 
   describe 'per-reporter rescue' do
     it 'catches an exception in one reporter and continues to the next' do
-      raising_class = Class.new(RSpecTracer::Reporters::Base) do
+      raising_class = Class.new(TestSift::Reporters::Base) do
         def generate
           raise 'boom'
         end
       end
-      ok_class = Class.new(RSpecTracer::Reporters::Base) do
+      ok_class = Class.new(TestSift::Reporters::Base) do
         def generate
           :ok
         end
@@ -224,7 +224,7 @@ RSpec.describe RSpecTracer::Reporters::Registry do
     end
 
     it 'survives when configuration exposes no logger' do
-      raising_class = Class.new(RSpecTracer::Reporters::Base) do
+      raising_class = Class.new(TestSift::Reporters::Base) do
         def generate
           raise 'boom'
         end
@@ -239,7 +239,7 @@ RSpec.describe RSpecTracer::Reporters::Registry do
     end
 
     it 'survives when configuration does not respond to :logger at all' do
-      raising_class = Class.new(RSpecTracer::Reporters::Base) do
+      raising_class = Class.new(TestSift::Reporters::Base) do
         def generate
           raise 'boom'
         end
@@ -262,9 +262,9 @@ RSpec.describe RSpecTracer::Reporters::Registry do
 
     it 'maps :terminal, :json, and :html to their reporter class constant names' do
       expect(described_class::BUILT_INS).to include(
-        terminal: 'RSpecTracer::Reporters::TerminalReporter',
-        json: 'RSpecTracer::Reporters::JsonReporter',
-        html: 'RSpecTracer::Reporters::HtmlReporter'
+        terminal: 'TestSift::Reporters::TerminalReporter',
+        json: 'TestSift::Reporters::JsonReporter',
+        html: 'TestSift::Reporters::HtmlReporter'
       )
     end
   end

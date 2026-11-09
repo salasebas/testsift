@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/tracker/file_digest'
+require 'testsift/tracker/file_digest'
 
-RSpec.describe RSpecTracer::Tracker::FileDigest do
+RSpec.describe TestSift::Tracker::FileDigest do
   let(:root) { Dir.mktmpdir('file_digest_spec_') }
   let(:path) { File.join(root, 'a.rb') }
 

@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer'
+require 'testsift'
 
-RSpecTracer.start
+TestSift.start
 
 require_relative '../app/calculator'
 require_relative '../app/inventory'

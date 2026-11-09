@@ -3,7 +3,7 @@
 require 'fileutils'
 require 'logger'
 require 'tmpdir'
-require 'rspec_tracer/engine'
+require 'testsift/engine'
 
 raise 'RSpec loaded with the engine' if defined?(RSpec)
 
@@ -47,7 +47,7 @@ Dir.mktmpdir('neutral-engine') do |root|
     transitive_load_tracking: false, storage_backend: :json, storage_backend_opts: {}
   )
 
-  cold = RSpecTracer::Engine.new(configuration: configuration).setup
+  cold = TestSift::Engine.new(configuration: configuration).setup
   register(cold, 'plain:test')
   assert_engine(cold.run_example?('plain:test'), 'new test must run')
   complete(cold, 'plain:test', path)
@@ -56,7 +56,7 @@ Dir.mktmpdir('neutral-engine') do |root|
   assert_engine(snapshot.all_examples.fetch('plain:test').dig(:execution_result, :status) == 'passed',
                 'outcome missing')
 
-  warm = RSpecTracer::Engine.new(configuration: configuration).setup
+  warm = TestSift::Engine.new(configuration: configuration).setup
   register(warm, 'plain:test')
   assert_engine(!warm.run_example?('plain:test'), 'unchanged passing test must be skipped')
   warm.on_example_skipped('plain:test')
@@ -64,7 +64,7 @@ Dir.mktmpdir('neutral-engine') do |root|
 
   worker_configuration = configuration.dup
   worker_configuration.cache_path = File.join(root, 'worker-cache')
-  worker = RSpecTracer::Engine.new(configuration: worker_configuration, read_cache_path: configuration.cache_path).setup
+  worker = TestSift::Engine.new(configuration: worker_configuration, read_cache_path: configuration.cache_path).setup
   register(worker, 'plain:test')
   assert_engine(!worker.run_example?('plain:test'), 'explicit parent cache must select like a warm run')
   worker.on_example_skipped('plain:test')
@@ -72,7 +72,7 @@ Dir.mktmpdir('neutral-engine') do |root|
   assert_engine(File.file?(File.join(worker_configuration.cache_path, 'last_run.json')), 'worker cache not saved')
 
   File.write(path, 'changed')
-  changed = RSpecTracer::Engine.new(configuration: configuration).setup
+  changed = TestSift::Engine.new(configuration: configuration).setup
   register(changed, 'plain:test')
   assert_engine(changed.run_example?('plain:test'), 'changed dependency must select the test')
   assert_engine(changed.run_example_reason('plain:test') == 'Files changed', 'wrong change reason')
@@ -80,7 +80,7 @@ Dir.mktmpdir('neutral-engine') do |root|
   register(changed, 'plain:unfinished')
   changed.finalize
 
-  interrupted = RSpecTracer::Engine.new(configuration: configuration).setup
+  interrupted = TestSift::Engine.new(configuration: configuration).setup
   register(interrupted, 'plain:unfinished')
   assert_engine(interrupted.run_example?('plain:unfinished'), 'unfinished test must run again')
   assert_engine(interrupted.run_example_reason('plain:unfinished') == 'Interrupted previously',
@@ -90,5 +90,5 @@ Dir.mktmpdir('neutral-engine') do |root|
   assert_engine(!defined?(RSpec), 'RSpec loaded during the engine lifecycle')
   assert_engine(Coverage.running?, 'finalization stopped Ruby Coverage')
 ensure
-  RSpecTracer::Tracker::IOHooks.uninstall
+  TestSift::Tracker::IOHooks.uninstall
 end

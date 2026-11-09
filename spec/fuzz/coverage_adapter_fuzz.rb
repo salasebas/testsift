@@ -7,7 +7,7 @@
 # before / after maps with mixed line shapes (Array, Hash, nil entries,
 # wildly varying lengths, missing keys, mode flips).
 #
-# Contract under test (per lib/rspec_tracer/tracker/coverage_adapter.rb):
+# Contract under test (per lib/testsift/tracker/coverage_adapter.rb):
 #   - compute_diff returns Set<Input> for paths whose line arrays
 #     differ between before and after.
 #   - delta? handles nil entries (unexecutable lines) without raising.
@@ -28,8 +28,8 @@
 require 'set'
 
 $LOAD_PATH.unshift File.expand_path('../../lib', __dir__)
-require 'rspec_tracer/tracker/coverage_adapter'
-require 'rspec_tracer/tracker/input'
+require 'testsift/tracker/coverage_adapter'
+require 'testsift/tracker/input'
 
 iterations = Integer(ENV.fetch('ITERATIONS', '500'))
 seed       = Integer(ENV.fetch('SEED', Random.new_seed.to_s))
@@ -64,7 +64,7 @@ def random_coverage_map(rng:, max_files:, max_lines:)
   end.to_h
 end
 
-adapter = RSpecTracer::Tracker::CoverageAdapter.new(
+adapter = TestSift::Tracker::CoverageAdapter.new(
   root: '/fuzz',
   filters: [],
   mode: :array

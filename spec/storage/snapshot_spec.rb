@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/snapshot'
 
-RSpec.describe RSpecTracer::Storage::Snapshot do
+RSpec.describe TestSift::Storage::Snapshot do
   describe '.empty' do
     subject(:snapshot) { described_class.empty(schema_version: 3, run_id: 'run-abc') }
 

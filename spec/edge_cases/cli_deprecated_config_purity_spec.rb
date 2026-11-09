@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
-# End-to-end stdout purity of the `rspec-tracer` binary when the
-# project's `.rspec-tracer` uses a deprecated 1.x DSL option. The
+# End-to-end stdout purity of the `testsift` binary when the
+# project's `.testsift` uses a deprecated 1.x DSL option. The
 # deprecation shims (`reports_s3_path`, `use_local_aws`) fire a
 # one-time `logger.warn` while the config loads -- BEFORE sub-command
 # dispatch, and in a fresh CLI process "one-time" means every
@@ -13,7 +13,7 @@
 #
 # Subprocess-driven because the failure mode lives at library load --
 # it cannot be reproduced in-process once the spec suite has loaded
-# rspec_tracer (a second `require 'rspec_tracer'` is a no-op, so the
+# testsift (a second `require 'testsift'` is a no-op, so the
 # config-load window never reopens).
 
 require 'json'
@@ -21,15 +21,15 @@ require 'open3'
 require 'set'
 require 'tmpdir'
 
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/storage/schema'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
+require 'testsift/storage/schema'
 
 # rubocop:disable RSpec/DescribeClass
-RSpec.describe 'rspec-tracer binary with a deprecated-DSL project config' do
+RSpec.describe 'testsift binary with a deprecated-DSL project config' do
   def seed_cache(dir)
-    snapshot = RSpecTracer::Storage::Snapshot.empty(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: 'run_purity'
+    snapshot = TestSift::Storage::Snapshot.empty(
+      schema_version: TestSift::Storage::Schema::CURRENT, run_id: 'run_purity'
     )
     snapshot.all_examples = {
       'spec/calc_spec.rb[1:1]' => {
@@ -40,25 +40,25 @@ RSpec.describe 'rspec-tracer binary with a deprecated-DSL project config' do
       }
     }
     snapshot.reverse_dependency = { '/lib/calc.rb' => Set.new(['spec/calc_spec.rb[1:1]']) }
-    RSpecTracer::Storage::JsonBackend.new(cache_path: File.join(dir, 'rspec_tracer_cache')).save_graph(
-      snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+    TestSift::Storage::JsonBackend.new(cache_path: File.join(dir, 'testsift_cache')).save_graph(
+      snapshot, schema_version: TestSift::Storage::Schema::CURRENT
     )
   end
 
   def run_cli(config_body, *argv)
     Dir.mktmpdir do |dir|
-      File.write(File.join(dir, '.rspec-tracer'), config_body)
+      File.write(File.join(dir, '.testsift'), config_body)
       seed_cache(dir)
       Open3.capture3(
         {
           'BUNDLE_GEMFILE' => File.expand_path('../../Gemfile', __dir__),
           # Deleted (nil) so the subprocess cache_path stays exactly
-          # <dir>/rspec_tracer_cache -- either var appends a scope
+          # <dir>/testsift_cache -- either var appends a scope
           # segment and would miss the seeded cache.
           'TEST_SUITE_ID' => nil,
           'TEST_ENV_NUMBER' => nil
         },
-        'bundle', 'exec', 'ruby', File.expand_path('../../bin/rspec-tracer', __dir__), *argv,
+        'bundle', 'exec', 'ruby', File.expand_path('../../bin/testsift', __dir__), *argv,
         chdir: dir
       )
     end
@@ -66,7 +66,7 @@ RSpec.describe 'rspec-tracer binary with a deprecated-DSL project config' do
 
   it 'keeps `blast-radius --json` stdout strictly parseable with the deprecation warning on stderr' do
     config = <<~CONFIG
-      RSpecTracer.configure do
+      TestSift.configure do
         reports_s3_path 's3://bucket/prefix'
       end
     CONFIG
@@ -77,7 +77,7 @@ RSpec.describe 'rspec-tracer binary with a deprecated-DSL project config' do
     # precedes or follows the single JSON document.
     payload = JSON.parse(out)
     expect(payload['files'].first).to include('status' => 'tracked', 'example_count' => 1)
-    expect(err).to include('rspec-tracer deprecation')
+    expect(err).to include('testsift deprecation')
     expect(err).to include('reports_s3_path')
   end
 
@@ -86,7 +86,7 @@ RSpec.describe 'rspec-tracer binary with a deprecated-DSL project config' do
     # next deprecation warning constructs a fresh logger mid-load,
     # which must still pick up the CLI's stderr default.
     config = <<~CONFIG
-      RSpecTracer.configure do
+      TestSift.configure do
         reports_s3_path 's3://bucket/prefix'
         log_level :debug
         use_local_aws true

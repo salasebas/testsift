@@ -1,5 +1,5 @@
 ---
-# Trivy filesystem scan config for rspec-tracer.
+# Trivy filesystem scan config for testsift.
 # Run via `task security:trivy`.
 
 scan:
@@ -23,9 +23,9 @@ skip-dirs:
   - coverage
   - node_modules
   - pkg
-  - rspec_tracer_cache
-  - rspec_tracer_coverage
-  - rspec_tracer_report
+  - testsift_cache
+  - testsift_coverage
+  - testsift_report
   - spec/fixtures/rails_app/log
   - spec/fixtures/rails_app/storage
   - spec/fixtures/rails_app/tmp

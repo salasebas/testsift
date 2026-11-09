@@ -1,0 +1,436 @@
+# frozen_string_literal: true
+
+require 'English'
+require 'time'
+require 'uri'
+
+require_relative 'git_ancestry'
+require_relative 'local_fs_backend'
+require_relative 'redis_backend'
+require_relative 's3_backend'
+
+module TestSift
+  # Internal RemoteCache — see {TestSift} for the user-facing surface.
+  # @api private
+  module RemoteCache
+    # Orchestrator for the user-facing `testsift:remote_cache:*`
+    # Rake tasks. Composes `GitAncestry` + a `Backend` implementation,
+    # drives the download (candidate-ref walk + first-valid wins) and
+    # upload (branch_ref + branch_refs update + retention prune) flows.
+    #
+    # Called from `lib/testsift/remote_cache/Rakefile` which is
+    # loaded by the user's own Rakefile per USER_FACING_SURFACE.md section 5.
+    # The user-facing task surface is preserved from 1.x bit-for-bit:
+    # same task names, same env vars, same exit behavior.
+    #
+    # Graceful-degradation contract:
+    #   - `download!` catches every StandardError, logs, returns false.
+    #     A failed download is cold run; tests still proceed.
+    #   - `upload!` catches every StandardError, logs, returns false.
+    #     A failed upload is logged but doesn't propagate non-zero -
+    #     the tests already passed; cache miss is recoverable next run.
+    #
+    class UserTasks
+      # Internal constant.
+      # @api private
+      BUILT_IN_BACKENDS = {
+        s3: S3Backend,
+        local_fs: LocalFsBackend,
+        redis: RedisBackend
+      }.freeze
+
+      # Module-level convenience for {#download!}. Equivalent to
+      # `UserTasks.new(configuration: ..., env: ...).download!`. Invoked
+      # by the bundled `testsift/remote_cache/Rakefile` shim that
+      # users `import` from their own `Rakefile`.
+      #
+      # @param configuration [Object] anything responding to the
+      #   `cache_path` / `logger` / `remote_cache_*` config surface
+      #   (defaults to the {TestSift} top-level module).
+      # @param env [Hash] env hash to read `GIT_BRANCH` /
+      #   `GIT_DEFAULT_BRANCH` from (defaults to `ENV`).
+      # @return [Boolean] true on a successful cache hit, false on cold
+      #   run or graceful failure.
+      def self.download!(configuration: TestSift, env: ENV)
+        new(configuration: configuration, env: env).download!
+      end
+
+      # Module-level convenience for {#upload!}. Equivalent to
+      # `UserTasks.new(configuration: ..., env: ...).upload!`. Invoked
+      # by the bundled `testsift/remote_cache/Rakefile` shim.
+      #
+      # @param configuration [Object] anything responding to the
+      #   `cache_path` / `logger` / `remote_cache_*` config surface
+      #   (defaults to the {TestSift} top-level module).
+      # @param env [Hash] env hash to read `GIT_BRANCH` /
+      #   `GIT_DEFAULT_BRANCH` from (defaults to `ENV`).
+      # @return [Boolean] true on a successful upload, false on
+      #   graceful failure (logged but not raised).
+      def self.upload!(configuration: TestSift, env: ENV)
+        new(configuration: configuration, env: env).upload!
+      end
+
+      # Internal helper for the tracer pipeline.
+      # @api private
+      def self.prune_all!(configuration: TestSift, env: ENV)
+        new(configuration: configuration, env: env).prune_all!
+      end
+
+      # Internal helper for the tracer pipeline.
+      # @api private
+      def self.git_repo?
+        system('git', 'rev-parse', 'HEAD', out: File::NULL, err: File::NULL)
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def initialize(configuration:, env:)
+        @config = configuration
+        @env = env
+        @logger = configuration.logger
+      end
+
+      # Pull the closest matching cache for the current branch + commit
+      # ancestry from the configured backend. Walks the candidate refs
+      # produced by {GitAncestry}, downloads + extracts the first ref
+      # whose archive validates, and returns true. Cold-run on miss.
+      #
+      # Errors are caught and logged; a failed download never propagates
+      # a non-zero exit into the test suite (graceful degradation).
+      #
+      # @example In a Rakefile
+      #   require 'testsift/remote_cache/Rakefile'
+      #   # provides `rake testsift:remote_cache:download` which
+      #   # invokes TestSift::RemoteCache::UserTasks.download!
+      #
+      # @return [Boolean] true on a successful download, false on cold
+      #   run / graceful failure.
+      def download!
+        ancestry = build_ancestry
+        ancestry.merge_base_branch!
+        backend = build_backend(ancestry)
+
+        refs = candidate_refs(ancestry, backend)
+        if refs.empty?
+          @logger.warn 'testsift remote_cache: no cache candidates found; cold run'
+          return false
+        end
+
+        tree_sha = head_tree_sha
+        refs.each do |ref, origin|
+          @logger.debug "testsift remote_cache: trying ref #{ref}"
+          next unless backend.download(ref, tree_sha: tree_sha)
+
+          log_download_success(ref, origin, ancestry)
+          return true
+        end
+
+        @logger.warn 'testsift remote_cache: no suitable cache found; cold run'
+        false
+      rescue StandardError => e
+        @logger.warn "testsift remote_cache: download failed (#{e.class}: #{e.message}); cold run"
+        false
+      end
+
+      # Push the local cache directory for the current branch + commit
+      # to the configured backend, refresh the per-branch ref index, and
+      # apply retention pruning.
+      #
+      # Errors are caught and logged; a failed upload never propagates
+      # non-zero into the test suite (the tests already passed).
+      #
+      # @example In a Rakefile
+      #   require 'testsift/remote_cache/Rakefile'
+      #   # provides `rake testsift:remote_cache:upload` which
+      #   # invokes TestSift::RemoteCache::UserTasks.upload!
+      #
+      # @return [Boolean] true on success, false on graceful failure.
+      def upload!
+        ancestry = build_ancestry
+        ancestry.merge_base_branch!
+        backend = build_backend(ancestry)
+
+        backend.upload(ancestry.branch_ref, tree_sha: head_tree_sha)
+        @logger.info "testsift remote_cache: uploaded cache to #{ancestry.branch_ref}"
+        maybe_update_branch_refs(backend, ancestry)
+        maybe_prune(backend, ancestry)
+        maybe_warn_unbounded(backend)
+        true
+      rescue StandardError => e
+        @logger.warn "testsift remote_cache: upload failed (#{e.class}: #{e.message})"
+        false
+      end
+
+      # Cross-tier PR-branch prune. Walks every branch under the
+      # configured prefix and deletes whole branches idle longer than
+      # `cache_retention_pr_branch_ttl_seconds`. Designed as a periodic
+      # maintenance task (nightly cron) - dead PR branches whose tip is
+      # never re-uploaded otherwise accumulate forever because
+      # `maybe_prune` only scopes to the current upload's tier. Returns
+      # the total refs removed across all branches, or 0 on graceful
+      # failure.
+      def prune_all!
+        ttl = safe_config(:cache_retention_pr_branch_ttl_seconds)
+        if ttl.nil?
+          @logger.warn 'testsift remote_cache: prune_all requires cache_retention_pr_branch_ttl; skipping'
+          return 0
+        end
+
+        backend = build_backend(build_admin_ancestry)
+        removed = backend.prune_all!(pr_branch_ttl_seconds: ttl)
+        @logger.info "testsift remote_cache: prune_all removed #{removed} refs"
+        removed
+      rescue StandardError => e
+        @logger.warn "testsift remote_cache: prune_all failed (#{e.class}: #{e.message})"
+        0
+      end
+
+      private
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def build_ancestry
+        GitAncestry.new(
+          default_branch: require_env('GIT_DEFAULT_BRANCH'),
+          branch: require_env('GIT_BRANCH')
+        )
+      end
+
+      # Ancestry for cross-tier admin tasks (prune_all). Only
+      # GIT_DEFAULT_BRANCH is required; GIT_BRANCH defaults to it so
+      # the backend constructs in main-tier mode (prune_all walks every
+      # pr/ branch regardless of the backend's own tier, so the branch
+      # value does not affect behavior). Running prune_all from a
+      # cron/workflow that is not tied to a specific PR should work
+      # with just GIT_DEFAULT_BRANCH set.
+      def build_admin_ancestry
+        default = require_env('GIT_DEFAULT_BRANCH')
+        branch = @env['GIT_BRANCH']
+        branch = default if branch.nil? || branch.to_s.empty?
+        GitAncestry.new(default_branch: default, branch: branch)
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def require_env(name)
+        value = @env[name]
+        raise "#{name} environment variable is not set" if value.nil? || value.to_s.empty?
+
+        value
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def build_backend(ancestry)
+        entry = remote_cache_backend_entry
+        raise 'no remote_cache_backend configured' if entry.nil?
+
+        name_or_class, user_opts = entry
+        klass = resolve_backend_class(name_or_class)
+        klass.new(**merge_runtime_opts(user_opts, ancestry))
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def remote_cache_backend_entry
+        explicit = safe_config(:remote_cache_backend_entry)
+        return explicit if explicit
+
+        derive_from_legacy_dsl
+      end
+
+      # Probe the legacy `reports_s3_path` DSL when no explicit
+      # `remote_cache_backend` is configured. Gated on
+      # {Configuration#reports_s3_path_set?} so the deprecation
+      # warning fires only when the user actually set the DSL or its
+      # env var — never on the probe path when neither is configured.
+      # @api private
+      def derive_from_legacy_dsl
+        return nil unless safe_config(:reports_s3_path_set?)
+
+        s3_uri = safe_config(:reports_s3_path)
+        return nil if s3_uri.nil? || s3_uri.to_s.empty?
+
+        uri = URI.parse(s3_uri)
+        return nil unless uri.scheme == 's3' && uri.host && !uri.host.empty?
+
+        prefix = uri.path.to_s.sub(%r{^/}, '')
+        [
+          :s3,
+          {
+            bucket: uri.host,
+            prefix: prefix,
+            local: safe_config(:use_local_aws) == true
+          }
+        ]
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def resolve_backend_class(name_or_class)
+        case name_or_class
+        when Symbol
+          BUILT_IN_BACKENDS.fetch(name_or_class) do
+            raise "unknown remote_cache_backend: #{name_or_class.inspect}"
+          end
+        when Class
+          name_or_class
+        else
+          raise "invalid remote_cache_backend: #{name_or_class.class}"
+        end
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def merge_runtime_opts(user_opts, ancestry)
+        runtime = {
+          branch: ancestry.branch_name,
+          default_branch: ancestry.default_branch_name,
+          cache_path: @config.cache_path,
+          test_suite_id: @env['TEST_SUITE_ID'],
+          logger: @logger
+        }
+        # User opts win for bucket/prefix/local; runtime opts are injected
+        # fresh (caller never sets these via DSL).
+        runtime.merge(user_opts)
+      end
+
+      # Returns a timestamp-sorted (newest first) list of
+      # `[ref, origin]` tuples where origin is `:branch` (PR-tier
+      # branch_refs upload) or `:ancestry` (commit-ancestry fallback,
+      # which on PR builds means a cross-branch hit on the
+      # default-branch tier). Same merge order as before — on PR
+      # builds branch_refs come first, ancestry refs second; on
+      # collision ancestry wins, so the origin reflects the winning
+      # source. The info-log shape in {#download!} reads the origin
+      # tag to qualify cross-branch fallback hits in the INFO line.
+      # @api private
+      def candidate_refs(ancestry, backend)
+        refs = {}
+        origins = {}
+        if ancestry.pr_build?
+          backend.branch_refs(ancestry.branch_name).each do |sha, ts|
+            refs[sha] = ts
+            origins[sha] = :branch
+          end
+        end
+        ancestry.ancestry_refs.each do |sha, ts|
+          refs[sha] = ts
+          origins[sha] = :ancestry
+        end
+        refs.sort_by { |_, ts| -ts }.map { |sha, _| [sha, origins[sha]] }
+      end
+
+      # Emit an INFO log line on a successful download. Distinguishes
+      # PR-tier branch_refs hits ("restored cache from <ref>") from
+      # ancestry-fallback hits on PR builds, which get the explicit
+      # "(cross-branch fallback)" qualifier so the user can tell at
+      # a glance whether the PR-tier cache existed or whether the
+      # restore traversed the default branch.
+      # @api private
+      def log_download_success(ref, origin, ancestry)
+        qualifier = origin == :ancestry && ancestry.pr_build? ? ' (cross-branch fallback)' : ''
+        @logger.info "testsift remote_cache: restored cache from #{ref}#{qualifier}"
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def maybe_update_branch_refs(backend, ancestry)
+        return unless ancestry.pr_build?
+
+        existing = backend.branch_refs(ancestry.branch_name)
+        updated = existing.merge(ancestry.branch_ref => Time.now.to_i)
+        filtered = filter_branch_refs(updated, ancestry)
+        backend.write_branch_refs(ancestry.branch_name, filtered)
+      end
+
+      # Bound branch_refs to 25 most-recent, filtered to refs newer
+      # than the oldest ancestry commit when ancestry is non-empty.
+      # Matches 1.x `Repo#filter_branch_refs`.
+      def filter_branch_refs(refs, ancestry)
+        ancestry_refs = ancestry.ancestry_refs
+        bounded =
+          if ancestry_refs.empty?
+            refs.sort_by { |_, ts| -ts }.first(GitAncestry::ANCESTRY_DEPTH)
+          else
+            oldest_ts = ancestry_refs.values.min
+            refs
+              .select { |_, ts| ts >= oldest_ts }
+              .sort_by { |_, ts| -ts }
+              .first(GitAncestry::ANCESTRY_DEPTH)
+          end
+        bounded.to_h
+      end
+
+      # Retention knob routing per approved scope:
+      #   - `cache_retention_count` / `cache_retention_duration`
+      #     apply to the main tier only. Main accumulates linearly;
+      #     these cap it.
+      #   - `cache_retention_pr_branch_ttl` applies to PR tier only.
+      #     PR branches die after merge; TTL prunes the whole branch
+      #     prefix when it's been idle.
+      def maybe_prune(backend, ancestry)
+        return unless backend.respond_to?(:prune!)
+
+        opts = retention_opts_for(ancestry)
+        return if opts.values.all?(&:nil?)
+
+        removed = backend.prune!(**opts)
+        @logger.debug "testsift remote_cache: pruned #{removed} refs" if removed.positive?
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def retention_opts_for(ancestry)
+        if ancestry.pr_build?
+          { count: nil, duration_seconds: nil,
+            pr_branch_ttl_seconds: safe_config(:cache_retention_pr_branch_ttl_seconds) }
+        else
+          { count: safe_config(:cache_retention_count),
+            duration_seconds: safe_config(:cache_retention_duration_seconds),
+            pr_branch_ttl_seconds: nil }
+        end
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def maybe_warn_unbounded(backend)
+        return unless backend.respond_to?(:unbounded_warning)
+        # Only meaningful on the main tier - PR tier gets branch-TTL
+        # retention and is bounded by branch lifecycle.
+        return if safe_config(:cache_retention_count)
+        return if safe_config(:cache_retention_duration_seconds)
+
+        warning = backend.unbounded_warning
+        @logger.warn(warning) if warning
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def safe_config(method)
+        @config.public_send(method)
+      rescue NoMethodError
+        nil
+      end
+
+      # Resolve HEAD's tree SHA via `git rev-parse HEAD^{tree}` for
+      # forwarding to the backend's tree-SHA secondary index. Same
+      # shell-invocation shape as `GitAncestry`'s `git rev-parse` calls,
+      # but graceful nil instead of raising: tree_sha is best-effort.
+      # When git is unavailable, the rev-parse fails, or HEAD doesn't
+      # exist (shallow clone, fresh repo), nil signals "skip the tree-
+      # SHA index" to the backend - S3Backend treats nil as no-op and
+      # falls through to the standard commit-SHA lookup; LocalFs / Redis
+      # accept the kwarg as a no-op.
+      def head_tree_sha
+        output = `git rev-parse HEAD^{tree} 2>/dev/null`.chomp
+        return nil unless $CHILD_STATUS&.success?
+        return nil if output.empty?
+
+        output
+      rescue StandardError
+        nil
+      end
+    end
+  end
+end

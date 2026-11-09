@@ -8,7 +8,7 @@ tasks:
     desc: >-
       Generate the YARD HTML documentation under doc/yard/. Reads
       .yardopts at repo root for source globs + extras (README,
-      ARCHITECTURE, UPGRADING, CHANGELOG, ROADMAP).
+      ARCHITECTURE, UPGRADING, CHANGELOG, COOKBOOK).
     cmds:
       - bundle exec yard doc
 
@@ -43,11 +43,11 @@ tasks:
       Run WCAG 2.1 AA accessibility audit on the HTML reporter via
       axe-core. Requires Node + Chrome (auto-installs ChromeDriver
       via browser-driver-manager on first run).
-      Generates rspec_tracer_report/ first if missing by running
+      Generates testsift_report/ first if missing by running
       task test:features:rails.
     cmds:
-      - test -f rspec_tracer_report/index.html || task test:features:rails
-      - npx --yes @axe-core/cli "file://$(pwd)/rspec_tracer_report/index.html" --tags wcag2aa,wcag21aa --timeout 240
+      - test -f testsift_report/index.html || task test:features:rails
+      - npx --yes @axe-core/cli "file://$(pwd)/testsift_report/index.html" --tags wcag2aa,wcag21aa --timeout 240
 
   docs:site:build:
     desc: >-
@@ -61,8 +61,8 @@ tasks:
       - rm -rf doc/site
       - mkdir -p doc/site/yard doc/site/demo
       - bundle exec yard doc --output-dir doc/site/yard
-      - test -f rspec_tracer_report/index.html || task test:features:rails
-      - cp -r rspec_tracer_report/* doc/site/demo/
+      - test -f testsift_report/index.html || task test:features:rails
+      - cp -r testsift_report/* doc/site/demo/
 
   docs:site:preview:
     desc: >-

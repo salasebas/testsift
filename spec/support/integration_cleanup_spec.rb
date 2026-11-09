@@ -7,13 +7,13 @@ require 'tmpdir'
 require_relative 'integration_cleanup'
 
 RSpec.describe IntegrationCleanup do
-  let(:tmp) { Dir.mktmpdir('rspec_tracer_integration_cleanup_') }
+  let(:tmp) { Dir.mktmpdir('testsift_integration_cleanup_') }
 
   after { FileUtils.rm_rf(tmp) }
 
   describe '.scrub_paths!' do
     it 'removes a single existing directory tree' do
-      target = File.join(tmp, 'rspec_tracer_cache')
+      target = File.join(tmp, 'testsift_cache')
       FileUtils.mkdir_p(File.join(target, 'run-id'))
       File.write(File.join(target, 'last_run.json'), '{}')
 
@@ -143,9 +143,9 @@ RSpec.describe IntegrationCleanup do
 
     it 'covers cache + coverage + report + simplecov + tmp' do
       expect(described_class::DEFAULT_SUBDIRS).to contain_exactly(
-        'rspec_tracer_cache',
-        'rspec_tracer_coverage',
-        'rspec_tracer_report',
+        'testsift_cache',
+        'testsift_coverage',
+        'testsift_report',
         'coverage',
         'tmp'
       )

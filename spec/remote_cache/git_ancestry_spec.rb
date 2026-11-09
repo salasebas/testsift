@@ -5,7 +5,7 @@ require 'tmpdir'
 require 'fileutils'
 require 'open3'
 
-require 'rspec_tracer/remote_cache/git_ancestry'
+require 'testsift/remote_cache/git_ancestry'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
 
@@ -97,7 +97,7 @@ module FakeGitRepo
   end
 end
 
-RSpec.describe RSpecTracer::RemoteCache::GitAncestry do
+RSpec.describe TestSift::RemoteCache::GitAncestry do
   include FakeGitRepo
 
   describe '#initialize' do

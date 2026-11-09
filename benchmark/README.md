@@ -1,6 +1,6 @@
-# rspec-tracer benchmark harness
+# TestSift benchmark harness
 
-Measures rspec-tracer's overhead across four scenarios and enforces a
+Measures TestSift's overhead across four scenarios and enforces a
 ratchet to catch performance regressions before they land.
 
 ## Imported-baseline measurements
@@ -101,7 +101,7 @@ rather than a wall-clock comparison. Wall-clock stays as
 informational summary output for trend-watching across runs.
 
 **For gem users**: if you adopt similar wall-clock gates against
-your own benchmark of rspec-tracer + parallel_tests, expect
+your own benchmark of TestSift + parallel_tests, expect
 2-3× run-to-run variance on shared CI runners. That's not a
 regression — it's an inherent property of `N workers on M vCPUs`
 where `N > M` plus shared-runner co-tenancy. Use a wider tolerance

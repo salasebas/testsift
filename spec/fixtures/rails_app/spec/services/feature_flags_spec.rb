@@ -73,7 +73,7 @@ RSpec.describe FeatureFlags do
   # `RAILS_APP_FORCE_REVIEW` env var (via FeatureFlags#require_review?)
   # — invisible to Coverage / IO observation because the env read
   # happens inside pure Ruby. Declaring `tracks: { env: ... }` teaches
-  # rspec-tracer to re-run these examples when the env changes.
+  # testsift to re-run these examples when the env changes.
   describe '.require_review? (ENV-branch blind-spot exercise)', tracks: { env: 'RAILS_APP_FORCE_REVIEW' } do
     around do |example|
       before = ENV['RAILS_APP_FORCE_REVIEW']

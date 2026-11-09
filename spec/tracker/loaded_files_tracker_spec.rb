@@ -4,7 +4,7 @@ require 'digest'
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/tracker/loaded_files_tracker'
+require 'testsift/tracker/loaded_files_tracker'
 
 # Injectable peek lambda keeps these specs deterministic and
 # isolated from the process's real ::Coverage state (which may have
@@ -16,7 +16,7 @@ require 'rspec_tracer/tracker/loaded_files_tracker'
 # writes) before the expectation - legitimate in a tracker that
 # reacts to a stream of observations. File-level rubocop relax.
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
+RSpec.describe TestSift::Tracker::LoadedFilesTracker do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
 
@@ -239,7 +239,7 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     end
 
     def fake_input(path, digest)
-      RSpecTracer::Tracker::Input.for_file(path: path, kind: :ruby, digest: digest, root: '/')
+      TestSift::Tracker::Input.for_file(path: path, kind: :ruby, digest: digest, root: '/')
     end
   end
 

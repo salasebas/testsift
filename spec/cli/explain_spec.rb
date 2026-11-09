@@ -5,27 +5,27 @@ require 'stringio'
 require 'tmpdir'
 require 'set'
 
-require 'rspec_tracer/cli/explain'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/storage/schema'
+require 'testsift/cli/explain'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
+require 'testsift/storage/schema'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations, RSpec/InstanceVariable
-RSpec.describe RSpecTracer::CLI::Explain do
+RSpec.describe TestSift::CLI::Explain do
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
   describe '.run' do
     it 'prints help when no args given' do
       expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
-      expect(stdout.string).to include('Usage: rspec-tracer explain')
+      expect(stdout.string).to include('Usage: testsift explain')
     end
 
     it 'prints help on -h / --help' do
       %w[-h --help].each do |flag|
         out = StringIO.new
         expect(described_class.run([flag], stdout: out, stderr: stderr)).to eq(0)
-        expect(out.string).to include('Usage: rspec-tracer explain')
+        expect(out.string).to include('Usage: testsift explain')
       end
     end
 
@@ -38,7 +38,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
 
     it 'returns 1 with a clear error when no cache exists' do
       Dir.mktmpdir do |dir|
-        allow(RSpecTracer).to receive_messages(cache_path: dir, storage_backend: :json)
+        allow(TestSift).to receive_messages(cache_path: dir, storage_backend: :json)
         expect(described_class.run(%w[anything], stdout: stdout, stderr: stderr)).to eq(1)
         expect(stderr.string).to include('no cache yet')
       end
@@ -48,7 +48,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, 'last_run.json'),
                    JSON.dump('schema_version' => 9999, 'run_id' => 'stale_run'))
-        allow(RSpecTracer).to receive_messages(cache_path: dir, storage_backend: :json)
+        allow(TestSift).to receive_messages(cache_path: dir, storage_backend: :json)
         expect(described_class.run(%w[any], stdout: stdout, stderr: stderr)).to eq(1)
         expect(stderr.string).to include('incompatible')
       end
@@ -69,15 +69,15 @@ RSpec.describe RSpecTracer::CLI::Explain do
 
       before do
         @tmp_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: run_id
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: run_id
         )
         snapshot.all_examples = { 'a/spec.rb[1:1]' => example_meta }
         snapshot.dependency = { 'a/spec.rb[1:1]' => Set.new(['./spec/foo_spec.rb', './lib/foo.rb']) }
-        RSpecTracer::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(cache_path: @tmp_dir, storage_backend: :json)
+        allow(TestSift).to receive_messages(cache_path: @tmp_dir, storage_backend: :json)
       end
 
       after { FileUtils.rm_rf(@tmp_dir) if @tmp_dir }
@@ -104,7 +104,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
 
     it 'prints help when --not-run is given without a positional' do
       expect(described_class.run(%w[--not-run], stdout: stdout, stderr: stderr)).to eq(0)
-      expect(stdout.string).to include('Usage: rspec-tracer explain')
+      expect(stdout.string).to include('Usage: testsift explain')
     end
 
     it 'documents --not-run in the help text' do
@@ -142,8 +142,8 @@ RSpec.describe RSpecTracer::CLI::Explain do
 
       before do
         @tmp_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: 'run_not_run'
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: 'run_not_run'
         )
         snapshot.all_examples = {
           skipped_id => meta_for(skipped_id, 'Foo skips cleanly'),
@@ -157,10 +157,10 @@ RSpec.describe RSpecTracer::CLI::Explain do
         snapshot.dependency = {
           skipped_id => Set.new(['./spec/foo_spec.rb', './lib/foo.rb'])
         }
-        RSpecTracer::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(cache_path: @tmp_dir, storage_backend: :json)
+        allow(TestSift).to receive_messages(cache_path: @tmp_dir, storage_backend: :json)
       end
 
       after { FileUtils.rm_rf(@tmp_dir) if @tmp_dir }
@@ -170,7 +170,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
         out = stdout.string
         expect(out).to include('last run:     skipped (cache hit)')
         expect(out).to include('skip reason:  no run trigger fired last run:')
-        expect(out).to include('whole-suite invalidators (Gemfile.lock, .ruby-version, .rspec-tracer, gem version)')
+        expect(out).to include('whole-suite invalidators (Gemfile.lock, .ruby-version, .testsift, gem version)')
         expect(out).to include('boot set: no boot file changed')
         expect(out).to include('prior status: not failed / flaky / pending / interrupted')
         expect(out).to include('dependency files: 2 tracked, none changed')
@@ -207,7 +207,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
         expect(described_class.run(['--not-run', ran_id], stdout: stdout, stderr: stderr)).to eq(0)
         out = stdout.string
         expect(out).to include('last run:     ran -- Files changed')
-        expect(out).to include("it was not skipped; run 'rspec-tracer explain #{ran_id}' for the run-side view")
+        expect(out).to include("it was not skipped; run 'testsift explain #{ran_id}' for the run-side view")
       end
 
       it 'predicts the unconditional re-run for a previously failed example' do
@@ -248,8 +248,8 @@ RSpec.describe RSpecTracer::CLI::Explain do
       before do
         skip 'sqlite backend unavailable on this Ruby' unless sqlite_available?
         @tmp_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: run_id
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: run_id
         )
         snapshot.all_examples = {
           ran_id => {
@@ -261,10 +261,10 @@ RSpec.describe RSpecTracer::CLI::Explain do
           }
         }
         snapshot.filtered_examples = { ran_id => 'Files changed' }
-        RSpecTracer::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(cache_path: @tmp_dir, storage_backend: :sqlite)
+        allow(TestSift).to receive_messages(cache_path: @tmp_dir, storage_backend: :sqlite)
       end
 
       after { FileUtils.rm_rf(@tmp_dir) if @tmp_dir }
@@ -279,7 +279,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
         return false unless RUBY_ENGINE == 'ruby'
 
         require 'sqlite3'
-        require 'rspec_tracer/storage/sqlite_backend'
+        require 'testsift/storage/sqlite_backend'
         true
       rescue LoadError
         false
@@ -292,8 +292,8 @@ RSpec.describe RSpecTracer::CLI::Explain do
       before do
         skip 'sqlite backend unavailable on this Ruby' unless sqlite_available?
         @tmp_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: run_id
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: run_id
         )
         snapshot.all_examples = {
           'a/spec.rb[1:1]' => {
@@ -306,10 +306,10 @@ RSpec.describe RSpecTracer::CLI::Explain do
           }
         }
         snapshot.dependency = { 'a/spec.rb[1:1]' => Set.new(['./spec/foo_spec.rb', './lib/foo.rb']) }
-        RSpecTracer::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(cache_path: @tmp_dir, storage_backend: :sqlite)
+        allow(TestSift).to receive_messages(cache_path: @tmp_dir, storage_backend: :sqlite)
       end
 
       after { FileUtils.rm_rf(@tmp_dir) if @tmp_dir }
@@ -328,7 +328,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
         return false unless RUBY_ENGINE == 'ruby'
 
         require 'sqlite3'
-        require 'rspec_tracer/storage/sqlite_backend'
+        require 'testsift/storage/sqlite_backend'
         true
       rescue LoadError
         false
@@ -336,7 +336,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
     end
 
     it 'rescues StandardError and returns 1' do
-      allow(RSpecTracer).to receive(:cache_path).and_raise(StandardError, 'cache resolve boom')
+      allow(TestSift).to receive(:cache_path).and_raise(StandardError, 'cache resolve boom')
 
       expect(described_class.run(%w[any], stdout: stdout, stderr: stderr)).to eq(1)
       expect(stderr.string).to include('explain:')
@@ -367,7 +367,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
 
   describe '--not-run helpers' do
     let(:snapshot) do
-      RSpecTracer::Storage::Snapshot.empty(schema_version: 1, run_id: 'helper_run')
+      TestSift::Storage::Snapshot.empty(schema_version: 1, run_id: 'helper_run')
     end
 
     describe '.last_run_line' do
@@ -424,7 +424,7 @@ RSpec.describe RSpecTracer::CLI::Explain do
     describe '.always_rerun_reason' do
       it 'returns each status label for membership in its id set' do
         %w[interrupted flaky failed pending].each do |status|
-          fresh = RSpecTracer::Storage::Snapshot.empty(schema_version: 1, run_id: 'r')
+          fresh = TestSift::Storage::Snapshot.empty(schema_version: 1, run_id: 'r')
           fresh["#{status}_examples"] = Set.new(%w[ex_1])
           expect(described_class.always_rerun_reason('ex_1', fresh)).to eq(status)
         end

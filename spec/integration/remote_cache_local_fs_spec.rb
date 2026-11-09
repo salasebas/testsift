@@ -6,8 +6,8 @@ require 'json'
 require 'securerandom'
 require 'tmpdir'
 
-require 'rspec_tracer/remote_cache/local_fs_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/remote_cache/local_fs_backend'
+require 'testsift/storage/schema'
 
 # Local-FS remote-cache integration spec.
 #
@@ -27,10 +27,10 @@ require 'rspec_tracer/storage/schema'
 # rubocop:disable RSpec/BeforeAfterAll, RSpec/MultipleExpectations
 # rubocop:disable RSpec/ExampleLength
 RSpec.describe 'RemoteCache::LocalFsBackend round-trip integration' do
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
   before(:all) do
-    @local_fs_root = Dir.mktmpdir('rspec-tracer-localfs-it')
+    @local_fs_root = Dir.mktmpdir('testsift-localfs-it')
   end
 
   after(:all) do
@@ -66,7 +66,7 @@ RSpec.describe 'RemoteCache::LocalFsBackend round-trip integration' do
 
   def build_backend(branch:, default_branch: 'main', test_suite_id: nil, root_subdir: nil)
     root = File.join(@local_fs_root, root_subdir || SecureRandom.hex(4))
-    RSpecTracer::RemoteCache::LocalFsBackend.new(
+    TestSift::RemoteCache::LocalFsBackend.new(
       root: root,
       branch: branch,
       default_branch: default_branch,

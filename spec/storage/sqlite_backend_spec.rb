@@ -3,7 +3,7 @@
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/snapshot'
 
 require_relative '../contracts/storage_backend'
 
@@ -15,13 +15,13 @@ return unless RUBY_ENGINE == 'ruby'
 
 begin
   require 'sqlite3'
-  require 'rspec_tracer/storage/sqlite_backend'
+  require 'testsift/storage/sqlite_backend'
 rescue LoadError
   return
 end
 
 # rubocop:disable RSpec/ExampleLength
-RSpec.describe RSpecTracer::Storage::SqliteBackend do
+RSpec.describe TestSift::Storage::SqliteBackend do
   let(:tmp_base) { Dir.mktmpdir }
   let(:cache_path) { File.join(tmp_base, 'cache') }
 
@@ -38,8 +38,8 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
   # two backends' round-trip shape differs on this one field, which is
   # why the contract spec's equality check uses PER-BACKEND sample data.
   def build_sample_snapshot(run_id)
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: { 'ex1' => { id: 'ex1', description: 'desc' } },
       duplicate_examples: { 'ex1' => [{ id: 'ex1', file: 'a.rb' }] },
@@ -63,18 +63,18 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
   # load_graph into the outer rescue, which returns nil per the
   # graceful-degradation contract.
   def corrupt_backend_storage!
-    backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-    db_path = File.join(cache_path, RSpecTracer::Storage::SqliteBackend::DB_FILENAME)
+    backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+    db_path = File.join(cache_path, TestSift::Storage::SqliteBackend::DB_FILENAME)
     File.binwrite(db_path, "\x00\xFF not a sqlite db\xC2\x00")
   end
 
   it_behaves_like 'a Storage::Backend'
 
   describe 'on-disk layout' do
-    before { backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT) }
+    before { backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT) }
 
     it 'creates a single sqlite3 file under cache_path' do
-      expect(File.file?(File.join(cache_path, 'rspec_tracer.sqlite3'))).to be(true)
+      expect(File.file?(File.join(cache_path, 'testsift.sqlite3'))).to be(true)
     end
 
     it 'does not leak WAL or SHM sidecars (journal_mode=MEMORY)' do
@@ -82,7 +82,7 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
     end
 
     it 'creates every schema table' do
-      db = SQLite3::Database.new(File.join(cache_path, 'rspec_tracer.sqlite3'))
+      db = SQLite3::Database.new(File.join(cache_path, 'testsift.sqlite3'))
       names = db.execute("SELECT name FROM sqlite_master WHERE type = 'table'").map(&:first)
 
       expect(names).to include(
@@ -95,7 +95,7 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
     end
 
     it 'creates the dependency(file_name) index' do
-      db = SQLite3::Database.new(File.join(cache_path, 'rspec_tracer.sqlite3'))
+      db = SQLite3::Database.new(File.join(cache_path, 'testsift.sqlite3'))
       indexes = db.execute(
         "SELECT name FROM sqlite_master WHERE type = 'index' AND tbl_name = 'dependency'"
       ).map(&:first)
@@ -108,16 +108,16 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
 
   describe 'lazy loading' do
     it 'returns a LazySnapshot from load_graph' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
-      expect(loaded).to be_a(RSpecTracer::Storage::LazySnapshot)
+      expect(loaded).to be_a(TestSift::Storage::LazySnapshot)
     end
 
     it 'does not query a field until it is accessed' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       allow(other_backend).to receive(:read_field).and_call_original
 
       loaded.schema_version
@@ -127,8 +127,8 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
     end
 
     it 'reads only the touched field' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       allow(other_backend).to receive(:read_field).and_call_original
 
       loaded.dependency
@@ -138,7 +138,7 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
   end
 
   describe '#read_field' do
-    before { backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT) }
+    before { backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT) }
 
     it 'raises ArgumentError on an unknown field' do
       expect { backend.read_field(:not_a_field) }
@@ -182,21 +182,21 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
       second = build_sample_snapshot('run-second')
       second.all_examples = { 'second_only' => { id: 'second_only' } }
 
-      backend.save_graph(first, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      backend.save_graph(second, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(first, schema_version: TestSift::Storage::Schema::CURRENT)
+      backend.save_graph(second, schema_version: TestSift::Storage::Schema::CURRENT)
 
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       expect(loaded.all_examples.keys).to contain_exactly('second_only')
     end
 
     it 'leaves last_run_id at the prior run when the transaction raises mid-save' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       previous = backend.last_run_id
       allow(backend).to receive(:insert_examples).and_raise('mid-save failure')
 
       begin
         backend.save_graph(build_sample_snapshot('run-xyz'),
-                           schema_version: RSpecTracer::Storage::Schema::CURRENT)
+                           schema_version: TestSift::Storage::Schema::CURRENT)
       rescue StandardError
         # intentional
       end

@@ -5,9 +5,9 @@ require 'fileutils'
 require 'tmpdir'
 require 'yaml'
 
-require 'rspec_tracer/rails/preset'
-require 'rspec_tracer/tracker/declared_globs'
-require 'rspec_tracer/tracker/io_hooks'
+require 'testsift/rails/preset'
+require 'testsift/tracker/declared_globs'
+require 'testsift/tracker/io_hooks'
 
 # Regression spec for the YAML-fixture blind-spot.
 # Rails fixtures (spec/fixtures/**/*.{yml,yaml}) are loaded via
@@ -22,7 +22,7 @@ require 'rspec_tracer/tracker/io_hooks'
 # path is mechanically verifiable end-to-end.
 # rubocop:disable RSpec/DescribeClass, RSpec/ExampleLength
 RSpec.describe 'Fixture tracking regression' do
-  let(:tmpdir) { Dir.mktmpdir('rspec-tracer-fixture') }
+  let(:tmpdir) { Dir.mktmpdir('testsift-fixture') }
   let(:fixture_path) { File.join(tmpdir, 'spec/fixtures/users.yml') }
 
   before do
@@ -36,15 +36,15 @@ RSpec.describe 'Fixture tracking regression' do
   end
 
   after do
-    RSpecTracer::Tracker::IOHooks.uninstall if RSpecTracer::Tracker::IOHooks.installed?
-    RSpecTracer::Tracker::IOHooks.clear_bucket
+    TestSift::Tracker::IOHooks.uninstall if TestSift::Tracker::IOHooks.installed?
+    TestSift::Tracker::IOHooks.clear_bucket
     FileUtils.remove_entry(tmpdir) if File.directory?(tmpdir)
   end
 
   describe 'via DeclaredGlobs + Preset :fixtures' do
     it 'enumerates the fixture file with kind :declared' do
-      globs = RSpecTracer::Rails::Preset::DEFAULTS[:fixtures]
-      declared = RSpecTracer::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
+      globs = TestSift::Rails::Preset::DEFAULTS[:fixtures]
+      declared = TestSift::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
 
       inputs = declared.walk
 
@@ -52,12 +52,12 @@ RSpec.describe 'Fixture tracking regression' do
     end
 
     it 'emits a digest that flips when the fixture contents change' do
-      globs = RSpecTracer::Rails::Preset::DEFAULTS[:fixtures]
-      declared_before = RSpecTracer::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
+      globs = TestSift::Rails::Preset::DEFAULTS[:fixtures]
+      declared_before = TestSift::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
       input_before = declared_before.walk.find { |i| i.path == File.expand_path(fixture_path) }
 
       File.write(fixture_path, "alice:\n  email: alice+new@example.com\n")
-      declared_after = RSpecTracer::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
+      declared_after = TestSift::Tracker::DeclaredGlobs.new(root: tmpdir, globs: globs)
       input_after = declared_after.walk.find { |i| i.path == File.expand_path(fixture_path) }
 
       expect(input_after.digest).not_to eq(input_before.digest)
@@ -66,9 +66,9 @@ RSpec.describe 'Fixture tracking regression' do
 
   describe 'via IOHooks YAML.load_file interception' do
     it 'records the fixture path as a :data Input when YAML.load_file runs' do
-      RSpecTracer::Tracker::IOHooks.install(root: tmpdir, filter: ->(_p) { true })
+      TestSift::Tracker::IOHooks.install(root: tmpdir, filter: ->(_p) { true })
       bucket = {}
-      RSpecTracer::Tracker::IOHooks.set_bucket(bucket)
+      TestSift::Tracker::IOHooks.set_bucket(bucket)
 
       YAML.load_file(fixture_path)
 
@@ -77,16 +77,16 @@ RSpec.describe 'Fixture tracking regression' do
     end
 
     it 'produces a digest that flips after a fixture mutation' do
-      RSpecTracer::Tracker::IOHooks.install(root: tmpdir, filter: ->(_p) { true })
+      TestSift::Tracker::IOHooks.install(root: tmpdir, filter: ->(_p) { true })
       bucket_before = {}
-      RSpecTracer::Tracker::IOHooks.set_bucket(bucket_before)
+      TestSift::Tracker::IOHooks.set_bucket(bucket_before)
       YAML.load_file(fixture_path)
       digest_before = bucket_before.values.find { |i| i.path == File.expand_path(fixture_path) }.digest
-      RSpecTracer::Tracker::IOHooks.clear_bucket
+      TestSift::Tracker::IOHooks.clear_bucket
 
       File.write(fixture_path, "alice:\n  email: alice+v2@example.com\n")
       bucket_after = {}
-      RSpecTracer::Tracker::IOHooks.set_bucket(bucket_after)
+      TestSift::Tracker::IOHooks.set_bucket(bucket_after)
       YAML.load_file(fixture_path)
       digest_after = bucket_after.values.find { |i| i.path == File.expand_path(fixture_path) }.digest
 
@@ -94,14 +94,14 @@ RSpec.describe 'Fixture tracking regression' do
     end
 
     it 'skips attribution when a declared glob already covers the path (IOHooks filter)' do
-      declared = RSpecTracer::Tracker::DeclaredGlobs.new(
-        root: tmpdir, globs: RSpecTracer::Rails::Preset::DEFAULTS[:fixtures]
+      declared = TestSift::Tracker::DeclaredGlobs.new(
+        root: tmpdir, globs: TestSift::Rails::Preset::DEFAULTS[:fixtures]
       )
-      RSpecTracer::Tracker::IOHooks.install(
+      TestSift::Tracker::IOHooks.install(
         root: tmpdir, filter: ->(path) { !declared.covers?(path) }
       )
       bucket = {}
-      RSpecTracer::Tracker::IOHooks.set_bucket(bucket)
+      TestSift::Tracker::IOHooks.set_bucket(bucket)
 
       YAML.load_file(fixture_path)
 

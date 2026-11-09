@@ -6,18 +6,19 @@
 #   /                       landing page (loads versions.json,
 #                           renders version nav)
 #   /versions.json          {latest_stable, all_versions[]}
-#   /main/yard/             HEAD-of-main YARD (replaced on each main push)
-#   /main/demo/             HEAD-of-main sample report
+#   /main/yard/             YARD for the head of the `testsift` branch
+#   /main/demo/             sample report for the head of `testsift`
 #   /v<version>/yard/       per-tag immutable (preserved indefinitely)
 #   /v<version>/demo/
 #
-# Triggers:
-#   - push to main (continuous deployment of /main/)
-#   - tag push v* (deployment of /v<version>/ + landing-page refresh)
-#   - workflow_dispatch (manual re-run, e.g. after a registry repair)
+# Trigger: workflow_dispatch only. TestSift has no Pages site yet, and
+# the gh-pages branch and the v2.x tags in this repository are
+# upstream's, so the versions.json tag filter below would list upstream
+# releases. Re-enable push/tag triggers after Pages is configured for
+# TestSift and the filter selects TestSift's own tags.
 #
 # Coverage browsing is owned by Codecov (see README badge → codecov.io
-# /gh/avmnu-sng/rspec-tracer): PR-delta comments, project history, and
+# /gh/salasebas/testsift): PR-delta comments, project history, and
 # public read-without-auth UI live there. This workflow used to also
 # stage SimpleCov HTML at /<version>/coverage/ via a workflow_run
 # chain on ci.yml, but the page was strictly redundant with Codecov
@@ -40,9 +41,6 @@
 name: docs-publish
 
 on:
-  push:
-    branches: [main]
-    tags: ['v*']
   workflow_dispatch:
 
 # Single in-flight run per ref; new pushes cancel older builds.
@@ -84,15 +82,15 @@ jobs:
               echo "target_dir=$VERSION"
             } >> "$GITHUB_OUTPUT"
             echo "Deploying tag: $VERSION -> /$VERSION/"
-          elif [[ "$GITHUB_REF" == refs/heads/main ]]; then
+          elif [[ "$GITHUB_REF" == refs/heads/testsift ]]; then
             {
               echo "kind=main"
               echo "version=main"
               echo "target_dir=main"
             } >> "$GITHUB_OUTPUT"
-            echo "Deploying main: HEAD -> /main/"
+            echo "Deploying testsift: HEAD -> /main/"
           else
-            # workflow_dispatch on a non-main branch — supported as
+            # workflow_dispatch on another branch — supported as
             # a manual rebuild but only republishes the landing page
             # + versions.json + a /preview-<run_id>/ snapshot.
             {
@@ -238,6 +236,6 @@ jobs:
       - name: Print site URL
         run: |
           echo "Docs deployed:"
-          echo "  Version-keyed: https://avmnu-sng.github.io/rspec-tracer/${{ steps.target.outputs.target_dir }}/yard/"
-          echo "  Demo:          https://avmnu-sng.github.io/rspec-tracer/${{ steps.target.outputs.target_dir }}/demo/"
-          echo "  Landing:       https://avmnu-sng.github.io/rspec-tracer/"
+          echo "  Version-keyed: https://salasebas.github.io/testsift/${{ steps.target.outputs.target_dir }}/yard/"
+          echo "  Demo:          https://salasebas.github.io/testsift/${{ steps.target.outputs.target_dir }}/demo/"
+          echo "  Landing:       https://salasebas.github.io/testsift/"

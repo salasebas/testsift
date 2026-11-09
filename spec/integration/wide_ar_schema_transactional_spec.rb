@@ -3,11 +3,11 @@
 # Widening-assertion spec for the Rails-default
 # `use_transactional_fixtures = true` setup.
 #
-# Real-user setup under test: a Rails project running the rspec-tracer
+# Real-user setup under test: a Rails project running the testsift
 # `track_ar_schema_notifications` DSL with the idiomatic transactional
 # fixtures default. Per-example BEGIN/COMMIT fires
 # `sql.active_record` inside the per-example bucket window, so the
-# schema-subscriber (lib/rspec_tracer/rails/notifications.rb
+# schema-subscriber (lib/testsift/rails/notifications.rb
 # #record_ar_schema) attributes db/schema.rb to every example whose
 # fixture setup opens a transaction. The narrow-attribution promise
 # the DSL name suggests silently widens to "all AR-fixture-wrapped
@@ -39,8 +39,8 @@ require_relative '../support/fixture_bundle_helper'
 
 module WideArSchemaTransactionalSpecHelpers
   TRACER_ENV = {
-    'RSPEC_TRACER' => '1'
-    # RSPEC_TRACER_RAILS_TRANSACTIONAL deliberately unset → fixture
+    'TESTSIFT' => '1'
+    # TESTSIFT_RAILS_TRANSACTIONAL deliberately unset → fixture
     # inherits the Rails-idiomatic `use_transactional_fixtures = true`
     # default. This is the canonical real-user setup under test.
   }.freeze
@@ -48,7 +48,7 @@ module WideArSchemaTransactionalSpecHelpers
   WIDE_SPEC = 'spec/wide_schema_spec.rb'
   SCHEMA_FILE_NAME = '/db/schema.rb'
 
-  MUTATION_MARKER = "\n# rspec-tracer wide-schema mutation marker\n"
+  MUTATION_MARKER = "\n# testsift wide-schema mutation marker\n"
 
   AR_DESCRIPTIONS = ['creates user A', 'creates user B', 'creates user C and counts'].freeze
   PURE_DESCRIPTION = 'performs only pure-Ruby computation'

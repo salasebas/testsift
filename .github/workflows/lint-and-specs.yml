@@ -7,7 +7,7 @@ on:
       # Per-subject mutation gating. Caller (ci.yml) computes
       # these from the PR diff; defaults true so non-PR / fallback
       # callers run every gate. Cross-cutting safety net (Gemfile /
-      # .ruby-version / Taskfile.yml / lib/rspec_tracer.rb / multi-
+      # .ruby-version / Taskfile.yml / lib/testsift.rb / multi-
       # subject diff) is enforced on the caller side.
       mut_tracker:
         type: boolean
@@ -71,7 +71,7 @@ jobs:
         run: task security:bundle-audit
       - name: Security — npm audit (HTML reporter)
         run: npm audit --audit-level=high
-        working-directory: lib/rspec_tracer/reporters/html
+        working-directory: lib/testsift/reporters/html
       - name: Security — trivy
         run: task security:trivy
 
@@ -170,7 +170,7 @@ jobs:
       # deterministic inputs; fuzz adds adversarial-input signal but
       # not new coverage. Wiring SimpleCov via RUBYOPT here is
       # possible but creates a parallel coverage path that would have
-      # to compose with rspec-tracer's `SimpleCovInterop` — out of
+      # to compose with testsift's `SimpleCovInterop` — out of
       # scope for this PR.
 
   # Aggregator: collate every per-job coverage resultset into one

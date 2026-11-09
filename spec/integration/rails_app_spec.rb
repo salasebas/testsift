@@ -2,7 +2,7 @@
 
 # Behavior-matrix integration test. Drives the reference Rails
 # fixture at `spec/fixtures/rails_app/` via subprocess RSpec runs
-# with rspec-tracer's v2 engine enabled, then mutates specific files
+# with testsift's v2 engine enabled, then mutates specific files
 # and asserts which examples the filter re-runs on the next warm run.
 #
 # Each scenario re-runs the cold cache so residual mutations from
@@ -31,7 +31,7 @@ require_relative '../support/fixture_bundle_helper'
 # tracer-state scrub / cache reader are shared with
 # narrow_ar_schema_spec.rb via FixtureBundleHelper.
 module RailsAppSpecHelpers
-  TRACER_ENV = { 'RSPEC_TRACER' => '1' }.freeze
+  TRACER_ENV = { 'TESTSIFT' => '1' }.freeze
   # BUNDLE_FROZEN tells bundler to use the lockfile as-is and skip
   # the per-`bundle exec` resolve check; saves ~0.5-1s per
   # subprocess across the 24 cold/warm scenarios. Safe because the
@@ -39,8 +39,8 @@ module RailsAppSpecHelpers
   # before any subprocess fires.
   SUBPROCESS_BUNDLE_ENV = { 'BUNDLE_FROZEN' => '1' }.freeze
 
-  MUTATION_MARKER = "\n# rspec-tracer behavior-matrix mutation marker\n"
-  MUTATION_MARKER_VIEW = "\n<!-- rspec-tracer behavior-matrix mutation marker -->\n"
+  MUTATION_MARKER = "\n# testsift behavior-matrix mutation marker\n"
+  MUTATION_MARKER_VIEW = "\n<!-- testsift behavior-matrix mutation marker -->\n"
 
   module_function
 
@@ -222,9 +222,9 @@ RSpec.describe 'rails_app behavior matrix' do
     end
   end
 
-  describe 'scenario 10: .rspec-tracer config mutation' do
+  describe 'scenario 10: .testsift config mutation' do
     it 're-runs every example (whole-suite invalidator)' do
-      mutate('.rspec-tracer') do
+      mutate('.testsift') do
         result = warm_run
         expect(result[:re_run]).to(eq(all_example_ids),
                                    -> { diff_message(expected: all_example_ids, actual: result[:re_run]) })

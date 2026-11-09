@@ -146,7 +146,7 @@ def parse_options(argv)
     cutoff_sha: DEFAULT_CUTOFF_SHA,
     target_runs: DEFAULT_TARGET_RUNS,
     tmp_dir: 'tmp/mined-ratchet',
-    repo: 'avmnu-sng/rspec-tracer'
+    repo: 'salasebas/testsift'
   }
   OptionParser.new do |o|
     o.on('--cutoff-sha SHA', 'Mine only runs at or after this commit (perf-stable cutoff)') do |v|

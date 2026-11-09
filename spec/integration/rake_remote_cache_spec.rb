@@ -10,18 +10,18 @@ require 'tmpdir'
 require 'uri'
 
 # User-facing Rake-task integration coverage. The 1.x → 2.0 user-facing
-# remote-cache flow is `bundle exec rake rspec_tracer:remote_cache:*`,
+# remote-cache flow is `bundle exec rake testsift:remote_cache:*`,
 # loaded from inside the gem via the canonical Rakefile shim:
 #
-#   spec = Gem::Specification.find_by_name('rspec-tracer')
-#   load "#{spec.gem_dir}/lib/rspec_tracer/remote_cache/Rakefile"
+#   spec = Gem::Specification.find_by_name('testsift')
+#   load "#{spec.gem_dir}/lib/testsift/remote_cache/Rakefile"
 #
 # `spec/integration/remote_cache_spec.rb` exercises the S3Backend
 # round-trip via direct backend calls. This spec drives the same
 # round-trip via the rake-task surface, proving:
 #   - the Rakefile shim loads cleanly under `rake -f`
-#   - task name resolution works (`rspec_tracer:remote_cache:download`,
-#     `rspec_tracer:remote_cache:upload`)
+#   - task name resolution works (`testsift:remote_cache:download`,
+#     `testsift:remote_cache:upload`)
 #   - env-var propagation reaches UserTasks (REMOTE_CACHE_URI, branch,
 #     test_suite_id)
 #   - exit behavior matches the 1.x graceful-degradation contract
@@ -31,7 +31,7 @@ require 'uri'
 # rubocop:disable RSpec/DescribeClass, RSpec/BeforeAfterAll, RSpec/InstanceVariable
 # rubocop:disable RSpec/LeakyConstantDeclaration, RSpec/ExampleLength, RSpec/MultipleExpectations
 # rubocop:disable Lint/ConstantDefinitionInBlock
-RSpec.describe 'rake rspec_tracer:remote_cache:* tasks against LocalStack', :integration, :localstack do
+RSpec.describe 'rake testsift:remote_cache:* tasks against LocalStack', :integration, :localstack do
   LOCALSTACK_ENDPOINT_RAKE = ENV.fetch('LOCALSTACK_ENDPOINT', 'http://localhost:4566')
   # Disable git background maintenance for the fake-repo setup below.
   # Matches the constant in spec/remote_cache/git_ancestry_spec.rb;
@@ -67,7 +67,7 @@ RSpec.describe 'rake rspec_tracer:remote_cache:* tasks against LocalStack', :int
   before(:all) do
     skip 'LocalStack not reachable; skipping integration specs' unless localstack_reachable?
 
-    @bucket = "rspec-tracer-rake-it-#{SecureRandom.hex(4)}"
+    @bucket = "testsift-rake-it-#{SecureRandom.hex(4)}"
     _stdout, stderr, status = Open3.capture3('awslocal', 's3', 'mb', "s3://#{@bucket}")
     raise "failed to create bucket #{@bucket}: #{stderr}" unless status.success?
   end
@@ -85,20 +85,20 @@ RSpec.describe 'rake rspec_tracer:remote_cache:* tasks against LocalStack', :int
   let(:user_rakefile) do
     <<~RAKE
       # frozen_string_literal: true
-      spec = Gem::Specification.find_by_name('rspec-tracer')
-      load "\#{spec.gem_dir}/lib/rspec_tracer/remote_cache/Rakefile"
+      spec = Gem::Specification.find_by_name('testsift')
+      load "\#{spec.gem_dir}/lib/testsift/remote_cache/Rakefile"
     RAKE
   end
 
-  # Minimal .rspec-tracer — explicit `remote_cache_backend :s3` with
+  # Minimal .testsift — explicit `remote_cache_backend :s3` with
   # bucket + prefix so `local: true` reaches the awslocal CLI path
   # (LocalStack endpoint). `remote_cache_uri` parses URIs but does
   # not currently flow `local:` through to the backend.
-  let(:dotrspec_tracer) do
+  let(:dottestsift) do
     <<~CONFIG
-      RSpecTracer.configure do
+      TestSift.configure do
         remote_cache_backend :s3,
-                             bucket: ENV.fetch('RSPEC_TRACER_TEST_BUCKET'),
+                             bucket: ENV.fetch('TESTSIFT_TEST_BUCKET'),
                              prefix: 'rake-spec',
                              local: true
         upload_non_ci_reports true
@@ -109,25 +109,25 @@ RSpec.describe 'rake rspec_tracer:remote_cache:* tasks against LocalStack', :int
   def run_in_tmpdir
     Dir.mktmpdir do |dir|
       File.write(File.join(dir, 'Rakefile'), user_rakefile)
-      File.write(File.join(dir, '.rspec-tracer'), dotrspec_tracer)
+      File.write(File.join(dir, '.testsift'), dottestsift)
       # Initialize git so UserTasks.git_repo? returns true and
       # GitAncestry can compute branch refs (uses HEAD + a single
       # commit so `git rev-list --max-count=25 HEAD` resolves).
       Dir.chdir(dir) do
         system('git', *GIT_NO_MAINTENANCE_RAKE, 'init', '-q', '-b', 'main') || raise('git init failed')
-        system('git', *GIT_NO_MAINTENANCE_RAKE, 'config', 'user.email', 'rspec-tracer-rake-spec@example.com') || raise
-        system('git', *GIT_NO_MAINTENANCE_RAKE, 'config', 'user.name', 'rspec-tracer rake spec') || raise
+        system('git', *GIT_NO_MAINTENANCE_RAKE, 'config', 'user.email', 'testsift-rake-spec@example.com') || raise
+        system('git', *GIT_NO_MAINTENANCE_RAKE, 'config', 'user.name', 'testsift rake spec') || raise
         File.write('seed.txt', 'seed')
         system('git', *GIT_NO_MAINTENANCE_RAKE, 'add', 'seed.txt') || raise
         system('git', *GIT_NO_MAINTENANCE_RAKE, 'commit', '-q', '-m', 'seed') || raise
       end
 
       # Seed a small cache for upload to consume.
-      cache_dir = File.join(dir, 'rspec_tracer_cache')
+      cache_dir = File.join(dir, 'testsift_cache')
       FileUtils.mkdir_p(cache_dir)
       File.write(
         File.join(cache_dir, 'last_run.json'),
-        JSON.pretty_generate('schema_version' => RSpecTracer::Storage::Schema::CURRENT,
+        JSON.pretty_generate('schema_version' => TestSift::Storage::Schema::CURRENT,
                              'run_id' => 'rake-run', 'timestamp' => Time.now.utc.iso8601)
       )
       FileUtils.mkdir_p(File.join(cache_dir, 'rake-run'))
@@ -144,11 +144,11 @@ RSpec.describe 'rake rspec_tracer:remote_cache:* tasks against LocalStack', :int
     Bundler.with_unbundled_env do
       env = {
         'BUNDLE_GEMFILE' => gemfile_path,
-        'RSPEC_TRACER_LOG_LEVEL' => 'info',
+        'TESTSIFT_LOG_LEVEL' => 'info',
         'CI' => 'true',
         'GIT_DEFAULT_BRANCH' => 'main',
         'GIT_BRANCH' => 'main',
-        'RSPEC_TRACER_TEST_BUCKET' => @bucket,
+        'TESTSIFT_TEST_BUCKET' => @bucket,
         'AWS_ACCESS_KEY_ID' => 'test',
         'AWS_SECRET_ACCESS_KEY' => 'test',
         'AWS_DEFAULT_REGION' => 'us-east-1'
@@ -158,10 +158,10 @@ RSpec.describe 'rake rspec_tracer:remote_cache:* tasks against LocalStack', :int
     end
   end
 
-  describe 'rspec_tracer:remote_cache:upload' do
+  describe 'testsift:remote_cache:upload' do
     it 'uploads the seeded cache to s3 via the rake-task surface' do
       run_in_tmpdir do |dir|
-        out, status = run_rake(task: 'rspec_tracer:remote_cache:upload', dir: dir)
+        out, status = run_rake(task: 'testsift:remote_cache:upload', dir: dir)
 
         expect(status.success?).to(be(true), "upload rake task failed:\n#{out}")
         ls_out, ls_err, ls_status = Open3.capture3(
@@ -179,20 +179,20 @@ RSpec.describe 'rake rspec_tracer:remote_cache:* tasks against LocalStack', :int
     end
   end
 
-  describe 'rspec_tracer:remote_cache:download' do
+  describe 'testsift:remote_cache:download' do
     it 'downloads a previously-uploaded cache via the rake-task surface' do
       run_in_tmpdir do |dir|
         # First, upload from this dir so a cache exists for the matching ref.
-        upload_out, upload_status = run_rake(task: 'rspec_tracer:remote_cache:upload', dir: dir)
+        upload_out, upload_status = run_rake(task: 'testsift:remote_cache:upload', dir: dir)
         raise "seed upload failed:\n#{upload_out}" unless upload_status.success?
 
         # Wipe local cache and re-download via the rake task.
-        FileUtils.rm_rf(File.join(dir, 'rspec_tracer_cache'))
+        FileUtils.rm_rf(File.join(dir, 'testsift_cache'))
 
-        out, status = run_rake(task: 'rspec_tracer:remote_cache:download', dir: dir)
+        out, status = run_rake(task: 'testsift:remote_cache:download', dir: dir)
 
         expect(status.success?).to(be(true), "download rake task failed:\n#{out}")
-        manifest_path = File.join(dir, 'rspec_tracer_cache', 'last_run.json')
+        manifest_path = File.join(dir, 'testsift_cache', 'last_run.json')
         expect(File).to(exist(manifest_path), "expected restored manifest at #{manifest_path}")
         manifest = JSON.parse(File.read(manifest_path))
         expect(manifest['run_id']).to eq('rake-run')

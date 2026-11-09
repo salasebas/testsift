@@ -4,12 +4,12 @@ require 'spec_helper'
 require 'json'
 require 'tmpdir'
 
-require 'rspec_tracer/remote_cache/validator'
-require 'rspec_tracer/storage/schema'
+require 'testsift/remote_cache/validator'
+require 'testsift/storage/schema'
 
 # rubocop:disable RSpec/ExampleLength
-RSpec.describe RSpecTracer::RemoteCache::Validator do
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+RSpec.describe TestSift::RemoteCache::Validator do
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
   describe '.valid?' do
     it 'returns true for a hash with the current schema_version' do

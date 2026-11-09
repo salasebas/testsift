@@ -2,17 +2,17 @@
 
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/base'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/base'
 
-RSpec.describe RSpecTracer::Reporters::Base do
+RSpec.describe TestSift::Reporters::Base do
   let(:tmp) { Dir.mktmpdir }
   let(:snapshot) do
-    RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'r').tap do |s|
+    TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'r').tap do |s|
       s.all_examples = { 'ex1' => { id: 'ex1' } }
     end
   end
-  let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'r') }
+  let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'r') }
 
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
@@ -43,7 +43,7 @@ RSpec.describe RSpecTracer::Reporters::Base do
     end
 
     it 'captures the optional logger' do
-      logger = instance_double(RSpecTracer::Logger)
+      logger = instance_double(TestSift::Logger)
       reporter = described_class.new(snapshot: snapshot, report_dir: tmp, run_metadata: {}, logger: logger)
 
       expect(reporter.logger).to be(logger)
@@ -72,7 +72,7 @@ RSpec.describe RSpecTracer::Reporters::Base do
     end
 
     it 'is true when snapshot.all_examples is nil' do
-      snap = RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'r')
+      snap = TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'r')
       snap.all_examples = nil
       reporter = described_class.new(snapshot: snap, report_dir: tmp, run_metadata: {})
 

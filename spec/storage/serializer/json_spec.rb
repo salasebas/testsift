@@ -1,7 +1,7 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'rspec_tracer/storage/serializer/json'
+require 'testsift/storage/serializer/json'
 
 # Direct unit-level spec for the Json serializer. Lives in this
 # subdirectory so mutant-rspec's Selector::Expression attributes
@@ -10,7 +10,7 @@ require 'rspec_tracer/storage/serializer/json'
 # shadowed once Storage::Serializer::Msgpack got a direct
 # describe of its own in msgpack_spec.rb).
 # rubocop:disable RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Storage::Serializer::Json do
+RSpec.describe TestSift::Storage::Serializer::Json do
   describe '.extension' do
     it 'returns the literal string "json" (drives the on-disk file shape)' do
       expect(described_class.extension).to eq('json')

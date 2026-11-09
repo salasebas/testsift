@@ -2,10 +2,10 @@
 
 require 'spec_helper'
 
-require 'rspec_tracer/remote_cache/backend'
+require 'testsift/remote_cache/backend'
 
 # rubocop:disable RSpec/ExampleLength
-RSpec.describe RSpecTracer::RemoteCache::Backend do
+RSpec.describe TestSift::RemoteCache::Backend do
   describe 'REQUIRED_METHODS' do
     it 'is frozen' do
       expect(described_class::REQUIRED_METHODS).to be_frozen

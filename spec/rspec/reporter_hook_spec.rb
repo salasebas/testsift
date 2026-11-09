@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/rspec/reporter_hook'
+require 'testsift/rspec/reporter_hook'
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/VerifiedDoubles
 # rubocop:disable RSpec/MultipleMemoizedHelpers, Style/MultilineBlockChain
-RSpec.describe RSpecTracer::RSpec::ReporterHook do
+RSpec.describe TestSift::RSpec::ReporterHook do
   let(:reporter_class) do
     Class.new do
       attr_reader :super_calls
@@ -34,12 +34,12 @@ RSpec.describe RSpecTracer::RSpec::ReporterHook do
   end
   let(:example) do
     double('Example',
-           metadata: { rspec_tracer_example_id: 'ex1' },
+           metadata: { testsift_example_id: 'ex1' },
            execution_result: execution_result)
   end
 
   before do
-    allow(RSpecTracer).to receive(:engine).and_return(engine)
+    allow(TestSift).to receive(:engine).and_return(engine)
   end
 
   describe '#example_started' do
@@ -51,7 +51,7 @@ RSpec.describe RSpecTracer::RSpec::ReporterHook do
     end
 
     it 'short-circuits (still calls super) when the engine is absent' do
-      allow(RSpecTracer).to receive(:engine).and_return(nil)
+      allow(TestSift).to receive(:engine).and_return(nil)
 
       reporter.example_started(example)
 
@@ -78,7 +78,7 @@ RSpec.describe RSpecTracer::RSpec::ReporterHook do
     end
 
     it 'short-circuits when engine is absent' do
-      allow(RSpecTracer).to receive(:engine).and_return(nil)
+      allow(TestSift).to receive(:engine).and_return(nil)
 
       reporter.example_finished(example)
 
@@ -108,7 +108,7 @@ RSpec.describe RSpecTracer::RSpec::ReporterHook do
       end
 
       it 'short-circuits when the engine is absent' do
-        allow(RSpecTracer).to receive(:engine).and_return(nil)
+        allow(TestSift).to receive(:engine).and_return(nil)
 
         reporter.public_send(callback, example)
 

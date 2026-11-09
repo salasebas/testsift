@@ -2,7 +2,7 @@
 
 # End-to-end regression for #195's two related bugs:
 #
-#   (a) RSpecTracer.start crashed with
+#   (a) TestSift.start crashed with
 #       `RuntimeError: coverage measurement is already setup`
 #       when the user pre-started `::Coverage` to opt into branch
 #       coverage. setup_coverage now mirrors
@@ -16,7 +16,7 @@
 #       branches without SimpleCov.
 #
 # Both scenarios drive a one-off Ruby subprocess against the
-# ruby_app fixture's Gemfile (which depends on rspec-tracer via
+# ruby_app fixture's Gemfile (which depends on testsift via
 # `path:`); subprocess isolation guarantees no leak from the parent
 # test process's already-running Coverage.
 
@@ -53,13 +53,13 @@ RSpec.describe 'standalone Coverage modes integration (issue #195)' do
       require 'coverage'
       ::Coverage.start(lines: true, branches: true)
 
-      require 'rspec_tracer'
+      require 'testsift'
 
       # setup_coverage was the crash point on a pre-started Coverage.
       # The Coverage.running? guard short-circuits before the bare
       # Coverage.start re-call. We drive setup_coverage directly so
       # the test doesn't depend on the full RSpec hook install chain.
-      RSpecTracer.send(:setup_coverage)
+      TestSift.send(:setup_coverage)
 
       puts 'OK'
     RUBY
@@ -71,13 +71,13 @@ RSpec.describe 'standalone Coverage modes integration (issue #195)' do
 
   it 'threads coverage_modes :branches through to Coverage.start on the standalone path' do
     File.write(script_path, <<~RUBY)
-      require 'rspec_tracer'
+      require 'testsift'
 
-      RSpecTracer.coverage_modes(%i[lines branches])
-      RSpecTracer.send(:setup_coverage)
+      TestSift.coverage_modes(%i[lines branches])
+      TestSift.send(:setup_coverage)
 
-      # Coverage was started AFTER rspec-tracer loaded, so the
-      # rspec-tracer lib files are not tracked. Load + exercise the
+      # Coverage was started AFTER testsift loaded, so the
+      # testsift lib files are not tracked. Load + exercise the
       # fixture's calculator AFTER the start so its `if b.zero?`
       # branches yield branch entries in Coverage.peek_result.
       require_relative 'app/calculator'
@@ -96,9 +96,9 @@ RSpec.describe 'standalone Coverage modes integration (issue #195)' do
 
   it 'omits branches from Coverage.peek_result when coverage_modes is not set' do
     File.write(script_path, <<~RUBY)
-      require 'rspec_tracer'
+      require 'testsift'
 
-      RSpecTracer.send(:setup_coverage)
+      TestSift.send(:setup_coverage)
 
       require_relative 'app/calculator'
       Calculator.new.divide(10, 2)

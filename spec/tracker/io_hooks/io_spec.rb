@@ -2,10 +2,10 @@
 
 require 'fileutils'
 require 'tmpdir'
-require 'rspec_tracer/tracker/io_hooks'
-require 'rspec_tracer/tracker/io_hooks/io'
+require 'testsift/tracker/io_hooks'
+require 'testsift/tracker/io_hooks/io'
 
-RSpec.describe RSpecTracer::Tracker::IOHooks::IOReads do
+RSpec.describe TestSift::Tracker::IOHooks::IOReads do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
   let(:bucket) { {} }
@@ -18,10 +18,10 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::IOReads do
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   around do |example|
-    RSpecTracer::Tracker::IOHooks.install(root: root)
+    TestSift::Tracker::IOHooks.install(root: root)
     example.run
   ensure
-    RSpecTracer::Tracker::IOHooks.uninstall
+    TestSift::Tracker::IOHooks.uninstall
   end
 
   describe '#read' do
@@ -29,7 +29,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::IOReads do
     # rubocop recommendation, not applicable here.
     # rubocop:disable Security/IoMethods
     let(:contents) do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { IO.read(fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { IO.read(fixture) }
     end
     # rubocop:enable Security/IoMethods
 

@@ -5,13 +5,13 @@ require 'stringio'
 require 'tmpdir'
 require 'set'
 
-require 'rspec_tracer/cli/cache_info'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/storage/schema'
+require 'testsift/cli/cache_info'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
+require 'testsift/storage/schema'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations, RSpec/InstanceVariable
-RSpec.describe RSpecTracer::CLI::CacheInfo do
+RSpec.describe TestSift::CLI::CacheInfo do
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
@@ -20,7 +20,7 @@ RSpec.describe RSpecTracer::CLI::CacheInfo do
       %w[-h --help].each do |flag|
         out = StringIO.new
         expect(described_class.run([flag], stdout: out, stderr: stderr)).to eq(0)
-        expect(out.string).to include('Usage: rspec-tracer cache:info')
+        expect(out.string).to include('Usage: testsift cache:info')
       end
     end
 
@@ -34,14 +34,14 @@ RSpec.describe RSpecTracer::CLI::CacheInfo do
     context 'with a populated cache (json backend)' do
       before do
         @tmp_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: 'run_abc123'
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: 'run_abc123'
         )
         snapshot.all_examples = { 'a' => { 'description' => 'one' }, 'b' => { 'description' => 'two' } }
-        RSpecTracer::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::JsonBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(cache_path: @tmp_dir, storage_backend: :json)
+        allow(TestSift).to receive_messages(cache_path: @tmp_dir, storage_backend: :json)
       end
 
       after { FileUtils.rm_rf(@tmp_dir) if @tmp_dir }
@@ -59,14 +59,14 @@ RSpec.describe RSpecTracer::CLI::CacheInfo do
       before do
         skip 'sqlite backend unavailable on this Ruby' unless sqlite_available?
         @tmp_dir = Dir.mktmpdir
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: 'run_sqlite_xyz'
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: 'run_sqlite_xyz'
         )
         snapshot.all_examples = { 'a' => { 'description' => 'one' }, 'b' => { 'description' => 'two' } }
-        RSpecTracer::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::SqliteBackend.new(cache_path: @tmp_dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive_messages(cache_path: @tmp_dir, storage_backend: :sqlite)
+        allow(TestSift).to receive_messages(cache_path: @tmp_dir, storage_backend: :sqlite)
       end
 
       after { FileUtils.rm_rf(@tmp_dir) if @tmp_dir }
@@ -84,7 +84,7 @@ RSpec.describe RSpecTracer::CLI::CacheInfo do
         return false unless RUBY_ENGINE == 'ruby'
 
         require 'sqlite3'
-        require 'rspec_tracer/storage/sqlite_backend'
+        require 'testsift/storage/sqlite_backend'
         true
       rescue LoadError
         false
@@ -94,7 +94,7 @@ RSpec.describe RSpecTracer::CLI::CacheInfo do
     context 'with no cache' do
       it 'reports the empty-cache state and exits 0' do
         Dir.mktmpdir do |dir|
-          allow(RSpecTracer).to receive_messages(cache_path: dir, storage_backend: :json)
+          allow(TestSift).to receive_messages(cache_path: dir, storage_backend: :json)
           expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
           expect(stdout.string).to include('no cache yet')
         end
@@ -110,7 +110,7 @@ RSpec.describe RSpecTracer::CLI::CacheInfo do
         Dir.mktmpdir do |dir|
           File.write(File.join(dir, 'last_run.json'),
                      JSON.dump('schema_version' => 9999, 'run_id' => 'stale_run'))
-          allow(RSpecTracer).to receive_messages(cache_path: dir, storage_backend: :json)
+          allow(TestSift).to receive_messages(cache_path: dir, storage_backend: :json)
 
           expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
           expect(stdout.string).to include('last_run:   stale_run')
@@ -120,7 +120,7 @@ RSpec.describe RSpecTracer::CLI::CacheInfo do
     end
 
     it 'rescues StandardError and returns 1 with a clear error' do
-      allow(RSpecTracer).to receive(:cache_path).and_raise(StandardError, 'cache resolve boom')
+      allow(TestSift).to receive(:cache_path).and_raise(StandardError, 'cache resolve boom')
 
       expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(1)
       expect(stderr.string).to include('cache:info:')

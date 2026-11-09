@@ -86,7 +86,7 @@ end
 CHANGELOG_PATH = 'CHANGELOG.md'
 
 # Line number (1-indexed) of the first released-version heading in
-# CHANGELOG.md, e.g. `## [2.0.0.pre.2] - 2026-05-16`. Everything
+# CHANGELOG.md, e.g. `## [0.2.0](...) (2026-05-16)` or `## 0.1.0 (...)`. Everything
 # above it is the active [Unreleased] block and is scanned; the
 # heading and everything below it are frozen shipped-history text
 # and exempt. When no released heading exists yet, the whole file
@@ -98,7 +98,7 @@ def changelog_frozen_from
     # default external encoding is US-ASCII, and match? raises on the
     # changelog's UTF-8 punctuation.
     lines = (File.foreach(changelog, encoding: 'UTF-8').map(&:scrub) if changelog.file?)
-    index = lines&.find_index { |line| line.match?(/\A##\s+\[\d/) }
+    index = lines&.find_index { |line| line.match?(/\A##\s+\[?\d/) }
     index ? index + 1 : Float::INFINITY
   end
 end

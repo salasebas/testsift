@@ -4,7 +4,7 @@
 # regressed in 2.0.0.pre.1 -- registry exposes :flaky status, the
 # filter recognizes :flaky_example, and the JSON / HTML reporters
 # emit flaky_examples, but no production code path transitions an
-# example into the :flaky bucket. README pitches rspec-tracer as a
+# example into the :flaky bucket. README pitches testsift as a
 # "flaky-test detector" in its first paragraph; 1.x had detection
 # since v1.0.0; the rewrite lost the transition logic.
 #
@@ -30,9 +30,9 @@ require 'open3'
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleExpectations, RSpec/ExampleLength
 RSpec.describe 'flaky-test detection across runs (issue #194)' do
   let(:fixture_root) { File.expand_path('../../benchmark/fixtures/ruby_app', __dir__) }
-  let(:cache_dir)    { File.join(fixture_root, 'rspec_tracer_cache') }
-  let(:report_dir)   { File.join(fixture_root, 'rspec_tracer_report') }
-  let(:coverage_dir) { File.join(fixture_root, 'rspec_tracer_coverage') }
+  let(:cache_dir)    { File.join(fixture_root, 'testsift_cache') }
+  let(:report_dir)   { File.join(fixture_root, 'testsift_report') }
+  let(:coverage_dir) { File.join(fixture_root, 'testsift_coverage') }
   let(:temp_spec)    { File.join(fixture_root, 'spec', 'flaky_detection_fixture_spec.rb') }
 
   around do |example|

@@ -7,4 +7,4 @@ rspec_version = ENV.fetch('RSPEC_VERSION', '~> 3.13')
 
 gem 'parallel_tests', parallel_tests_version
 gem 'rspec', rspec_version
-gem 'rspec-tracer', path: '../../..', require: false
+gem 'testsift', path: '../../..', require: false

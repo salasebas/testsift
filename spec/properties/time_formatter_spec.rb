@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/time_formatter'
+require 'testsift/time_formatter'
 require 'rantly/rspec_extensions'
 
 # Grammar the formatter is supposed to produce:
@@ -11,7 +11,7 @@ require 'rantly/rspec_extensions'
 TIME_FORMAT_TOKEN = /\d+(?:\.\d+)?\s+(?:second|minute|hour|day)s?/
 TIME_FORMAT_RE    = /\A#{TIME_FORMAT_TOKEN}(?:\s+#{TIME_FORMAT_TOKEN})*\z/
 
-RSpec.describe RSpecTracer::TimeFormatter do
+RSpec.describe TestSift::TimeFormatter do
   describe '.format_time' do
     it 'returns a non-empty string for any non-negative integer second count' do
       property_of { range(0, 86_399) }.check(100) do |secs|

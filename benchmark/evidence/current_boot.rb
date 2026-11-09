@@ -7,20 +7,20 @@ require_relative 'host'
 module CurrentEvidence
   def self.profile_targets
     {
-      RSpecTracer::Engine => {
+      TestSift::Engine => {
         seed_graph_from_previous: 'graph_restore', graph_from_previous: 'graph_restore',
         register_example: 'example_registration'
       },
-      RSpecTracer::Tracker::DependencyGraph => { build_inverse_index: 'graph_index' },
-      RSpecTracer::Tracker::IOHooks.singleton_class => { record: 'io_hooks', record_ruby_load: 'io_hooks' },
-      RSpecTracer::Storage::JsonBackend => { decode_field: 'cache_model' },
-      RSpecTracer::Storage::SqliteBackend => {
+      TestSift::Tracker::DependencyGraph => { build_inverse_index: 'graph_index' },
+      TestSift::Tracker::IOHooks.singleton_class => { record: 'io_hooks', record_ruby_load: 'io_hooks' },
+      TestSift::Storage::JsonBackend => { decode_field: 'cache_model' },
+      TestSift::Storage::SqliteBackend => {
         load_graph: 'cache_load', save_graph: 'cache_save', read_field: 'cache_decode', dispatch_read: 'cache_model'
       },
-      RSpecTracer::Storage::Serializer::Msgpack.singleton_class => {
+      TestSift::Storage::Serializer::Msgpack.singleton_class => {
         encode: 'cache_codec_encode', decode: 'cache_codec_decode'
       },
-      RSpecTracer::RSpec::ParallelTests.singleton_class => {
+      TestSift::RSpec::ParallelTests.singleton_class => {
         wait_for_peer_done_markers!: 'worker_wait', emit_merged_reporters!: 'reports'
       }
     }
@@ -42,7 +42,7 @@ module CurrentEvidence
   end
 
   def self.profile_interning
-    RSpecTracer::Storage::JsonBackend.prepend(Module.new do
+    TestSift::Storage::JsonBackend.prepend(Module.new do
       def deep_intern(object)
         return super if @intern_profile_active
 
@@ -81,7 +81,7 @@ module CurrentEvidence
     payload.merge!(memory)
     payload[:jit] = defined?(RubyVM::YJIT) && RubyVM::YJIT.enabled?
     if ENV['EVIDENCE_TRACER'] == '1'
-      backend = RSpecTracer.engine.storage_backend
+      backend = TestSift.engine.storage_backend
       payload[:storage_class] = backend.class.name
       payload[:serializer] = backend.serializer_name if backend.respond_to?(:serializer_name)
     end

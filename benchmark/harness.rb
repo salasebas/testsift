@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-# rspec-tracer benchmark harness.
+# testsift benchmark harness.
 #
-# Measures rspec-tracer overhead across 4 scenarios and compares
+# Measures testsift overhead across 4 scenarios and compares
 # against a committed ratchet file. Builds fail if any scenario's
 # median time exceeds the ratchet's P50 by > REGRESSION_FAIL_RATIO
 # (30% by default; 20% before per-PR enforcement on the
@@ -118,7 +118,7 @@ module BenchmarkHarness
       cwd: RUBY_FIXTURE,
       cmd: %w[bundle exec rspec --no-color],
       env: {},
-      cleanup: %w[rspec_tracer_cache rspec_tracer_report rspec_tracer_coverage],
+      cleanup: %w[testsift_cache testsift_report testsift_coverage],
       smoke: true
     },
     'warm_noop' => {
@@ -141,15 +141,15 @@ module BenchmarkHarness
       desc: 'Warm run with env_snapshot mismatch on the first iteration (env-tracking overhead floor)',
       cwd: RUBY_FIXTURE,
       cmd: %w[bundle exec rspec --no-color],
-      env: { 'RSPEC_TRACER_BENCH_ENV' => 'changed' },
-      warmup: ->(cwd) { run_rspec_once(cwd, { 'RSPEC_TRACER_BENCH_ENV' => 'baseline' }) },
+      env: { 'TESTSIFT_BENCH_ENV' => 'changed' },
+      warmup: ->(cwd) { run_rspec_once(cwd, { 'TESTSIFT_BENCH_ENV' => 'baseline' }) },
       smoke: false
     },
     'track_env_warm_mismatch' => {
       # Config-level + wildcard env-snapshot mismatch. The fixture's
-      # .rspec-tracer declares `track_env 'RSPEC_TRACER_BENCH_CONFIG_*'`
+      # .testsift declares `track_env 'TESTSIFT_BENCH_CONFIG_*'`
       # at config level. Warmup primes the cache with
-      # RSPEC_TRACER_BENCH_CONFIG_KEY = 'baseline' (matched by the
+      # TESTSIFT_BENCH_CONFIG_KEY = 'baseline' (matched by the
       # wildcard at register_config_tracked_env_names time); iterations
       # run with the env flipped to 'changed', forcing every example
       # through the config-level env_changed path
@@ -162,8 +162,8 @@ module BenchmarkHarness
       desc: 'Warm run with config-level wildcard env_snapshot mismatch on first iteration',
       cwd: RUBY_FIXTURE,
       cmd: %w[bundle exec rspec --no-color],
-      env: { 'RSPEC_TRACER_BENCH_CONFIG_KEY' => 'changed' },
-      warmup: ->(cwd) { run_rspec_once(cwd, { 'RSPEC_TRACER_BENCH_CONFIG_KEY' => 'baseline' }) },
+      env: { 'TESTSIFT_BENCH_CONFIG_KEY' => 'changed' },
+      warmup: ->(cwd) { run_rspec_once(cwd, { 'TESTSIFT_BENCH_CONFIG_KEY' => 'baseline' }) },
       smoke: false
     },
     'parallel_tests_2_workers' => {
@@ -171,7 +171,7 @@ module BenchmarkHarness
       cwd: RUBY_FIXTURE,
       cmd: %w[bundle exec parallel_rspec spec],
       env: { 'PARALLEL_TEST_GROUPS' => '2' },
-      cleanup: %w[rspec_tracer_cache rspec_tracer_report rspec_tracer_coverage rspec_tracer.lock],
+      cleanup: %w[testsift_cache testsift_report testsift_coverage testsift.lock],
       # smoke:false keeps `task check` under its fast-feedback budget -
       # parallel_tests startup is ~1.5s per iteration, dominates the smoke
       # wall clock. Runs on benchmark:full and CI.
@@ -185,9 +185,9 @@ module BenchmarkHarness
         'RAILS_VERSION' => '~> 7.1.0',
         'RSPEC_RAILS_VERSION' => '~> 6.1.0',
         'SQLITE3_VERSION' => '~> 1.4',
-        'RSPEC_TRACER' => '1'
+        'TESTSIFT' => '1'
       },
-      cleanup: %w[rspec_tracer_cache rspec_tracer_report rspec_tracer_coverage coverage],
+      cleanup: %w[testsift_cache testsift_report testsift_coverage coverage],
       setup: lambda do |cwd|
         system('bundle', 'exec', 'rails', 'db:test:prepare',
                chdir: cwd, out: File::NULL, err: File::NULL)
@@ -218,9 +218,9 @@ module BenchmarkHarness
         'RAILS_VERSION' => '~> 7.1.0',
         'RSPEC_RAILS_VERSION' => '~> 6.1.0',
         'SQLITE3_VERSION' => '~> 1.4',
-        'RSPEC_TRACER' => '1'
+        'TESTSIFT' => '1'
       },
-      cleanup: %w[rspec_tracer_cache rspec_tracer_report rspec_tracer_coverage coverage],
+      cleanup: %w[testsift_cache testsift_report testsift_coverage coverage],
       setup: lambda do |cwd|
         system('bundle', 'exec', 'rails', 'db:test:prepare',
                chdir: cwd, out: File::NULL, err: File::NULL)
@@ -231,7 +231,7 @@ module BenchmarkHarness
       # Long-running parent-process variant of cold_rails_v2. Boots
       # Rails ONCE in the parent, then fork()s for each measured
       # iteration. Iter timing captures rspec invocation +
-      # rspec-tracer engine setup + per-example overhead, BUT
+      # testsift engine setup + per-example overhead, BUT
       # excludes the cold Rails boot (which is amortized across iters
       # in the parent). Captures the steady-state per-rerun cost users
       # see in iterative dev loops (where Spring or zeus-style
@@ -247,10 +247,10 @@ module BenchmarkHarness
         'RAILS_VERSION' => '~> 7.1.0',
         'RSPEC_RAILS_VERSION' => '~> 6.1.0',
         'SQLITE3_VERSION' => '~> 1.4',
-        'RSPEC_TRACER' => '1',
+        'TESTSIFT' => '1',
         'RAILS_ENV' => 'test'
       },
-      cleanup: %w[rspec_tracer_cache rspec_tracer_report rspec_tracer_coverage coverage],
+      cleanup: %w[testsift_cache testsift_report testsift_coverage coverage],
       setup: lambda do |cwd|
         system('bundle', 'exec', 'rails', 'db:test:prepare',
                chdir: cwd, out: File::NULL, err: File::NULL)

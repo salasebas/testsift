@@ -2,7 +2,7 @@
 
 require 'fileutils'
 require 'tmpdir'
-require 'rspec_tracer/tracker/io_hooks'
+require 'testsift/tracker/io_hooks'
 require 'rantly/rspec_extensions'
 
 # Property: for any N >= 1 and any file under project root with an
@@ -10,7 +10,7 @@ require 'rantly/rspec_extensions'
 # produces exactly one Input (identity-keyed dedup).
 #
 # rubocop:disable RSpec/ExampleLength
-RSpec.describe RSpecTracer::Tracker::IOHooks do
+RSpec.describe TestSift::Tracker::IOHooks do
   # Outer mktmpdir is per-example but all 100 property iterations
   # share it - rewriting the fixture each property iteration would
   # defeat the point of measuring idempotence.

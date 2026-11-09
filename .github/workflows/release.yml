@@ -1,113 +1,101 @@
 name: release
 
+# release-please keeps a release pull request open against `testsift`
+# with the next version bump and CHANGELOG entry, computed from the
+# Conventional Commit messages merged since the last release. Merging
+# that pull request tags `vX.Y.Z`, creates the GitHub release, and
+# hands off to `publish`. Configuration: release-please-config.json and
+# .release-please-manifest.json. Procedure: RELEASING.md.
+#
+# Tags and pull requests created with GITHUB_TOKEN do not trigger other
+# workflows, so publishing runs here, gated on `release_created`,
+# rather than in a separate tag-push workflow.
+
 on:
   push:
-    # Tag triggers use GitHub Actions filter-pattern syntax, NOT bash
-    # extended-glob and NOT POSIX regex. Per
-    # docs.github.com/en/actions/reference/workflows-and-actions/workflow-syntax:
-    # `*` = zero+ chars except `/` (greedy; matches dots); `+` = one+
-    # of the *preceding* character / character class; `[0-9]` is a
-    # character class. So "one or more digits" is `[0-9]+`. The
-    # bash-extglob form `+([0-9])` is NOT recognized — actionlint
-    # accepts it as syntactically valid YAML but the runtime treats
-    # `+(`, `)` as literal characters that no real tag contains.
-    #
-    # The looser `v*.*.*` form is intentionally NOT used — `*`
-    # greedy-matches dots, so `v*.*.*` accidentally matches
-    # `v2.0.0.rc.1` (third `*` eats `0.rc.1`). Each shape gets its own
-    # explicit pattern so a future flavor rename or addition is a
-    # one-line edit and so unintended pre-release tags don't fire the
-    # final-release path.
-    #
-    # Patterns are YAML-quoted because the cheat sheet warns: "always
-    # quote patterns containing brackets to avoid YAML parsing errors."
-    tags:
-      # Final release: vMAJOR.MINOR.PATCH only. `[0-9]+` per segment
-      # rejects any non-digit, so `v2.0.0.rc.1` does not match here.
-      - 'v[0-9]+.[0-9]+.[0-9]+'
-      # Pre-release flavors: vMAJOR.MINOR.PATCH.<flavor>.N. The
-      # rspec-tracer.gemspec version constant convention is the dotted
-      # form (e.g. `2.0.0.pre.1`); RubyGems treats any non-numeric
-      # segment as a pre-release version, so `gem install rspec-tracer`
-      # without `--pre` skips these. One pattern per flavor; add new
-      # flavors here as separate lines if ever needed.
-      - 'v[0-9]+.[0-9]+.[0-9]+.pre.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+.rc.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+.beta.[0-9]+'
-      - 'v[0-9]+.[0-9]+.[0-9]+.alpha.[0-9]+'
+    branches: [testsift]
 
-permissions:
-  contents: write  # required to create the GitHub release
+permissions: {}
+
+concurrency:
+  group: release
+  cancel-in-progress: false
 
 jobs:
-  publish:
-    name: publish ${{ github.ref_name }} to rubygems
+  release-please:
+    name: release-please
     runs-on: ubuntu-latest
-    timeout-minutes: 15
-
-    env:
-      GEM_HOST_API_KEY: ${{ secrets.RUBYGEMS_API_KEY }}
-
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+    outputs:
+      release_created: ${{ steps.release.outputs.release_created }}
+      tag_name: ${{ steps.release.outputs.tag_name }}
+      version: ${{ steps.release.outputs.version }}
     steps:
-      - name: Checkout
+      - name: Run release-please
+        id: release
+        uses: googleapis/release-please-action@v5
+        with:
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
+
+  publish:
+    name: publish ${{ needs.release-please.outputs.tag_name }} to RubyGems
+    needs: release-please
+    if: needs.release-please.outputs.release_created == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    # Add required reviewers to this environment to approve each
+    # publish by hand; the RubyGems trusted publisher can also be
+    # restricted to it.
+    environment: rubygems
+    permissions:
+      contents: read
+      id-token: write  # RubyGems trusted publishing exchanges the OIDC token
+    env:
+      TAG: ${{ needs.release-please.outputs.tag_name }}
+      VERSION: ${{ needs.release-please.outputs.version }}
+    steps:
+      - name: Checkout the release tag
         uses: actions/checkout@v7
-
-      - name: Validate tag matches gemspec version
-        run: |
-          tag="${GITHUB_REF_NAME#v}"
-          gem_version=$(ruby -Ilib -rrspec_tracer/version -e 'print RSpecTracer::VERSION')
-          if [ "$tag" != "$gem_version" ]; then
-            echo "::error::tag ${GITHUB_REF_NAME} (stripped: ${tag}) does not match RSpecTracer::VERSION (${gem_version})"
-            exit 1
-          fi
-          echo "tag ${GITHUB_REF_NAME} matches RSpecTracer::VERSION ${gem_version}"
-
-      - name: Determine prerelease flag for the GitHub release UI
-        id: prerelease
-        # Mirrors the flavor list in `on.push.tags` above. RubyGems
-        # treats any non-numeric segment as a pre-release for `gem
-        # install` purposes regardless of this flag; this is purely
-        # the GitHub release UI marker (Latest vs Pre-release badge).
-        run: |
-          if [[ "$GITHUB_REF_NAME" =~ \.(pre|rc|beta|alpha)\. ]]; then
-            echo "value=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "value=false" >> "$GITHUB_OUTPUT"
-          fi
+        with:
+          ref: ${{ needs.release-please.outputs.tag_name }}
 
       - name: Setup Ruby
         uses: ruby/setup-ruby@v1
         with:
-          ruby-version: '3.4'
+          ruby-version: '.ruby-version'
           bundler: '4.0.10'
           bundler-cache: true
 
-      - name: Build gem
-        run: gem build rspec-tracer.gemspec
+      - name: Setup Node
+        uses: actions/setup-node@v6
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: lib/testsift/reporters/html/package-lock.json
+
+      - name: Setup Task
+        uses: go-task/setup-task@v2
+        with:
+          version: 3.45.4
+
+      - name: Validate tag matches TestSift::VERSION
+        run: |
+          gem_version=$(ruby -Ilib -rtestsift/version -e 'print TestSift::VERSION')
+          if [ "$TAG" != "v${gem_version}" ] || [ "$VERSION" != "$gem_version" ]; then
+            echo "::error::tag ${TAG} (release ${VERSION}) does not match TestSift::VERSION ${gem_version}"
+            exit 1
+          fi
+
+      - name: Build and verify the gem from the built artifact
+        run: task release:verify
+
+      - name: Configure RubyGems trusted publishing
+        uses: rubygems/configure-rubygems-credentials@v2.1.0
 
       - name: Publish to RubyGems
-        if: env.GEM_HOST_API_KEY != ''
-        run: gem push rspec-tracer-*.gem
-
-      - name: Fail if RUBYGEMS_API_KEY secret is missing
-        if: env.GEM_HOST_API_KEY == ''
-        run: |
-          echo "::error::RUBYGEMS_API_KEY secret is not set. Add it under Settings \u2192 Secrets and variables \u2192 Actions."
-          exit 1
-
-      - name: Create GitHub release
-        uses: softprops/action-gh-release@v3
-        with:
-          tag_name: ${{ github.ref_name }}
-          name: ${{ github.ref_name }}
-          body: |
-            See [CHANGELOG.md](https://github.com/avmnu-sng/rspec-tracer/blob/main/CHANGELOG.md) for the full release notes.
-
-            Install:
-
-            ```
-            gem install rspec-tracer -v ${{ github.ref_name }}
-            ```
-          draft: false
-          prerelease: ${{ steps.prerelease.outputs.value }}
-          generate_release_notes: false
+        run: gem push "pkg/testsift-${VERSION}.gem"

@@ -7,13 +7,13 @@ require 'rbconfig'
 require 'tmpdir'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Engine do
+RSpec.describe TestSift::Engine do
   let(:root) { Dir.mktmpdir('engine-boundary') }
   let(:lib_path) { File.expand_path('../../lib', __dir__) }
 
   before do
-    File.write(File.join(root, '.rspec-tracer'), <<~RUBY)
-      RSpecTracer.configure do
+    File.write(File.join(root, '.testsift'), <<~RUBY)
+      TestSift.configure do
         run_all_examples false
         transitive_load_tracking false
       end
@@ -22,8 +22,8 @@ RSpec.describe RSpecTracer::Engine do
       File.write(File.join(root, "#{name}.yml"), "#{name}: true\n")
     end
     File.write(File.join(root, 'boundary_spec.rb'), <<~RUBY)
-      require 'rspec_tracer'
-      RSpecTracer.start
+      require 'testsift'
+      TestSift.start
 
       RSpec.describe 'lifecycle' do
         around do |example|
@@ -52,13 +52,13 @@ RSpec.describe RSpecTracer::Engine do
   end
 
   def cache(name)
-    cache_root = File.join(root, 'rspec_tracer_cache')
+    cache_root = File.join(root, 'testsift_cache')
     manifest = JSON.parse(File.read(File.join(cache_root, 'last_run.json')))
     JSON.parse(File.read(File.join(cache_root, manifest.fetch('run_id'), "#{name}.json")))
   end
 
   def report_examples
-    report = JSON.parse(File.read(File.join(root, 'rspec_tracer_report', 'report.json')))
+    report = JSON.parse(File.read(File.join(root, 'testsift_report', 'report.json')))
     report.fetch('reports').fetch('all_examples')
   end
 

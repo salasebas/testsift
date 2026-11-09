@@ -28,9 +28,9 @@ require 'digest'
 require 'set'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __dir__))
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/schema'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/schema'
+require 'testsift/storage/snapshot'
 
 ITERATIONS  = Integer(ENV.fetch('ITERATIONS', '20'))
 EXAMPLES    = Integer(ENV.fetch('EXAMPLES', '500'))
@@ -39,7 +39,7 @@ DEPS_PER_EX = Integer(ENV.fetch('DEPS_PER_EX', '20'))
 BACKEND     = ENV.fetch('BACKEND', 'json').to_sym
 SERIALIZER  = ENV.fetch('SERIALIZER', 'json').to_sym
 
-require 'rspec_tracer/storage/sqlite_backend' if BACKEND == :sqlite
+require 'testsift/storage/sqlite_backend' if BACKEND == :sqlite
 
 # rubocop:disable Metrics/MethodLength, Metrics/AbcSize
 def build_snapshot(examples:, files:, deps_per_ex:)
@@ -60,8 +60,8 @@ def build_snapshot(examples:, files:, deps_per_ex:)
   reverse = Hash.new { |h, k| h[k] = Set.new }
   dependency.each { |id, paths| paths.each { |p| reverse[p] << id } }
 
-  RSpecTracer::Storage::Snapshot.new(
-    schema_version: RSpecTracer::Storage::Schema::CURRENT,
+  TestSift::Storage::Snapshot.new(
+    schema_version: TestSift::Storage::Schema::CURRENT,
     run_id: Digest::MD5.hexdigest(example_ids.join),
     all_examples: all_examples,
     duplicate_examples: {},
@@ -82,9 +82,9 @@ end
 def build_backend(cache_path)
   case BACKEND
   when :sqlite
-    RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path)
+    TestSift::Storage::SqliteBackend.new(cache_path: cache_path)
   else
-    RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: SERIALIZER)
+    TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: SERIALIZER)
   end
 end
 
@@ -100,18 +100,18 @@ begin
   snapshot = build_snapshot(examples: EXAMPLES, files: FILES, deps_per_ex: DEPS_PER_EX)
 
   build_backend(cache_path)
-    .save_graph(snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+    .save_graph(snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
   disk_bytes = cache_size_bytes(cache_path)
 
   # Warm once (pays first-load JIT + require tax outside the timed loop).
   build_backend(cache_path)
-    .load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+    .load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
     .to_h
 
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   ITERATIONS.times do
     loaded = build_backend(cache_path)
-      .load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      .load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
     # Touch every field so the lazy reader materializes; mirrors
     # Engine.setup's access pattern.
     loaded.to_h

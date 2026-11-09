@@ -5,10 +5,10 @@ require 'stringio'
 require 'tmpdir'
 require 'fileutils'
 
-require 'rspec_tracer/cli/report_open'
+require 'testsift/cli/report_open'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::CLI::ReportOpen do
+RSpec.describe TestSift::CLI::ReportOpen do
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
@@ -17,7 +17,7 @@ RSpec.describe RSpecTracer::CLI::ReportOpen do
       %w[-h --help].each do |flag|
         out = StringIO.new
         expect(described_class.run([flag], stdout: out, stderr: stderr)).to eq(0)
-        expect(out.string).to include('Usage: rspec-tracer report:open')
+        expect(out.string).to include('Usage: testsift report:open')
       end
     end
 
@@ -30,7 +30,7 @@ RSpec.describe RSpecTracer::CLI::ReportOpen do
 
     it 'returns 1 with a clear error when index.html is missing' do
       Dir.mktmpdir do |dir|
-        allow(RSpecTracer).to receive(:report_path).and_return(dir)
+        allow(TestSift).to receive(:report_path).and_return(dir)
         expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(1)
         expect(stderr.string).to include('no report at')
         expect(stderr.string).to include('run rspec first')
@@ -40,7 +40,7 @@ RSpec.describe RSpecTracer::CLI::ReportOpen do
     it 'returns 0 and prints the path when no opener is detected' do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, 'index.html'), '<html></html>')
-        allow(RSpecTracer).to receive(:report_path).and_return(dir)
+        allow(TestSift).to receive(:report_path).and_return(dir)
         allow(described_class).to receive(:detect_opener).and_return(nil)
 
         expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
@@ -51,7 +51,7 @@ RSpec.describe RSpecTracer::CLI::ReportOpen do
     it 'launches the opener and returns 0 on success' do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, 'index.html'), '<html></html>')
-        allow(RSpecTracer).to receive(:report_path).and_return(dir)
+        allow(TestSift).to receive(:report_path).and_return(dir)
         allow(described_class).to receive_messages(detect_opener: 'open')
         allow(described_class).to receive(:system).and_return(true)
 
@@ -63,7 +63,7 @@ RSpec.describe RSpecTracer::CLI::ReportOpen do
     it 'returns 1 when the opener launch fails' do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, 'index.html'), '<html></html>')
-        allow(RSpecTracer).to receive(:report_path).and_return(dir)
+        allow(TestSift).to receive(:report_path).and_return(dir)
         allow(described_class).to receive_messages(detect_opener: 'open')
         allow(described_class).to receive(:system).and_return(false)
 
@@ -73,7 +73,7 @@ RSpec.describe RSpecTracer::CLI::ReportOpen do
     end
 
     it 'rescues StandardError and returns 1' do
-      allow(RSpecTracer).to receive(:report_path).and_raise(StandardError, 'report resolve boom')
+      allow(TestSift).to receive(:report_path).and_raise(StandardError, 'report resolve boom')
 
       expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(1)
       expect(stderr.string).to include('report:open:')

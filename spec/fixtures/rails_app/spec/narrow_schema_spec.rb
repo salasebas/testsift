@@ -4,14 +4,14 @@ require "rails_helper"
 
 # Narrow-AR-schema fixture spec. Two examples:
 #   - one issues an AR query (User.create!) so the sql.active_record
-#     subscriber fires and rspec-tracer's record_ar_schema attributes
+#     subscriber fires and testsift's record_ar_schema attributes
 #     `db/schema.rb` to this example_id;
 #   - one performs only a pure-Ruby computation, so the subscriber
 #     never fires and `db/schema.rb` is NOT in this example_id's
 #     dependency set.
 #
 # The OUTER `spec/integration/narrow_ar_schema_spec.rb` drives this
-# fixture with `RSPEC_TRACER_RAILS_TRANSACTIONAL=false`, asserts the
+# fixture with `TESTSIFT_RAILS_TRANSACTIONAL=false`, asserts the
 # per-example attribution above, mutates `db/schema.rb`, and verifies
 # the warm filter re-runs only the AR-touching example.
 RSpec.describe "narrow AR schema attribution" do

@@ -2,10 +2,10 @@
 
 # Narrow-AR-schema integration spec. Drives the rails fixture
 # (spec/fixtures/rails_app/spec/narrow_schema_spec.rb) under
-# RSPEC_TRACER_RAILS_TRANSACTIONAL=false (env toggle in
+# TESTSIFT_RAILS_TRANSACTIONAL=false (env toggle in
 # the fixture rails_helper.rb). With transactional fixtures off,
-# rspec-tracer's per-example schema-subscriber attribution path
-# (lib/rspec_tracer/rails/notifications.rb #record_ar_schema) becomes
+# testsift's per-example schema-subscriber attribution path
+# (lib/testsift/rails/notifications.rb #record_ar_schema) becomes
 # the only mechanism observing AR schema changes - the canonical use
 # case for users who run integration tests with each example
 # committing to the test DB.
@@ -42,8 +42,8 @@ require_relative '../support/fixture_bundle_helper'
 # FixtureBundleHelper.
 module NarrowArSchemaSpecHelpers
   TRACER_ENV = {
-    'RSPEC_TRACER' => '1',
-    'RSPEC_TRACER_RAILS_TRANSACTIONAL' => 'false'
+    'TESTSIFT' => '1',
+    'TESTSIFT_RAILS_TRANSACTIONAL' => 'false'
   }.freeze
   # See rails_app_spec.rb's SUBPROCESS_BUNDLE_ENV for rationale —
   # BUNDLE_FROZEN skips per-`bundle exec` lockfile resolve in the
@@ -52,7 +52,7 @@ module NarrowArSchemaSpecHelpers
   NARROW_SPEC = 'spec/narrow_schema_spec.rb'
   SCHEMA_FILE_NAME = '/db/schema.rb'
 
-  MUTATION_MARKER = "\n# rspec-tracer narrow-schema mutation marker\n"
+  MUTATION_MARKER = "\n# testsift narrow-schema mutation marker\n"
 
   module_function
 

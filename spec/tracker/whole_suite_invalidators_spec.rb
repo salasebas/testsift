@@ -3,9 +3,9 @@
 require 'digest'
 require 'fileutils'
 require 'tmpdir'
-require 'rspec_tracer/tracker/whole_suite_invalidators'
+require 'testsift/tracker/whole_suite_invalidators'
 
-RSpec.describe RSpecTracer::Tracker::WholeSuiteInvalidators do
+RSpec.describe TestSift::Tracker::WholeSuiteInvalidators do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
 
@@ -25,10 +25,10 @@ RSpec.describe RSpecTracer::Tracker::WholeSuiteInvalidators do
       expect(invs.root).to eq(File.expand_path(root))
     end
 
-    it 'defaults gem_version to RSpecTracer::VERSION' do
+    it 'defaults gem_version to TestSift::VERSION' do
       invs = described_class.new(root: root)
 
-      expect(invs.gem_version).to eq(RSpecTracer::VERSION)
+      expect(invs.gem_version).to eq(TestSift::VERSION)
     end
 
     it 'accepts an explicit gem_version override' do
@@ -45,11 +45,11 @@ RSpec.describe RSpecTracer::Tracker::WholeSuiteInvalidators do
       expect(invs.digest_snapshot).to have_key(described_class::GEM_IDENTITY_KEY)
     end
 
-    it 'hashes gem identity with SHA256 over "rspec-tracer-<version>"' do
+    it 'hashes gem identity with SHA256 over "testsift-<version>"' do
       invs = described_class.new(root: root, gem_version: '1.2.3')
 
       expect(invs.digest_snapshot[described_class::GEM_IDENTITY_KEY])
-        .to eq(Digest::SHA256.hexdigest('rspec-tracer-1.2.3'))
+        .to eq(Digest::SHA256.hexdigest('testsift-1.2.3'))
     end
 
     it 'omits absent watch files rather than inserting a nil sentinel' do
@@ -74,12 +74,12 @@ RSpec.describe RSpecTracer::Tracker::WholeSuiteInvalidators do
         .to eq(Digest::SHA256.hexdigest("3.3.10\n"))
     end
 
-    it 'digests .rspec-tracer when present' do
-      write_watch('.rspec-tracer', "RSpecTracer.configure {}\n")
+    it 'digests .testsift when present' do
+      write_watch('.testsift', "TestSift.configure {}\n")
       invs = described_class.new(root: root)
 
-      expect(invs.digest_snapshot['.rspec-tracer'])
-        .to eq(Digest::SHA256.hexdigest("RSpecTracer.configure {}\n"))
+      expect(invs.digest_snapshot['.testsift'])
+        .to eq(Digest::SHA256.hexdigest("TestSift.configure {}\n"))
     end
 
     it 'returns a distinct digest on file-content changes' do

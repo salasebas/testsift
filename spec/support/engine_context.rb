@@ -2,16 +2,16 @@
 
 require 'fileutils'
 require 'tmpdir'
-require 'rspec_tracer/engine'
+require 'testsift/engine'
 
 # rubocop:disable RSpec/MultipleMemoizedHelpers
 RSpec.shared_context 'with engine configuration' do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:logger) { instance_double(RSpecTracer::Logger, debug: nil, info: nil, warn: nil, error: nil) }
+  let(:logger) { instance_double(TestSift::Logger, debug: nil, info: nil, warn: nil, error: nil) }
   let(:configuration) { stub_configuration }
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
   before do
     write_project_file('lib/a.rb', "module A; VALUE = 1; end\n")
@@ -19,8 +19,8 @@ RSpec.shared_context 'with engine configuration' do
   end
 
   after do
-    RSpecTracer::Tracker::IOHooks.uninstall
-    RSpecTracer::Tracker::IOHooks.clear_bucket
+    TestSift::Tracker::IOHooks.uninstall
+    TestSift::Tracker::IOHooks.clear_bucket
     FileUtils.rm_rf(tmp_base) if tmp_base
   end
 
@@ -53,7 +53,7 @@ RSpec.shared_context 'with engine configuration' do
   end
 
   def build_tracker(configuration_override = configuration)
-    RSpecTracer::Engine.new(configuration: configuration_override)
+    TestSift::Engine.new(configuration: configuration_override)
   end
 
   def build_example(example_id, file_name = '/spec/thing_spec.rb', line = 1)

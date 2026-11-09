@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'rspec_tracer/tracker/dependency_graph'
-require 'rspec_tracer/tracker/input'
+require 'testsift/tracker/dependency_graph'
+require 'testsift/tracker/input'
 
-RSpec.describe RSpecTracer::Tracker::DependencyGraph do
+RSpec.describe TestSift::Tracker::DependencyGraph do
   subject(:graph) { described_class.new }
 
   def input(path, kind: :ruby)
-    RSpecTracer::Tracker::Input.for_file(
+    TestSift::Tracker::Input.for_file(
       path: path, kind: kind, digest: 'd', root: '/'
     )
   end

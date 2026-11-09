@@ -2,9 +2,9 @@
 
 require 'digest/md5'
 require 'set'
-require 'rspec_tracer/tracker/env_snapshot'
+require 'testsift/tracker/env_snapshot'
 
-RSpec.describe RSpecTracer::Tracker::EnvSnapshot do
+RSpec.describe TestSift::Tracker::EnvSnapshot do
   let(:env) { { 'API_KEY' => 'secret', 'ROLE_CONFIG' => 'admin' } }
   let(:observer) { described_class.new(env: env) }
 
@@ -88,9 +88,9 @@ RSpec.describe RSpecTracer::Tracker::EnvSnapshot do
   describe 'default env source' do
     it 'reads from ::ENV when no injection is provided' do
       observer = described_class.new
-      result = observer.digest_snapshot(%w[RSPEC_TRACER_ENV_SPEC_PROBE])
+      result = observer.digest_snapshot(%w[TESTSIFT_ENV_SPEC_PROBE])
 
-      expect(result['RSPEC_TRACER_ENV_SPEC_PROBE']).to eq(Digest::MD5.hexdigest(''))
+      expect(result['TESTSIFT_ENV_SPEC_PROBE']).to eq(Digest::MD5.hexdigest(''))
     end
   end
 

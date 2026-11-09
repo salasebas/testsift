@@ -21,11 +21,11 @@ require 'set'
 
 module PerExampleDslSpecHelpers
   FIXTURE_ROOT = File.expand_path('../fixtures/rails_app', __dir__)
-  CACHE_DIR = File.join(FIXTURE_ROOT, 'rspec_tracer_cache')
-  COVERAGE_DIR = File.join(FIXTURE_ROOT, 'rspec_tracer_coverage')
-  REPORT_DIR = File.join(FIXTURE_ROOT, 'rspec_tracer_report')
+  CACHE_DIR = File.join(FIXTURE_ROOT, 'testsift_cache')
+  COVERAGE_DIR = File.join(FIXTURE_ROOT, 'testsift_coverage')
+  REPORT_DIR = File.join(FIXTURE_ROOT, 'testsift_report')
   LOCAL_COVERAGE = File.join(FIXTURE_ROOT, 'coverage')
-  TRACER_ENV = { 'RSPEC_TRACER' => '1' }.freeze
+  TRACER_ENV = { 'TESTSIFT' => '1' }.freeze
   SCRUB_DIRS = [CACHE_DIR, COVERAGE_DIR, REPORT_DIR, LOCAL_COVERAGE].freeze
 
   module_function

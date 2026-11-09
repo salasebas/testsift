@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Loaded into the rspec-tracer-instrumented soak subprocess via
+# Loaded into the testsift-instrumented soak subprocess via
 # RUBYOPT="-r<absolute_path>/memstat_at_exit.rb". On exit, writes a
 # memory snapshot under `$SOAK_MEMSTAT_DIR/memstat-<pid>.json`.
 #

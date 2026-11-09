@@ -3,15 +3,15 @@
 require 'set'
 require 'stringio'
 require 'tmpdir'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/terminal_reporter'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/terminal_reporter'
 
 require_relative '../contracts/reporter'
 
 # rubocop:disable RSpec/MultipleMemoizedHelpers, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Reporters::TerminalReporter do
+RSpec.describe TestSift::Reporters::TerminalReporter do
   let(:reporter_class) { described_class }
-  let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
+  let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
   let(:io) { StringIO.new }
   let(:run_metadata) { { cache_path: '/fake/cache/path' } }
   let(:snapshot) { build_populated_snapshot }
@@ -20,7 +20,7 @@ RSpec.describe RSpecTracer::Reporters::TerminalReporter do
   after { FileUtils.remove_entry(report_dir) if File.directory?(report_dir) }
 
   def build_populated_snapshot(overrides = {})
-    RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'rid').tap do |s|
+    TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'rid').tap do |s|
       s.all_examples = {
         'ex1' => { execution_result: { status: 'passed' } },
         'ex2' => {},
@@ -56,7 +56,7 @@ RSpec.describe RSpecTracer::Reporters::TerminalReporter do
     it 'emits the header line with counts and cache percent' do
       build_reporter.generate
 
-      expect(io.string).to include('rspec-tracer: 3 examples tracked')
+      expect(io.string).to include('testsift: 3 examples tracked')
       expect(io.string).to include('2 re-run')
       expect(io.string).to include('1 skipped')
       expect(io.string).to include('33% cached')

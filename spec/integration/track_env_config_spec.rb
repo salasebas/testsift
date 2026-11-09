@@ -5,7 +5,7 @@
 # `spec/fixtures/rails_app/` via subprocess RSpec.
 #
 # This spec is config-level only; per-example wildcard coverage lives
-# in `per_example_dsl_spec.rb`. The fixture's `.rspec-tracer` is
+# in `per_example_dsl_spec.rb`. The fixture's `.testsift` is
 # rewritten per-example here (config-level DSL is the surface under
 # test) and restored in `after`.
 #
@@ -21,13 +21,13 @@ require 'set'
 
 module TrackEnvConfigSpecHelpers
   FIXTURE_ROOT = File.expand_path('../fixtures/rails_app', __dir__)
-  CACHE_DIR = File.join(FIXTURE_ROOT, 'rspec_tracer_cache')
-  COVERAGE_DIR = File.join(FIXTURE_ROOT, 'rspec_tracer_coverage')
-  REPORT_DIR = File.join(FIXTURE_ROOT, 'rspec_tracer_report')
+  CACHE_DIR = File.join(FIXTURE_ROOT, 'testsift_cache')
+  COVERAGE_DIR = File.join(FIXTURE_ROOT, 'testsift_coverage')
+  REPORT_DIR = File.join(FIXTURE_ROOT, 'testsift_report')
   LOCAL_COVERAGE = File.join(FIXTURE_ROOT, 'coverage')
-  TRACER_ENV = { 'RSPEC_TRACER' => '1' }.freeze
+  TRACER_ENV = { 'TESTSIFT' => '1' }.freeze
   SCRUB_DIRS = [CACHE_DIR, COVERAGE_DIR, REPORT_DIR, LOCAL_COVERAGE].freeze
-  RSPEC_TRACER_CONFIG = File.join(FIXTURE_ROOT, '.rspec-tracer')
+  TESTSIFT_CONFIG = File.join(FIXTURE_ROOT, '.testsift')
 
   module_function
 
@@ -75,7 +75,7 @@ RSpec.describe 'config-level track_env DSL integration' do
 
   before(:all) { TrackEnvConfigSpecHelpers.ensure_bundle_and_db }
 
-  let(:original_config) { File.read(TrackEnvConfigSpecHelpers::RSPEC_TRACER_CONFIG) }
+  let(:original_config) { File.read(TrackEnvConfigSpecHelpers::TESTSIFT_CONFIG) }
 
   before do
     @original_config = original_config
@@ -83,15 +83,15 @@ RSpec.describe 'config-level track_env DSL integration' do
   end
 
   after do
-    File.write(TrackEnvConfigSpecHelpers::RSPEC_TRACER_CONFIG, @original_config)
+    File.write(TrackEnvConfigSpecHelpers::TESTSIFT_CONFIG, @original_config)
     TrackEnvConfigSpecHelpers.clear_tracer_state
   end
 
   describe 'literal config-level env name' do
     before do
-      File.write(TrackEnvConfigSpecHelpers::RSPEC_TRACER_CONFIG, <<~CONFIG)
+      File.write(TrackEnvConfigSpecHelpers::TESTSIFT_CONFIG, <<~CONFIG)
         # frozen_string_literal: true
-        RSpecTracer.configure do
+        TestSift.configure do
           track_env 'AUTH_TOKEN'
         end
       CONFIG
@@ -131,9 +131,9 @@ RSpec.describe 'config-level track_env DSL integration' do
 
   describe 'wildcard config-level pattern' do
     before do
-      File.write(TrackEnvConfigSpecHelpers::RSPEC_TRACER_CONFIG, <<~CONFIG)
+      File.write(TrackEnvConfigSpecHelpers::TESTSIFT_CONFIG, <<~CONFIG)
         # frozen_string_literal: true
-        RSpecTracer.configure do
+        TestSift.configure do
           track_env 'M53_PROBE_*'
         end
       CONFIG

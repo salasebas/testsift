@@ -4,9 +4,9 @@ require 'fileutils'
 require 'json'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/coverage_json_reporter'
+require 'testsift'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/coverage_json_reporter'
 
 require_relative '../contracts/reporter'
 
@@ -14,10 +14,10 @@ require_relative '../contracts/reporter'
 # Round-trip byte-equivalence vs the rails_app fixture's golden
 # lives in spec/integration/coverage_json_round_trip_spec.rb (driven
 # end-to-end through a subprocess); this file exercises the emitter
-# in isolation against stubbed RSpecTracer + Engine surface so each
+# in isolation against stubbed TestSift + Engine surface so each
 # branch is reachable on MRI.
 # rubocop:disable RSpec/MultipleMemoizedHelpers, RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
+RSpec.describe TestSift::Reporters::CoverageJsonReporter do
   let(:tmp) { Dir.mktmpdir }
   let(:fixture_root) { File.join(tmp, 'project') }
   let(:coverage_dir) { File.join(tmp, 'coverage_out') }
@@ -25,19 +25,19 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
   let(:tracked_file) { File.join(fixture_root, 'lib', 'tracked.rb') }
   let(:other_file) { File.join(fixture_root, 'lib', 'other.rb') }
   let(:filtered_file) { File.join(fixture_root, 'spec', 'foo_spec.rb') }
-  let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
+  let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
   let(:snapshot) do
-    RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'r').tap do |s|
+    TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'r').tap do |s|
       s.all_examples = { 'ex1' => { full_description: 'A' } }
     end
   end
   let(:run_metadata) { {} }
   let(:reporter_class) { described_class }
-  let(:registry) { instance_double(RSpecTracer::Tracker::ExampleRegistry) }
-  let(:adapter) { instance_double(RSpecTracer::Tracker::CoverageAdapter) }
+  let(:registry) { instance_double(TestSift::Tracker::ExampleRegistry) }
+  let(:adapter) { instance_double(TestSift::Tracker::CoverageAdapter) }
   let(:engine) do
     instance_double(
-      RSpecTracer::Engine,
+      TestSift::Engine,
       coverage_adapter: adapter,
       registry: registry,
       merge_skipped_coverage: {}
@@ -51,7 +51,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
     File.write(other_file, "z = 3\n")
     File.write(filtered_file, "fail\n")
 
-    allow(RSpecTracer).to receive_messages(
+    allow(TestSift).to receive_messages(
       engine: engine,
       coverage_path: coverage_dir,
       coverage_filters: [],
@@ -98,8 +98,8 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
   end
 
   describe '#generate' do
-    it 'returns nil and skips emission when RSpecTracer.engine is nil' do
-      allow(RSpecTracer).to receive(:engine).and_return(nil)
+    it 'returns nil and skips emission when TestSift.engine is nil' do
+      allow(TestSift).to receive(:engine).and_return(nil)
       reporter = described_class.new(
         snapshot: empty_snapshot, report_dir: report_dir, run_metadata: {}, logger: nil
       )
@@ -117,59 +117,59 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       expect(File).to be_directory(coverage_dir)
 
       payload = JSON.parse(File.read(result, encoding: 'UTF-8'))
-      expect(payload.keys).to eq(['RSpecTracer'])
-      expect(payload['RSpecTracer']['coverage']).to eq(tracked_file => [1, 1])
-      expect(payload['RSpecTracer']['timestamp']).to be_a(Integer)
+      expect(payload.keys).to eq(['TestSift'])
+      expect(payload['TestSift']['coverage']).to eq(tracked_file => [1, 1])
+      expect(payload['TestSift']['timestamp']).to be_a(Integer)
     end
 
     it 'sorts the file list and stubs files added via coverage_tracked_files' do
       allow(adapter).to receive(:peek_unfiltered).and_return(other_file => [1])
-      allow(RSpecTracer).to receive(:coverage_tracked_files).and_return(
+      allow(TestSift).to receive(:coverage_tracked_files).and_return(
         File.join(fixture_root, 'lib', '*.rb')
       )
 
       build_reporter.generate
 
       payload = JSON.parse(File.read(File.join(coverage_dir, 'coverage.json'), encoding: 'UTF-8'))
-      keys = payload['RSpecTracer']['coverage'].keys
+      keys = payload['TestSift']['coverage'].keys
       expect(keys).to eq(keys.sort)
       expect(keys).to include(tracked_file, other_file)
-      expect(payload['RSpecTracer']['coverage'][tracked_file]).to eq([0, 0])
+      expect(payload['TestSift']['coverage'][tracked_file]).to eq([0, 0])
     end
 
     it 'applies coverage_filters by file name (matches legacy CoverageReporter#final_coverage_files)' do
       allow(adapter).to receive(:peek_unfiltered).and_return(
         tracked_file => [1, 1], filtered_file => [1]
       )
-      filter = RSpecTracer::Filter.register(%r{^/spec/})
-      allow(RSpecTracer).to receive(:coverage_filters).and_return([filter])
+      filter = TestSift::Filter.register(%r{^/spec/})
+      allow(TestSift).to receive(:coverage_filters).and_return([filter])
 
       build_reporter.generate
 
       payload = JSON.parse(File.read(File.join(coverage_dir, 'coverage.json'), encoding: 'UTF-8'))
-      expect(payload['RSpecTracer']['coverage'].keys).to eq([tracked_file])
+      expect(payload['TestSift']['coverage'].keys).to eq([tracked_file])
     end
 
     it 'leaves an out-of-root file path untouched when filtering (file_name_for early-return)' do
-      # Paths outside RSpecTracer.root (e.g. an absolute gem path
+      # Paths outside TestSift.root (e.g. an absolute gem path
       # surfacing through Coverage.peek_result) skip the prefix-strip.
       # The filter-match should see the path verbatim.
       external_file = '/opt/gems/foreign/lib/foo.rb'
       allow(adapter).to receive(:peek_unfiltered).and_return(
         tracked_file => [1, 1], external_file => [1]
       )
-      filter = RSpecTracer::Filter.register(%r{\A/opt/gems/})
-      allow(RSpecTracer).to receive(:coverage_filters).and_return([filter])
+      filter = TestSift::Filter.register(%r{\A/opt/gems/})
+      allow(TestSift).to receive(:coverage_filters).and_return([filter])
 
       build_reporter.generate
 
       payload = JSON.parse(File.read(File.join(coverage_dir, 'coverage.json'), encoding: 'UTF-8'))
-      expect(payload['RSpecTracer']['coverage'].keys).to eq([tracked_file])
+      expect(payload['TestSift']['coverage'].keys).to eq([tracked_file])
     end
 
     it 'logs covered/total LOC + percent through the provided logger' do
       allow(adapter).to receive(:peek_unfiltered).and_return(tracked_file => [1, nil])
-      logger = instance_double(RSpecTracer::Logger, info: nil)
+      logger = instance_double(TestSift::Logger, info: nil)
 
       described_class.new(
         snapshot: snapshot, report_dir: report_dir, run_metadata: {}, logger: logger
@@ -180,7 +180,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
 
     it 'is silent when computed coverage has zero LOC' do
       allow(adapter).to receive(:peek_unfiltered).and_return(tracked_file => [nil, nil])
-      logger = instance_double(RSpecTracer::Logger, info: nil)
+      logger = instance_double(TestSift::Logger, info: nil)
 
       described_class.new(
         snapshot: snapshot, report_dir: report_dir, run_metadata: {}, logger: logger
@@ -199,7 +199,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       build_reporter.generate
 
       payload = JSON.parse(File.read(File.join(coverage_dir, 'coverage.json'), encoding: 'UTF-8'))
-      expect(payload['RSpecTracer']['coverage'][tracked_file]).to eq([3, 4])
+      expect(payload['TestSift']['coverage'][tracked_file]).to eq([3, 4])
     end
 
     it 'tolerates frozen line arrays from Coverage.peek_result (Ruby 3.2+)' do
@@ -217,7 +217,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       expect { build_reporter.generate }.not_to raise_error
 
       payload = JSON.parse(File.read(File.join(coverage_dir, 'coverage.json'), encoding: 'UTF-8'))
-      expect(payload['RSpecTracer']['coverage'][tracked_file]).to eq([3, 4])
+      expect(payload['TestSift']['coverage'][tracked_file]).to eq([3, 4])
       # Original frozen array must NOT be mutated (dup-on-write contract).
       expect(frozen_line_array).to eq([1, nil])
     end
@@ -232,12 +232,12 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       build_reporter.generate
 
       payload = JSON.parse(File.read(File.join(coverage_dir, 'coverage.json'), encoding: 'UTF-8'))
-      expect(payload['RSpecTracer']['coverage'][tracked_file].first).to eq(1)
+      expect(payload['TestSift']['coverage'][tracked_file].first).to eq(1)
     end
 
     it 'returns nil and installs SimpleCov interop when simplecov? is true (array-mode coverage)' do
       allow(adapter).to receive(:peek_unfiltered_full).and_return(tracked_file => [1, 1])
-      allow(RSpecTracer).to receive(:simplecov?).and_return(true)
+      allow(TestSift).to receive(:simplecov?).and_return(true)
       allow(described_class::SimpleCovInterop).to receive(:install)
 
       expect(build_reporter.generate).to be_nil
@@ -256,7 +256,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       branches = { [:if, 0, 1, 0, 1, 10] => { [:then, 1, 1, 0, 1, 5] => 3 } }
       hash_mode = { tracked_file => { lines: [1, 1], branches: branches } }
       allow(adapter).to receive(:peek_unfiltered_full).and_return(hash_mode)
-      allow(RSpecTracer).to receive(:simplecov?).and_return(true)
+      allow(TestSift).to receive(:simplecov?).and_return(true)
       allow(described_class::SimpleCovInterop).to receive(:install)
 
       build_reporter.generate
@@ -280,7 +280,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       allow(engine).to receive(:merge_skipped_coverage).with(['ex_skipped']).and_return(
         tracked_file => { 1 => 5 }
       )
-      allow(RSpecTracer).to receive(:simplecov?).and_return(true)
+      allow(TestSift).to receive(:simplecov?).and_return(true)
       allow(described_class::SimpleCovInterop).to receive(:install)
 
       build_reporter.generate
@@ -304,7 +304,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       allow(engine).to receive(:merge_skipped_coverage).with(['ex_skipped']).and_return(
         tracked_file => { 1 => 5, 2 => 7 }
       )
-      allow(RSpecTracer).to receive(:simplecov?).and_return(true)
+      allow(TestSift).to receive(:simplecov?).and_return(true)
       allow(described_class::SimpleCovInterop).to receive(:install)
 
       build_reporter.generate
@@ -332,7 +332,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       allow(engine).to receive(:merge_skipped_coverage).with(['ex_skipped']).and_return(
         tracked_file => { 1 => 5 }
       )
-      allow(RSpecTracer).to receive(:simplecov?).and_return(true)
+      allow(TestSift).to receive(:simplecov?).and_return(true)
       allow(described_class::SimpleCovInterop).to receive(:install)
 
       expect { build_reporter.generate }.not_to raise_error
@@ -358,7 +358,7 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       allow(engine).to receive(:merge_skipped_coverage).with(['ex_skipped']).and_return(
         tracked_file => { 0 => 1 }
       )
-      allow(RSpecTracer).to receive(:simplecov?).and_return(true)
+      allow(TestSift).to receive(:simplecov?).and_return(true)
       allow(described_class::SimpleCovInterop).to receive(:install)
 
       build_reporter.generate
@@ -383,9 +383,9 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       cov_a = { '/lib/a.rb' => [1, 2, nil], '/lib/b.rb' => [1] }
       cov_b = { '/lib/a.rb' => [4, nil, nil], '/lib/c.rb' => [9] }
       File.write(File.join(peer_a, 'coverage.json'),
-                 JSON.generate(RSpecTracer: { coverage: cov_a, timestamp: 1 }))
+                 JSON.generate(TestSift: { coverage: cov_a, timestamp: 1 }))
       File.write(File.join(peer_b, 'coverage.json'),
-                 JSON.generate(RSpecTracer: { coverage: cov_b, timestamp: 2 }))
+                 JSON.generate(TestSift: { coverage: cov_b, timestamp: 2 }))
     end
 
     it 'unions per-line strengths across peer coverage.json files' do
@@ -395,14 +395,14 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       )
 
       payload = JSON.parse(File.read(output_path, encoding: 'UTF-8'))
-      expect(payload['RSpecTracer']['coverage']['/lib/a.rb']).to eq([5, 2, nil])
-      expect(payload['RSpecTracer']['coverage']['/lib/b.rb']).to eq([1])
-      expect(payload['RSpecTracer']['coverage']['/lib/c.rb']).to eq([9])
-      expect(payload['RSpecTracer']['timestamp']).to be_a(Integer)
+      expect(payload['TestSift']['coverage']['/lib/a.rb']).to eq([5, 2, nil])
+      expect(payload['TestSift']['coverage']['/lib/b.rb']).to eq([1])
+      expect(payload['TestSift']['coverage']['/lib/c.rb']).to eq([9])
+      expect(payload['TestSift']['timestamp']).to be_a(Integer)
     end
 
     it 'creates the output directory and emits a debug log line through the provided logger' do
-      logger = instance_double(RSpecTracer::Logger, debug: nil)
+      logger = instance_double(TestSift::Logger, debug: nil)
 
       described_class.merge_parallel(
         peer_paths: [peer_a, peer_b],
@@ -420,12 +420,12 @@ RSpec.describe RSpecTracer::Reporters::CoverageJsonReporter do
       end.not_to raise_error
 
       payload = JSON.parse(File.read(output_path, encoding: 'UTF-8'))
-      expect(payload['RSpecTracer']['coverage']).to be_empty
+      expect(payload['TestSift']['coverage']).to be_empty
     end
   end
 
   describe 'SimpleCovInterop' do
-    let(:interop) { RSpecTracer::Reporters::CoverageJsonReporter::SimpleCovInterop }
+    let(:interop) { TestSift::Reporters::CoverageJsonReporter::SimpleCovInterop }
 
     after { interop.coverage = nil }
 

@@ -5,7 +5,7 @@
 # this run's filter classified the example with (Failed previously /
 # Pending previously / Files changed / Environment changed / Interrupted
 # previously), not the seeded prior-snapshot reason. The fix lives at
-# RSpecTracer::Engine#register_example, which now overwrites the seeded
+# TestSift::Engine#register_example, which now overwrites the seeded
 # entry in @all_examples instead of preserving it via `||=`.
 #
 # Drives the ruby_app fixture with a temp spec file containing a
@@ -20,9 +20,9 @@ require 'open3'
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleExpectations, RSpec/ExampleLength
 RSpec.describe 'report.json#run_reason persistence on warm runs' do
   let(:fixture_root) { File.expand_path('../../benchmark/fixtures/ruby_app', __dir__) }
-  let(:cache_dir)    { File.join(fixture_root, 'rspec_tracer_cache') }
-  let(:report_dir)   { File.join(fixture_root, 'rspec_tracer_report') }
-  let(:coverage_dir) { File.join(fixture_root, 'rspec_tracer_coverage') }
+  let(:cache_dir)    { File.join(fixture_root, 'testsift_cache') }
+  let(:report_dir)   { File.join(fixture_root, 'testsift_report') }
+  let(:coverage_dir) { File.join(fixture_root, 'testsift_coverage') }
   let(:temp_spec)    { File.join(fixture_root, 'spec', 'run_reason_regression_spec.rb') }
 
   around do |example|

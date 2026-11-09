@@ -10,9 +10,9 @@
 require 'set'
 require 'rantly/rspec_extensions'
 
-require 'rspec_tracer/tracker/dependency_graph'
-require 'rspec_tracer/tracker/example_registry'
-require 'rspec_tracer/tracker/filter'
+require 'testsift/tracker/dependency_graph'
+require 'testsift/tracker/example_registry'
+require 'testsift/tracker/filter'
 
 PROPERTY_PATHS = %w[/lib/a.rb /lib/b.rb /lib/c.rb /lib/d.rb /lib/e.rb].freeze
 PROPERTY_STATUSES = %i[passed failed pending interrupted flaky skipped].freeze
@@ -25,8 +25,8 @@ module FilterPropertyGen
     example_ids = (1..PROPERTY_EXAMPLE_COUNT).map { |i| "ex#{i}" }
     registered_ids = example_ids.sample(Rantly { range(0, PROPERTY_EXAMPLE_COUNT) })
 
-    graph = RSpecTracer::Tracker::DependencyGraph.new
-    registry = RSpecTracer::Tracker::ExampleRegistry.new
+    graph = TestSift::Tracker::DependencyGraph.new
+    registry = TestSift::Tracker::ExampleRegistry.new
     registered_ids.each do |id|
       paths = PROPERTY_PATHS.sample(Rantly { range(0, PROPERTY_PATHS.size) })
       graph.register_example(id, paths.to_set)
@@ -47,7 +47,7 @@ end
 
 RSpec.describe 'Filter invariants' do
   def select(scenario, change_set: scenario[:change_set], whole_suite_invalidated: false)
-    RSpecTracer::Tracker::Filter.select(
+    TestSift::Tracker::Filter.select(
       graph: scenario[:graph],
       change_set: change_set,
       registry: scenario[:registry],

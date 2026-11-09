@@ -7,14 +7,14 @@ require 'json'
 require 'open3'
 require 'tmpdir'
 
-# Real-user-shape integration coverage for `RSPEC_TRACER_STORAGE`
+# Real-user-shape integration coverage for `TESTSIFT_STORAGE`
 # env-var precedence over the `storage_backend` DSL.
 #
 # Discriminator: each backend writes a different file shape under
-# `rspec_tracer_cache/`:
+# `testsift_cache/`:
 #   :json   -> `last_run.json` (manifest) + per-field `*.json` files
-#              under `<run_id>/` (no `rspec_tracer.sqlite3`).
-#   :sqlite -> `rspec_tracer.sqlite3` database file (no `last_run.json`,
+#              under `<run_id>/` (no `testsift.sqlite3`).
+#   :sqlite -> `testsift.sqlite3` database file (no `last_run.json`,
 #              no per-field JSON under `<run_id>/`; the manifest
 #              pointer lives inside the DB).
 #
@@ -23,7 +23,7 @@ require 'tmpdir'
 # cache-persistence bugs.
 #
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleExpectations, RSpec/ExampleLength
-RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
+RSpec.describe 'TESTSIFT_STORAGE env-var override integration' do
   let(:project_root) { File.expand_path('../..', __dir__) }
   let(:gemfile_path) { File.join(project_root, 'Gemfile') }
 
@@ -42,15 +42,15 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
   end
 
   def write_fixture(dir, dsl_storage:)
-    File.write(File.join(dir, '.rspec-tracer'), <<~RUBY)
+    File.write(File.join(dir, '.testsift'), <<~RUBY)
       # frozen_string_literal: true
-      RSpecTracer.configure do
+      TestSift.configure do
         storage_backend :#{dsl_storage}
       end
     RUBY
     File.write(File.join(dir, 'spec_helper.rb'), <<~RUBY)
-      require 'rspec_tracer'
-      RSpecTracer.start
+      require 'testsift'
+      TestSift.start
     RUBY
     File.write(File.join(dir, 'storage_spec.rb'), <<~RUBY)
       require_relative 'spec_helper'
@@ -64,7 +64,7 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
         'BUNDLE_GEMFILE' => gemfile_path,
         'GIT_DEFAULT_BRANCH' => nil,
         'GIT_BRANCH' => nil,
-        'RSPEC_TRACER_STORAGE' => nil
+        'TESTSIFT_STORAGE' => nil
       }.merge(env_overrides)
       Open3.capture2e(env, 'bundle', 'exec', 'rspec', '--no-color', 'storage_spec.rb',
                       chdir: dir)
@@ -72,10 +72,10 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
   end
 
   def cache_layout(dir)
-    cache_dir = File.join(dir, 'rspec_tracer_cache')
+    cache_dir = File.join(dir, 'testsift_cache')
     return { dir_present: false } unless Dir.exist?(cache_dir)
 
-    sqlite_present = File.exist?(File.join(cache_dir, 'rspec_tracer.sqlite3'))
+    sqlite_present = File.exist?(File.join(cache_dir, 'testsift.sqlite3'))
     manifest_path = File.join(cache_dir, 'last_run.json')
     json_field_count = if File.exist?(manifest_path)
                          manifest = JSON.parse(File.read(manifest_path, encoding: 'UTF-8'))
@@ -94,12 +94,12 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
     }
   end
 
-  context 'when RSPEC_TRACER_STORAGE=sqlite overrides the DSL :json' do
-    it 'env wins - writes rspec_tracer.sqlite3, NO last_run.json + NO per-field JSON' do
+  context 'when TESTSIFT_STORAGE=sqlite overrides the DSL :json' do
+    it 'env wins - writes testsift.sqlite3, NO last_run.json + NO per-field JSON' do
       Dir.mktmpdir do |dir|
         write_fixture(dir, dsl_storage: 'json')
 
-        out, status = run_rspec(dir, env_overrides: { 'RSPEC_TRACER_STORAGE' => 'sqlite' })
+        out, status = run_rspec(dir, env_overrides: { 'TESTSIFT_STORAGE' => 'sqlite' })
 
         expect(status.success?).to(
           be(true),
@@ -108,7 +108,7 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
         layout = cache_layout(dir)
         expect(layout[:sqlite_present]).to(
           be(true),
-          "expected rspec_tracer.sqlite3 with env=sqlite override, got: #{layout.inspect}\n#{out}"
+          "expected testsift.sqlite3 with env=sqlite override, got: #{layout.inspect}\n#{out}"
         )
         expect(layout[:json_manifest_present]).to(
           be(false),
@@ -119,12 +119,12 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
     end
   end
 
-  context 'when RSPEC_TRACER_STORAGE=json overrides the DSL :sqlite' do
-    it 'env wins - writes last_run.json + per-field JSON files, NO rspec_tracer.sqlite3' do
+  context 'when TESTSIFT_STORAGE=json overrides the DSL :sqlite' do
+    it 'env wins - writes last_run.json + per-field JSON files, NO testsift.sqlite3' do
       Dir.mktmpdir do |dir|
         write_fixture(dir, dsl_storage: 'sqlite')
 
-        out, status = run_rspec(dir, env_overrides: { 'RSPEC_TRACER_STORAGE' => 'json' })
+        out, status = run_rspec(dir, env_overrides: { 'TESTSIFT_STORAGE' => 'json' })
 
         expect(status.success?).to(
           be(true),
@@ -134,7 +134,7 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
         expect(layout[:json_manifest_present]).to be(true)
         expect(layout[:sqlite_present]).to(
           be(false),
-          "expected no rspec_tracer.sqlite3 with env=json override, got: #{layout.inspect}\n#{out}"
+          "expected no testsift.sqlite3 with env=json override, got: #{layout.inspect}\n#{out}"
         )
         expect(layout[:json_field_count]).to(
           be > 0,
@@ -144,7 +144,7 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
     end
   end
 
-  context 'when RSPEC_TRACER_STORAGE is absent (DSL alone decides)' do
+  context 'when TESTSIFT_STORAGE is absent (DSL alone decides)' do
     it 'DSL :sqlite produces sqlite layout when env is unset' do
       Dir.mktmpdir do |dir|
         write_fixture(dir, dsl_storage: 'sqlite')
@@ -158,7 +158,7 @@ RSpec.describe 'RSPEC_TRACER_STORAGE env-var override integration' do
         layout = cache_layout(dir)
         expect(layout[:sqlite_present]).to(
           be(true),
-          "expected rspec_tracer.sqlite3 from DSL :sqlite (env unset), got: #{layout.inspect}\n#{out}"
+          "expected testsift.sqlite3 from DSL :sqlite (env unset), got: #{layout.inspect}\n#{out}"
         )
         expect(layout[:json_manifest_present]).to be(false)
         expect(layout[:json_field_count]).to eq(0)

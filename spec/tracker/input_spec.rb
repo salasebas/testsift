@@ -3,9 +3,9 @@
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/tracker/input'
+require 'testsift/tracker/input'
 
-RSpec.describe RSpecTracer::Tracker::Input do
+RSpec.describe TestSift::Tracker::Input do
   let(:root) { '/tmp/project' }
 
   describe '.for_file' do
@@ -89,7 +89,7 @@ RSpec.describe RSpecTracer::Tracker::Input do
       end.to raise_error(ArgumentError, /invalid Input kind: :bogus/)
     end
 
-    RSpecTracer::Tracker::ALLOWED_INPUT_KINDS.each do |kind|
+    TestSift::Tracker::ALLOWED_INPUT_KINDS.each do |kind|
       it "accepts kind=#{kind}" do
         input = described_class.for_file(
           path: "/tmp/project/x_#{kind}", kind: kind, digest: 'd', root: root

@@ -1,9 +1,9 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'rspec_tracer/tracker/example_registry'
+require 'testsift/tracker/example_registry'
 
-RSpec.describe RSpecTracer::Tracker::ExampleRegistry do
+RSpec.describe TestSift::Tracker::ExampleRegistry do
   subject(:registry) { described_class.new }
 
   describe 'constants' do

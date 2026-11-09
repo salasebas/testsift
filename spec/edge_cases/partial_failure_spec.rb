@@ -24,13 +24,13 @@ require 'fileutils'
 require 'json'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 PARTIAL_FAILURE_SQLITE_AVAILABLE =
   begin
     require 'sqlite3'
-    require 'rspec_tracer/storage/sqlite_backend'
+    require 'testsift/storage/sqlite_backend'
     RUBY_ENGINE == 'ruby'
   rescue LoadError
     false
@@ -38,15 +38,15 @@ PARTIAL_FAILURE_SQLITE_AVAILABLE =
 
 # rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Partial failure — mid-write disk-full recovery' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_partial_failure_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_partial_failure_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   def build_snapshot(run_id, marker)
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: { marker => { id: marker, description: "from #{marker}" } },
       duplicate_examples: {},
@@ -67,7 +67,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
   end
 
   describe 'JsonBackend' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path) }
 
     before do
       backend.save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version)
@@ -88,7 +88,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
       end.to raise_error(Errno::ENOSPC)
 
       # last_run.json still points at alpha (last step never executed).
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
       expect(snap).not_to be_nil
       expect(snap.run_id).to eq('alpha')
@@ -107,7 +107,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
         backend.save_graph(build_snapshot('beta', 'ex_b'), schema_version: schema_version)
       end.to raise_error(Errno::ENOSPC)
 
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
       expect(snap.run_id).to eq('alpha')
     end
@@ -132,7 +132,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
       RSpec::Mocks.space.proxy_for(File).reset
       backend.save_graph(build_snapshot('gamma', 'ex_c'), schema_version: schema_version)
 
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
       expect(snap.run_id).to eq('gamma')
       expect(snap.all_examples.keys).to eq(['ex_c'])
@@ -154,7 +154,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
       # We don't assert tmps are present (the rescue in write_payload_atomic
       # cleans them up); we assert that whether or not they linger, the
       # reader is unfazed.
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       expect { reader.load_graph(schema_version: schema_version) }.not_to raise_error
       expect(reader.load_graph(schema_version: schema_version).run_id).to eq('alpha')
       expect(tmps).to all(satisfy { |p| File.file?(p) || !File.exist?(p) }) # informational
@@ -167,7 +167,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
       backend.save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version)
     end
 
-    let(:backend) { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path) }
+    let(:backend) { TestSift::Storage::SqliteBackend.new(cache_path: cache_path) }
 
     it 'rolls back the in-flight transaction when an INSERT fails mid-stream' do
       raise_after = 5
@@ -189,7 +189,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
       end.to raise_error(SQLite3::Exception, /simulated/)
 
       RSpec::Mocks.space.proxy_for(SQLite3::Database).reset
-      reader = RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::SqliteBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
 
       expect(snap).not_to be_nil
@@ -216,7 +216,7 @@ RSpec.describe 'Partial failure — mid-write disk-full recovery' do
       RSpec::Mocks.space.proxy_for(SQLite3::Database).reset
       backend.save_graph(build_snapshot('gamma', 'ex_c'), schema_version: schema_version)
 
-      reader = RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::SqliteBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
       expect(snap.run_id).to eq('gamma')
     end

@@ -1,13 +1,13 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer'
+require 'testsift'
 
-# Direct tests for RSpecTracer.setup_coverage's interaction with Ruby's
+# Direct tests for TestSift.setup_coverage's interaction with Ruby's
 # `::Coverage` module. Three regressions / additions land here:
 #
 #   * pre-#195: bare `Coverage.start` crashes with
 #     "coverage measurement is already setup" when a user pre-starts
-#     Coverage to opt into branches before `RSpecTracer.start`. The
+#     Coverage to opt into branches before `TestSift.start`. The
 #     `Coverage.running?` guard mirrors `Engine#ensure_coverage_started`
 #     so both entry points agree on the predicate.
 #   * pre-#195: standalone path always used the bare `Coverage.start`
@@ -18,7 +18,7 @@ require 'rspec_tracer'
 #     running, `setup_coverage` returns immediately (the DSL is inert
 #     under SimpleCov, which owns the Coverage lifecycle via
 #     `enable_coverage :branch` etc.).
-RSpec.describe RSpecTracer, '.setup_coverage + #coverage_modes (issue #195)' do
+RSpec.describe TestSift, '.setup_coverage + #coverage_modes (issue #195)' do
   before do
     # Reset memoized @simplecov / @coverage_modes between examples.
     described_class.remove_instance_variable(:@simplecov) if described_class.instance_variable_defined?(:@simplecov)

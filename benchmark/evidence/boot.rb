@@ -51,38 +51,38 @@ module Evidence
 
   # Engines before the shared example-boundary snapshot named this step peek_normalized.
   def self.normalization_method
-    adapter = RSpecTracer::Tracker::CoverageAdapter
+    adapter = TestSift::Tracker::CoverageAdapter
     adapter.private_method_defined?(:normalize) ? :normalize : :peek_normalized
   end
 
   def self.observer_targets
     {
-      RSpecTracer::Tracker::CoverageAdapter => {
+      TestSift::Tracker::CoverageAdapter => {
         compute_diff: 'dependency_delta', normalization_method => 'coverage_normalize'
       },
-      RSpecTracer::Tracker::LoadedFilesTracker => {
+      TestSift::Tracker::LoadedFilesTracker => {
         capture_boot_set!: 'loaded_attribution', loaded_set_inputs: 'loaded_attribution',
         stop_example: 'loaded_attribution'
       },
-      RSpecTracer::Tracker::FileDigest.singleton_class => { compute: 'stat_hash' },
-      RSpecTracer::Tracker::DeclaredGlobs => { walk: 'declared_globs' },
-      RSpecTracer::Tracker::NewFileDetector => { new_files: 'new_files' },
-      RSpecTracer::Tracker::DependencyGraph => { register_example: 'graph', examples_depending_on: 'graph' },
-      RSpecTracer::Tracker::Filter.singleton_class => { select: 'selection' }
+      TestSift::Tracker::FileDigest.singleton_class => { compute: 'stat_hash' },
+      TestSift::Tracker::DeclaredGlobs => { walk: 'declared_globs' },
+      TestSift::Tracker::NewFileDetector => { new_files: 'new_files' },
+      TestSift::Tracker::DependencyGraph => { register_example: 'graph', examples_depending_on: 'graph' },
+      TestSift::Tracker::Filter.singleton_class => { select: 'selection' }
     }
   end
 
   def self.engine_targets
     {
-      RSpecTracer::Engine => {
+      TestSift::Engine => {
         setup: 'setup', example_started: 'example_boundary', example_finished: 'example_boundary',
         record_coverage_delta: 'report_delta', attribute_to_example: 'file_attribution',
         compute_change_set: 'change_detection', build_snapshot: 'snapshot_build', finalize: 'finalize'
       },
-      RSpecTracer.singleton_class => {
+      TestSift.singleton_class => {
         emit_reporters: 'reports', emit_coverage_json: 'coverage_report', run_exit_tasks: 'exit_tasks'
       },
-      RSpecTracer::RSpec::ParallelTests.singleton_class => {
+      TestSift::RSpec::ParallelTests.singleton_class => {
         finalize!: 'worker_finalize', merge_snapshot!: 'worker_merge', merge_coverage!: 'worker_merge'
       }
     }
@@ -90,7 +90,7 @@ module Evidence
 
   def self.storage_targets
     {
-      RSpecTracer::Storage::JsonBackend => {
+      TestSift::Storage::JsonBackend => {
         load_graph: 'cache_load', save_graph: 'cache_save', read_field: 'cache_decode'
       },
       JSON.singleton_class => { parse: 'json_decode', generate: 'json_encode', pretty_generate: 'json_encode' },
@@ -149,12 +149,12 @@ module Evidence
   end
 
   def self.dependency_only
-    RSpecTracer::Engine.prepend(Module.new do
+    TestSift::Engine.prepend(Module.new do
       def record_coverage_delta(*)
         nil
       end
     end)
-    RSpecTracer.singleton_class.prepend(Module.new do
+    TestSift.singleton_class.prepend(Module.new do
       def emit_coverage_json
         nil
       end
@@ -169,7 +169,7 @@ module Evidence
         result
       end
     end)
-    RSpecTracer::Tracker::LoadedFilesTracker.prepend(Module.new do
+    TestSift::Tracker::LoadedFilesTracker.prepend(Module.new do
       def stop_example(*)
         original = @peek
         @peek = -> { Evidence.instance_variable_get(:@latest_coverage_keys) }
@@ -196,7 +196,7 @@ mode = ENV.fetch('EVIDENCE_MODE')
 Coverage.start(lines: true, branches: mode == 'branches') unless mode == 'plain'
 
 if ENV['EVIDENCE_TRACER'] == '1'
-  require 'rspec_tracer'
+  require 'testsift'
   Evidence.dependency_only if mode == 'dependency'
   Evidence.share_loaded_snapshot if ENV['EVIDENCE_VARIANT'] == 'share_snapshot'
   Evidence.install_profile if ENV['EVIDENCE_PROFILE'] == '1'
@@ -209,5 +209,5 @@ discovery_observer = Module.new do
     super
   end
 end
-discovery_target = ENV['EVIDENCE_TRACER'] == '1' ? RSpecTracer::RSpec::RunnerHook : RSpec::Core::Runner
+discovery_target = ENV['EVIDENCE_TRACER'] == '1' ? TestSift::RSpec::RunnerHook : RSpec::Core::Runner
 discovery_target.prepend(discovery_observer)

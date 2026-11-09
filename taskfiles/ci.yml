@@ -45,7 +45,7 @@ tasks:
         fi
 
         # Step 2: smoke-probe the exact operations S3Backend uses.
-        bucket="rspec-tracer-smoke-$$"
+        bucket="testsift-smoke-$$"
         tmp=$(mktemp)
         echo "probe" > "$tmp"
         trap 'rm -f "$tmp"; awslocal s3 rb "s3://${bucket}" --force >/dev/null 2>&1 || true' EXIT
@@ -89,7 +89,7 @@ tasks:
         fi
 
         # Step 2: smoke probe the exact op set RedisBackend uses.
-        bucket="rspec-tracer-smoke-$$"
+        bucket="testsift-smoke-$$"
         redis-cli -u "{{.URL}}" SET "${bucket}:probe" "probe-value" >/dev/null
         redis-cli -u "{{.URL}}" GET "${bucket}:probe" | grep -q probe-value
         redis-cli -u "{{.URL}}" HSET "${bucket}:hash" field value >/dev/null

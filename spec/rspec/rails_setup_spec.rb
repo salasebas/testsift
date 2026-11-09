@@ -1,14 +1,14 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/rspec/rails_setup'
+require 'testsift/rspec/rails_setup'
 require_relative '../support/engine_context'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::RSpec::RailsSetup do
+RSpec.describe TestSift::RSpec::RailsSetup do
   include_context 'with engine configuration'
 
   def prepare_tracker(configuration_override = configuration)
-    engine = RSpecTracer::Engine.new(configuration: configuration_override).setup
+    engine = TestSift::Engine.new(configuration: configuration_override).setup
     described_class.install(engine: engine, configuration: configuration_override)
     engine
   end
@@ -51,11 +51,11 @@ RSpec.describe RSpecTracer::RSpec::RailsSetup do
     end
 
     after do
-      if defined?(RSpecTracer::Rails::Notifications) && RSpecTracer::Rails::Notifications.installed?
-        RSpecTracer::Rails::Notifications.uninstall
+      if defined?(TestSift::Rails::Notifications) && TestSift::Rails::Notifications.installed?
+        TestSift::Rails::Notifications.uninstall
       end
-      if defined?(RSpecTracer::Rails::I18nTracking) && RSpecTracer::Rails::I18nTracking.installed?
-        RSpecTracer::Rails::I18nTracking.uninstall
+      if defined?(TestSift::Rails::I18nTracking) && TestSift::Rails::I18nTracking.installed?
+        TestSift::Rails::I18nTracking.uninstall
       end
     end
 
@@ -64,8 +64,8 @@ RSpec.describe RSpecTracer::RSpec::RailsSetup do
 
       expect(captured_suite_blocks.size).to eq(1)
       expect(
-        defined?(RSpecTracer::Rails::Notifications) &&
-          RSpecTracer::Rails::Notifications.installed?
+        defined?(TestSift::Rails::Notifications) &&
+          TestSift::Rails::Notifications.installed?
       ).to be_falsey
     end
 
@@ -79,7 +79,7 @@ RSpec.describe RSpecTracer::RSpec::RailsSetup do
 
       hook.call
 
-      expect(RSpecTracer::Rails::Notifications).to be_installed
+      expect(TestSift::Rails::Notifications).to be_installed
       expect(tracker.send(:rails_observers_installed?)).to be(true)
     end
 
@@ -94,8 +94,8 @@ RSpec.describe RSpecTracer::RSpec::RailsSetup do
       hook.call
 
       expect(
-        defined?(RSpecTracer::Rails::Notifications) &&
-          RSpecTracer::Rails::Notifications.installed?
+        defined?(TestSift::Rails::Notifications) &&
+          TestSift::Rails::Notifications.installed?
       ).to be_falsey
     end
 
@@ -144,9 +144,9 @@ RSpec.describe RSpecTracer::RSpec::RailsSetup do
       stub_const('Rails::VERSION::STRING', '7.2.3.1')
 
       hook.call
-      installed_first = RSpecTracer::Rails::Notifications.installed?
+      installed_first = TestSift::Rails::Notifications.installed?
       expect { hook.call }.not_to raise_error
-      installed_second = RSpecTracer::Rails::Notifications.installed?
+      installed_second = TestSift::Rails::Notifications.installed?
 
       expect([installed_first, installed_second]).to eq([true, true])
     end
@@ -197,11 +197,11 @@ RSpec.describe RSpecTracer::RSpec::RailsSetup do
     end
 
     after do
-      if defined?(RSpecTracer::Rails::Notifications) && RSpecTracer::Rails::Notifications.installed?
-        RSpecTracer::Rails::Notifications.uninstall
+      if defined?(TestSift::Rails::Notifications) && TestSift::Rails::Notifications.installed?
+        TestSift::Rails::Notifications.uninstall
       end
-      if defined?(RSpecTracer::Rails::I18nTracking) && RSpecTracer::Rails::I18nTracking.installed?
-        RSpecTracer::Rails::I18nTracking.uninstall
+      if defined?(TestSift::Rails::I18nTracking) && TestSift::Rails::I18nTracking.installed?
+        TestSift::Rails::I18nTracking.uninstall
       end
     end
 

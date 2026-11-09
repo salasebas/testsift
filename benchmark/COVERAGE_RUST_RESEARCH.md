@@ -129,7 +129,7 @@ terms, including retained notices and the applicable Ruby/BSD licensing choices.
 
 ## Practical migration inventory
 
-The baseline's `lib/rspec_tracer/tracker/coverage_adapter.rb` normalizes snapshots,
+The baseline's `lib/testsift/tracker/coverage_adapter.rb` normalizes snapshots,
 filters paths, unions before/after keys, compares line arrays, and creates changed-file
 inputs. `loaded_files_tracker.rb` also obtains coverage file names; installation and final
 reporting have other observation needs. These are separate from VM collection.

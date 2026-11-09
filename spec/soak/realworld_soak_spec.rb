@@ -10,7 +10,7 @@ require 'pathname'
 # Solidus / Refinery / Spree. Each project's pin lives at
 # .github/sha-pins/<project>.txt (sha + tag + license_sha256);
 # the workflow / `task soak:fixture:<project>` clones at the pinned
-# SHA, injects rspec-tracer into the project's Gemfile, bundles,
+# SHA, injects testsift into the project's Gemfile, bundles,
 # and db-prepares. This spec consumes the prepped fixture: subprocess
 # per iter, deterministic-seeded random file mutation rotation
 # through 9 kinds, asserts memstat[N] <= memstat[5] * 1.05 for
@@ -117,14 +117,14 @@ PROJECT_INVOCATIONS = {
     # Refinery v4.1.0 ships two examples sharing one full description
     # (images/spec/models/refinery/image_spec.rb:163 / :207, both
     # "Refinery::Image#thumbnail_dimensions returns correctly with
-    # nil"). rspec-tracer's fail_on_duplicates gate (default true)
+    # nil"). testsift's fail_on_duplicates gate (default true)
     # turns that into exit 1 on an otherwise green suite, which
     # failed every nightly iter 1 since the v4.1.0 pin. Duplicate
     # detection + drop stay exercised (the diagnostic still logs and
     # the colliding pair is dropped); only the exit gate is disabled
     # because upstream description hygiene is not the soak's
     # assertion surface.
-    extra_env: { 'RSPEC_TRACER_FAIL_ON_DUPLICATES' => 'false' }
+    extra_env: { 'TESTSIFT_FAIL_ON_DUPLICATES' => 'false' }
   },
   spree: {
     gemfile_dir: 'spree/core',
@@ -249,7 +249,7 @@ FIXTURE_ROOT = Pathname(
 ).expand_path
 GEMFILE_PATH = FIXTURE_ROOT.join(INVOCATION[:gemfile_dir], 'Gemfile')
 ENGINE_PATH = FIXTURE_ROOT.join(INVOCATION[:engine_dir])
-CACHE_PATH = ENGINE_PATH.join('rspec_tracer_cache')
+CACHE_PATH = ENGINE_PATH.join('testsift_cache')
 # GitHub Actions populates `inputs.<name>` with each input's default
 # value on `schedule:` triggers (vs `pull_request:` where the inputs
 # context is absent), so the soak workflow's `SOAK_ITERATIONS:
@@ -454,7 +454,7 @@ RSpec.describe "realworld soak (#{PROJECT}#{SHARD_LABEL})" do
       'BUNDLE_GEMFILE' => GEMFILE_PATH.to_s,
       'RUBYOPT' => "-r#{SOAK_START} -r#{MEMSTAT_AT_EXIT}",
       'SOAK_MEMSTAT_DIR' => iter_dir.to_s,
-      'RSPEC_TRACER' => '1',
+      'TESTSIFT' => '1',
       # Delete CI from the child env (nil unsets it in Open3's env
       # hash). Empty string is TRUTHY in Ruby, which trips Gemfile
       # conditionals like Spree's `gem 'mysql2' if ENV['CI']` and
@@ -511,7 +511,7 @@ RSpec.describe "realworld soak (#{PROJECT}#{SHARD_LABEL})" do
   end
 
   def verify_cache_state(iter)
-    raise "iter #{iter}#{SHARD_LABEL} (#{PROJECT}): rspec_tracer_cache/ missing at #{CACHE_PATH}" \
+    raise "iter #{iter}#{SHARD_LABEL} (#{PROJECT}): testsift_cache/ missing at #{CACHE_PATH}" \
       unless CACHE_PATH.directory?
 
     last_run = CACHE_PATH.join('last_run.json')

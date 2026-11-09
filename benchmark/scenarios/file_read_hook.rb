@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Microbenchmark for RSpecTracer::Tracker::IOHooks#record fast-reject.
+# Microbenchmark for TestSift::Tracker::IOHooks#record fast-reject.
 #
 # Three measurements, all against a tiny in-root fixture so File.read
 # itself is cheap (μs-scale). What we want to see is the *additional*
@@ -23,7 +23,7 @@ require 'fileutils'
 require 'tmpdir'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __dir__))
-require 'rspec_tracer/tracker/io_hooks'
+require 'testsift/tracker/io_hooks'
 
 REJECT_ITERS = Integer(ENV.fetch('REJECT_ITERS', '100_000'))
 RECORD_ITERS = Integer(ENV.fetch('RECORD_ITERS', '10_000'))
@@ -46,7 +46,7 @@ begin
   REJECT_ITERS.times { File.read(fixture) }
   baseline = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
 
-  RSpecTracer::Tracker::IOHooks.install(root: root)
+  TestSift::Tracker::IOHooks.install(root: root)
 
   # Reject path: hook installed, no bucket.
   REJECT_ITERS.times { File.read(fixture) } # warm
@@ -58,7 +58,7 @@ begin
   # Record path: distinct fixtures, full work per call.
   bucket = {}
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-  RSpecTracer::Tracker::IOHooks.with_bucket(bucket) do
+  TestSift::Tracker::IOHooks.with_bucket(bucket) do
     record_fixtures.each { |f| File.read(f) }
   end
   record_total = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0

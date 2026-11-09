@@ -21,7 +21,7 @@
 # never load this file.
 require 'simplecov'
 
-unless ENV['RSPEC_TRACER_DISABLE'] == '1' || ENV['COVERAGE'] == 'false' || defined?(Mutant)
+unless ENV['TESTSIFT_DISABLE'] == '1' || ENV['COVERAGE'] == 'false' || defined?(Mutant)
   require 'simplecov_json_formatter'
 
   SimpleCov.formatters = [
@@ -60,24 +60,24 @@ unless ENV['RSPEC_TRACER_DISABLE'] == '1' || ENV['COVERAGE'] == 'false' || defin
     add_filter '/vendor/'
     add_filter '/tmp/'
     add_filter '/coverage/'
-    add_filter %r{/lib/rspec_tracer/reporters/html/}
+    add_filter %r{/lib/testsift/reporters/html/}
     # Metadata-only file (single VERSION constant). Mirrors the
     # codecov.yml + scripts/merge_coverage.rb ignore lists.
-    add_filter %r{/lib/rspec_tracer/version\.rb\z}
+    add_filter %r{/lib/testsift/version\.rb\z}
   end
 end
 
 require_relative 'support/tracker_coverage_gate'
 TrackerCoverageGate.install!
 
-require 'rspec_tracer'
+require 'testsift'
 
 # Skip the tracer self-instrumentation when running under mutant — the
 # tracer's own Runner boot path calls TimeFormatter.format_time, and any
 # mutation that makes that raise would prevent the spec_helper from
 # loading at all, leaving mutant unable to distinguish "killed" from
 # "setup crashed".
-RSpecTracer.start unless ENV['RSPEC_TRACER_DISABLE'] == '1'
+TestSift.start unless ENV['TESTSIFT_DISABLE'] == '1'
 
 RSpec.configure do |config|
   config.example_status_persistence_file_path = 'spec/examples.txt'

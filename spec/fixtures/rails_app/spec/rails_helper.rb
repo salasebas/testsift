@@ -2,7 +2,7 @@
 
 ENV['RAILS_ENV'] ||= 'test'
 
-# Enable rspec-tracer for this fixture when RSPEC_TRACER=1 is set (the
+# Enable testsift for this fixture when TESTSIFT=1 is set (the
 # integration matrix + the benchmark harness cold_rails_v2 both
 # flip this on). Load order matters:
 #
@@ -10,27 +10,27 @@ ENV['RAILS_ENV'] ||= 'test'
 #      framework + app .rb file ends up in the tracker's
 #      LoadedFilesTracker boot_set.
 #   2. Rails loads (config/environment).
-#   3. RSpecTracer.start AFTER Rails is in the object graph, so
+#   3. TestSift.start AFTER Rails is in the object graph, so
 #      `setup_rails`'s `defined?(::Rails::VERSION)` check resolves
 #      truthy and Engine.setup installs the Rails::Notifications +
 #      Rails::I18nTracking observers.
 #
-# RSPEC_TRACER_FIXTURE_NO_SIMPLECOV=1 opts out of SimpleCov so
-# rspec-tracer's own coverage.json emitter writes to
-# rspec_tracer_coverage/coverage.json. Used by the
+# TESTSIFT_FIXTURE_NO_SIMPLECOV=1 opts out of SimpleCov so
+# testsift's own coverage.json emitter writes to
+# testsift_coverage/coverage.json. Used by the
 # spec/integration/coverage_json_round_trip_spec.rb golden round-trip
-# (when SimpleCov is loaded, rspec-tracer defers coverage emission to
+# (when SimpleCov is loaded, testsift defers coverage emission to
 # SimpleCov's at_exit and never writes its own coverage.json).
-if ENV['RSPEC_TRACER'] == '1' && ENV['RSPEC_TRACER_FIXTURE_NO_SIMPLECOV'] != '1'
+if ENV['TESTSIFT'] == '1' && ENV['TESTSIFT_FIXTURE_NO_SIMPLECOV'] != '1'
   require 'simplecov'
   SimpleCov.start { add_filter(%r{^/spec/}) } unless SimpleCov.running
 end
 
 require_relative '../config/environment'
 
-if ENV['RSPEC_TRACER'] == '1'
-  require 'rspec_tracer'
-  RSpecTracer.start
+if ENV['TESTSIFT'] == '1'
+  require 'testsift'
+  TestSift.start
 end
 
 abort('The Rails environment is running in production mode!') if Rails.env.production?
@@ -51,13 +51,13 @@ require_relative 'spec_helper'
 Dir[Rails.root.join('spec/support/**/*.rb')].each { |f| require f }
 
 # Optional DatabaseCleaner driver for the wide-schema integration specs.
-# RSPEC_TRACER_DB_CLEANER_STRATEGY = truncation | deletion | transaction
+# TESTSIFT_DB_CLEANER_STRATEGY = truncation | deletion | transaction
 # loads database_cleaner-active_record and wraps each example in a
 # DatabaseCleaner.cleaning around hook with the requested strategy. The
 # narrow-schema + transactional + non-DSL flows leave the env unset, so
 # the gem is never required and the existing Gemfile resolve still works
 # on every matrix cell.
-db_cleaner_strategy = ENV['RSPEC_TRACER_DB_CLEANER_STRATEGY']
+db_cleaner_strategy = ENV['TESTSIFT_DB_CLEANER_STRATEGY']
 if db_cleaner_strategy && !db_cleaner_strategy.empty?
   require 'database_cleaner/active_record'
   DatabaseCleaner.strategy = db_cleaner_strategy.to_sym
@@ -76,13 +76,13 @@ RSpec.configure do |config|
 
   # Default: transactional fixtures on (matches Rails idiomatic test
   # setup; covered by `task test:features:rails`). When the
-  # narrow-AR-schema scenario flips RSPEC_TRACER_RAILS_TRANSACTIONAL=false,
+  # narrow-AR-schema scenario flips TESTSIFT_RAILS_TRANSACTIONAL=false,
   # each example commits its writes to the test DB and the per-example
   # schema-subscriber attribution path (Tracker::Notifications) becomes
   # the only mechanism observing AR schema changes - the canonical
   # use_transactional_fixtures=false case real users with per-example
   # transactions off see. Driven by `task test:features:rails:narrow-schema`.
-  config.use_transactional_fixtures = ENV.fetch('RSPEC_TRACER_RAILS_TRANSACTIONAL', 'true') != 'false'
+  config.use_transactional_fixtures = ENV.fetch('TESTSIFT_RAILS_TRANSACTIONAL', 'true') != 'false'
   config.infer_spec_type_from_file_location!
   config.filter_rails_from_backtrace!
 

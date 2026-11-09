@@ -7,8 +7,8 @@ require 'fileutils'
 require 'set'
 require 'tmpdir'
 require 'rantly/rspec_extensions'
-require 'rspec_tracer/tracker/declared_globs'
-require 'rspec_tracer/tracker/new_file_detector'
+require 'testsift/tracker/declared_globs'
+require 'testsift/tracker/new_file_detector'
 
 # Fixed alphabet of files on disk - Rantly can only produce collisions
 # against a small population, and collisions are the whole point of
@@ -48,7 +48,7 @@ module InvalidationMonotonicGen
   end
 
   def build_walker(root, globs)
-    RSpecTracer::Tracker::DeclaredGlobs.new(root: root, globs: globs)
+    TestSift::Tracker::DeclaredGlobs.new(root: root, globs: globs)
   end
 end
 
@@ -104,10 +104,10 @@ RSpec.describe 'invalidation monotonicity' do
         extra = InvalidationMonotonicGen.extra_glob(exclude: globs)
         next if extra.nil?
 
-        before_set = RSpecTracer::Tracker::NewFileDetector
+        before_set = TestSift::Tracker::NewFileDetector
           .new(root: root, declared_globs: globs, default_globs: [])
           .new_files(known_paths: Set.new)
-        after_set = RSpecTracer::Tracker::NewFileDetector
+        after_set = TestSift::Tracker::NewFileDetector
           .new(root: root, declared_globs: globs + [extra], default_globs: [])
           .new_files(known_paths: Set.new)
 
@@ -123,7 +123,7 @@ RSpec.describe 'invalidation monotonicity' do
         extra = (MONOTONIC_FILES - known_rels).sample
         next if extra.nil?
 
-        detector = RSpecTracer::Tracker::NewFileDetector.new(
+        detector = TestSift::Tracker::NewFileDetector.new(
           root: root, declared_globs: MONOTONIC_GLOBS, default_globs: []
         )
         before_set = detector.new_files(known_paths: Set.new(known_abs))

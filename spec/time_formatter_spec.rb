@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-RSpec.describe RSpecTracer::TimeFormatter do
+RSpec.describe TestSift::TimeFormatter do
   describe '.format_time' do
     {
       # sub-second precision

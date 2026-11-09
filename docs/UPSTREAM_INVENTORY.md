@@ -26,18 +26,18 @@ limitation column states what the check does not cover.
 
 | Feature | Baseline implementation | Verification | Limitations | TestSift status |
 | --- | --- | --- | --- | --- |
-| Dependency graph and SHA256 invalidation | `lib/rspec_tracer/tracker/dependency_graph.rb`, `file_digest.rb`, `filter.rb` | `bundle exec rspec spec/tracker/dependency_graph_spec.rb spec/tracker/filter_spec.rb spec/properties` | Selection is only as complete as the observed inputs | Adopt; engine extracted in #6 |
+| Dependency graph and SHA256 invalidation | `lib/testsift/tracker/dependency_graph.rb`, `file_digest.rb`, `filter.rb` | `bundle exec rspec spec/tracker/dependency_graph_spec.rb spec/tracker/filter_spec.rb spec/properties` | Selection is only as complete as the observed inputs | Adopt; engine extracted in #6 |
 | Coverage-diff and loaded-file attribution | `tracker/coverage_adapter.rb`, `tracker/loaded_files_tracker.rb` | `bundle exec rspec spec/integration/loaded_files_tracking_spec.rb spec/integration/constants_regression_spec.rb` | Code executed between examples outside a load is not attributed | Adopt; snapshot shared in #21 |
 | File, glob, and ENV declarations | `tracker/declared_globs.rb`, `env_snapshot.rb`, `rspec/metadata.rb` | `bundle exec rspec spec/tracker/declared_globs_spec.rb spec/tracker/env_snapshot_spec.rb spec/integration/per_example_dsl_spec.rb` | Undeclared ENV branches are invisible | Adopt |
 | I/O read hooks | `tracker/io_hooks/` | `bundle exec rspec spec/tracker/io_hooks spec/properties/io_hooks_thread_safety_spec.rb` | Native extensions reading files bypass the hooks | Adopt |
-| Rails observers and presets | `lib/rspec_tracer/rails/` | `task test:features:rails` | Eager loading over-approximates dependencies | Adapt in #13 |
+| Rails observers and presets | `lib/testsift/rails/` | `task test:features:rails` | Eager loading over-approximates dependencies | Adapt in #13 |
 | RSpec and parallel_tests integration | `rspec/runner_hook.rb`, `rspec/reporter_hook.rb`, `rspec/parallel_tests.rb` | `task test:integration:parallel` | Only parallel_tests is validated as a worker runner | Adopt; worker reuse in #11 |
 | JSON storage | `storage/json_backend.rb` | `bundle exec rspec spec/storage spec/contracts` | Whole-cache rewrite on every run | Adopt; cost measured in #28 |
 | SQLite storage | `storage/sqlite_backend.rb` | `bundle exec rspec spec/storage/sqlite_backend_spec.rb spec/integration/sqlite_failing_run_spec.rb` | MRI only; sqlite3 1.x re-raised a pending exit (fixed in #4) | Adopt with the #4 fix |
-| Remote caches (S3, filesystem, Redis) | `lib/rspec_tracer/remote_cache/` | `bundle exec rspec spec/remote_cache` | S3 and Redis need their services; CI covers them with LocalStack and Redis | Adopt; coherence in #11 |
+| Remote caches (S3, filesystem, Redis) | `lib/testsift/remote_cache/` | `bundle exec rspec spec/remote_cache` | S3 and Redis need their services; CI covers them with LocalStack and Redis | Adopt; coherence in #11 |
 | Flaky-result history | `engine.rb` (`flaky_history?`), `reporters/` | `bundle exec rspec spec/integration/flaky_detection_spec.rb` | Sticky flag, no trend | Adopt |
-| Diagnostics CLI (`doctor`, `explain`, `blast-radius`, `cache:*`) | `lib/rspec_tracer/cli/` | `bundle exec rspec spec/cli` | Reads the local cache only | Adopt |
-| Reports (terminal, JSON, HTML, coverage JSON) | `lib/rspec_tracer/reporters/` | `bundle exec rspec spec/reporters` | HTML and JSON each build the shared payload | Adopt; payload sharing follows #28 |
+| Diagnostics CLI (`doctor`, `explain`, `blast-radius`, `cache:*`) | `lib/testsift/cli/` | `bundle exec rspec spec/cli` | Reads the local cache only | Adopt |
+| Reports (terminal, JSON, HTML, coverage JSON) | `lib/testsift/reporters/` | `bundle exec rspec spec/reporters` | HTML and JSON each build the shared payload | Adopt; payload sharing follows #28 |
 | SimpleCov interoperability | `reporters/coverage_json_reporter.rb` (`SimpleCovInterop`) | `bundle exec rspec spec/reporters/coverage_json_reporter_spec.rb` | Lifecycle ownership is not yet specified | Adapt in #8 |
 
 Results on 2026-11-08 (macOS, MRI 3.3.10, sqlite3 2.10.2), in table order:

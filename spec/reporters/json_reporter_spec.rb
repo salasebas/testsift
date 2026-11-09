@@ -5,8 +5,8 @@ require 'json'
 require 'set'
 require 'tmpdir'
 require 'time'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/json_reporter'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/json_reporter'
 
 require_relative '../contracts/reporter'
 
@@ -14,20 +14,20 @@ require_relative '../contracts/reporter'
 # payload_builder_spec.rb (JsonReporter delegates). This file asserts
 # IO behavior + delegation + schema constant wiring.
 # rubocop:disable RSpec/MultipleMemoizedHelpers
-RSpec.describe RSpecTracer::Reporters::JsonReporter do
+RSpec.describe TestSift::Reporters::JsonReporter do
   let(:tmp) { Dir.mktmpdir }
-  let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
+  let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
   let(:snapshot) { build_populated_snapshot }
   let(:run_metadata) do
     { pid: 1234, run_time: 4.25, started_at: Time.utc(2026, 4, 23, 12, 0, 0), parallel_tests: false }
   end
-  let(:report_dir) { File.join(tmp, 'rspec_tracer_report') }
+  let(:report_dir) { File.join(tmp, 'testsift_report') }
   let(:reporter_class) { described_class }
 
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
   def build_populated_snapshot
-    RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'runabc').tap do |s|
+    TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'runabc').tap do |s|
       s.all_examples = {
         'ex1' => {
           full_description: 'First example',
@@ -83,7 +83,7 @@ RSpec.describe RSpecTracer::Reporters::JsonReporter do
     end
 
     it 'logs a debug line through the provided logger' do
-      logger = instance_double(RSpecTracer::Logger, debug: nil)
+      logger = instance_double(TestSift::Logger, debug: nil)
       described_class.new(
         snapshot: snapshot, report_dir: report_dir, run_metadata: run_metadata, logger: logger
       ).generate
@@ -110,7 +110,7 @@ RSpec.describe RSpecTracer::Reporters::JsonReporter do
   describe 'SCHEMA_VERSION constant' do
     it 'delegates to PayloadBuilder::SCHEMA_VERSION' do
       expect(described_class::SCHEMA_VERSION)
-        .to eq(RSpecTracer::Reporters::PayloadBuilder::SCHEMA_VERSION)
+        .to eq(TestSift::Reporters::PayloadBuilder::SCHEMA_VERSION)
     end
 
     it 'is pinned to 1 for the initial reporter schema' do

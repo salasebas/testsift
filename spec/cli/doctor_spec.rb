@@ -4,10 +4,10 @@ require 'spec_helper'
 require 'stringio'
 require 'tmpdir'
 
-require 'rspec_tracer/cli/doctor'
+require 'testsift/cli/doctor'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::CLI::Doctor do
+RSpec.describe TestSift::CLI::Doctor do
   let(:stdout) { StringIO.new }
   let(:stderr) { StringIO.new }
 
@@ -16,7 +16,7 @@ RSpec.describe RSpecTracer::CLI::Doctor do
       %w[-h --help].each do |flag|
         out = StringIO.new
         expect(described_class.run([flag], stdout: out, stderr: stderr)).to eq(0)
-        expect(out.string).to include('Usage: rspec-tracer doctor')
+        expect(out.string).to include('Usage: testsift doctor')
       end
     end
 
@@ -31,7 +31,7 @@ RSpec.describe RSpecTracer::CLI::Doctor do
       expect(described_class.run([], stdout: stdout, stderr: stderr)).to eq(0)
       lines = stdout.string.split("\n")
       expect(lines.any? { |l| l.start_with?('OK   ruby:') }).to be(true)
-      expect(lines.any? { |l| l.start_with?('OK   rspec-tracer:') }).to be(true)
+      expect(lines.any? { |l| l.start_with?('OK   testsift:') }).to be(true)
       expect(lines.any? { |l| l.include?('cache_path:') }).to be(true)
       expect(lines.any? { |l| l.include?('coverage_path:') }).to be(true)
       expect(lines.any? { |l| l.include?('report_path:') }).to be(true)
@@ -108,12 +108,12 @@ RSpec.describe RSpecTracer::CLI::Doctor do
 
   # Deeper doctor checks - schema-version compat, remote-cache
   # backend reachability, and AR-schema narrow-attribution config
-  # detection. Tests use focused stubs over the live RSpecTracer
+  # detection. Tests use focused stubs over the live TestSift
   # module since the CLI dispatches against the global module.
   describe '.cache_schema_version_check' do
     it 'returns INFO when no last_run.json exists yet' do
       Dir.mktmpdir do |dir|
-        allow(RSpecTracer).to receive(:cache_path).and_return(dir)
+        allow(TestSift).to receive(:cache_path).and_return(dir)
         expect(described_class.cache_schema_version_check).to start_with('INFO schema:')
         expect(described_class.cache_schema_version_check).to include('no cache yet')
       end
@@ -121,9 +121,9 @@ RSpec.describe RSpecTracer::CLI::Doctor do
 
     it 'returns OK when stored schema version matches the gem' do
       Dir.mktmpdir do |dir|
-        manifest = { 'schema_version' => RSpecTracer::Storage::Schema::CURRENT, 'run_id' => 'abc' }
+        manifest = { 'schema_version' => TestSift::Storage::Schema::CURRENT, 'run_id' => 'abc' }
         File.write(File.join(dir, 'last_run.json'), JSON.dump(manifest))
-        allow(RSpecTracer).to receive(:cache_path).and_return(dir)
+        allow(TestSift).to receive(:cache_path).and_return(dir)
         expect(described_class.cache_schema_version_check).to start_with('OK   schema:')
       end
     end
@@ -131,7 +131,7 @@ RSpec.describe RSpecTracer::CLI::Doctor do
     it 'returns WARN with cold-run note when stored schema version differs' do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, 'last_run.json'), JSON.dump('schema_version' => 1, 'run_id' => 'abc'))
-        allow(RSpecTracer).to receive(:cache_path).and_return(dir)
+        allow(TestSift).to receive(:cache_path).and_return(dir)
         line = described_class.cache_schema_version_check
         expect(line).to start_with('WARN schema:')
         expect(line).to include('cold run')
@@ -141,42 +141,42 @@ RSpec.describe RSpecTracer::CLI::Doctor do
 
   describe '.remote_cache_check' do
     it 'returns INFO when no remote_cache backend is configured' do
-      allow(RSpecTracer).to receive(:respond_to?).and_call_original
-      allow(RSpecTracer).to receive(:respond_to?).with(:remote_cache_backend_entry).and_return(true)
-      allow(RSpecTracer).to receive(:remote_cache_backend_entry).and_return(nil)
+      allow(TestSift).to receive(:respond_to?).and_call_original
+      allow(TestSift).to receive(:respond_to?).with(:remote_cache_backend_entry).and_return(true)
+      allow(TestSift).to receive(:remote_cache_backend_entry).and_return(nil)
       expect(described_class.remote_cache_check).to start_with('INFO remote_cache:')
     end
 
     it 'returns OK with bucket name when :s3 backend is configured' do
-      allow(RSpecTracer).to receive(:respond_to?).and_call_original
-      allow(RSpecTracer).to receive(:respond_to?).with(:remote_cache_backend_entry).and_return(true)
-      allow(RSpecTracer).to receive(:remote_cache_backend_entry).and_return([:s3, { bucket: 'my-bucket' }])
+      allow(TestSift).to receive(:respond_to?).and_call_original
+      allow(TestSift).to receive(:respond_to?).with(:remote_cache_backend_entry).and_return(true)
+      allow(TestSift).to receive(:remote_cache_backend_entry).and_return([:s3, { bucket: 'my-bucket' }])
       line = described_class.remote_cache_check
       expect(line).to start_with('OK   remote_cache:')
       expect(line).to include('my-bucket')
     end
 
     it 'returns WARN when :local_fs path does not exist' do
-      allow(RSpecTracer).to receive(:respond_to?).and_call_original
-      allow(RSpecTracer).to receive(:respond_to?).with(:remote_cache_backend_entry).and_return(true)
-      allow(RSpecTracer).to receive(:remote_cache_backend_entry).and_return([:local_fs, { path: '/nope' }])
+      allow(TestSift).to receive(:respond_to?).and_call_original
+      allow(TestSift).to receive(:respond_to?).with(:remote_cache_backend_entry).and_return(true)
+      allow(TestSift).to receive(:remote_cache_backend_entry).and_return([:local_fs, { path: '/nope' }])
       expect(described_class.remote_cache_check).to start_with('WARN remote_cache:')
     end
   end
 
   describe '.ar_schema_narrow_attribution_check' do
     before do
-      allow(RSpecTracer).to receive(:respond_to?).and_call_original
-      allow(RSpecTracer).to receive(:respond_to?).with(:track_ar_schema_notifications?).and_return(true)
+      allow(TestSift).to receive(:respond_to?).and_call_original
+      allow(TestSift).to receive(:respond_to?).with(:track_ar_schema_notifications?).and_return(true)
     end
 
     it 'returns INFO when track_ar_schema_notifications is disabled' do
-      allow(RSpecTracer).to receive(:track_ar_schema_notifications?).and_return(false)
+      allow(TestSift).to receive(:track_ar_schema_notifications?).and_return(false)
       expect(described_class.ar_schema_narrow_attribution_check).to start_with('INFO AR schema:')
     end
 
     it 'returns INFO when Rails is not loaded' do
-      allow(RSpecTracer).to receive(:track_ar_schema_notifications?).and_return(true)
+      allow(TestSift).to receive(:track_ar_schema_notifications?).and_return(true)
       hide_const('Rails') if defined?(Rails)
       expect(described_class.ar_schema_narrow_attribution_check).to start_with('INFO AR schema:')
     end

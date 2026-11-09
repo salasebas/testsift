@@ -4,10 +4,10 @@
 # expectation (generator unpacking, factory call); the rubocop-rspec
 # defaults are tuned for unit tests with 1 line of body.
 # rubocop:disable RSpec/ExampleLength
-require 'rspec_tracer/tracker/input'
+require 'testsift/tracker/input'
 require 'rantly/rspec_extensions'
 
-ALLOWED_KINDS_LIST = RSpecTracer::Tracker::ALLOWED_INPUT_KINDS.to_a.freeze
+ALLOWED_KINDS_LIST = TestSift::Tracker::ALLOWED_INPUT_KINDS.to_a.freeze
 IDENTITY_ROOT = '/tmp/project'
 
 # Helper-method indirection keeps property_of generator blocks
@@ -30,7 +30,7 @@ module InputIdentityGen
   end
 
   def for_name(name, kind:, digest:)
-    RSpecTracer::Tracker::Input.for_file(
+    TestSift::Tracker::Input.for_file(
       path: File.join(IDENTITY_ROOT, "#{name}.rb"),
       kind: kind, digest: digest, root: IDENTITY_ROOT
     )
@@ -47,7 +47,7 @@ module InputIdentityGen
   end
 end
 
-RSpec.describe RSpecTracer::Tracker::Input do
+RSpec.describe TestSift::Tracker::Input do
   describe '.for_file identity determinism' do
     it 'depends only on (path, kind), not on digest' do
       property_of { [InputIdentityGen.kind, InputIdentityGen.alpha_word] }.check(100) do |kind, name|

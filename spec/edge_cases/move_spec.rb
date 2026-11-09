@@ -15,22 +15,22 @@
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleMemoizedHelpers
 RSpec.describe 'File moved across directories between runs' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_move_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_move_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
   let(:old_path) { '/spec/legacy/feature_spec.rb' }
   let(:new_path) { '/spec/integration/feature_spec.rb' }
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   def build_snapshot(run_id, file_path, marker)
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: { marker => { id: marker, description: "from #{marker}", file_path: file_path } },
       duplicate_examples: {},
@@ -92,13 +92,13 @@ RSpec.describe 'File moved across directories between runs' do
   end
 
   describe 'JsonBackend :json' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
 
     it_behaves_like 'replaces the cold path with the moved-to path on warm save'
   end
 
   describe 'JsonBackend :msgpack' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
 
     it_behaves_like 'replaces the cold path with the moved-to path on warm save'
   end
@@ -108,7 +108,7 @@ RSpec.describe 'File moved across directories between runs' do
       sqlite_available =
         begin
           require 'sqlite3'
-          require 'rspec_tracer/storage/sqlite_backend'
+          require 'testsift/storage/sqlite_backend'
           RUBY_ENGINE == 'ruby'
         rescue LoadError
           false
@@ -116,7 +116,7 @@ RSpec.describe 'File moved across directories between runs' do
       skip 'sqlite3 gem not installable on this Ruby (JRuby or missing dep)' unless sqlite_available
     end
 
-    let(:backend) { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path) }
+    let(:backend) { TestSift::Storage::SqliteBackend.new(cache_path: cache_path) }
 
     it_behaves_like 'replaces the cold path with the moved-to path on warm save'
   end

@@ -1,5 +1,5 @@
 ---
-# yamllint configuration for rspec-tracer.
+# yamllint configuration for testsift.
 # The defaults flag GitHub Actions' `on:` key as a truthy value and enforce
 # an 80-column limit that workflow syntax routinely exceeds. Relax both.
 
@@ -20,9 +20,9 @@ rules:
 
 ignore: |
   /coverage/
-  /rspec_tracer_cache/
-  /rspec_tracer_coverage/
-  /rspec_tracer_report/
+  /testsift_cache/
+  /testsift_coverage/
+  /testsift_report/
   /tmp/
   /vendor/
   /.bundle/

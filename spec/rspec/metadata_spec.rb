@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'rspec_tracer/rspec/metadata'
+require 'testsift/rspec/metadata'
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/VerifiedDoubles, RSpec/ExampleLength
-RSpec.describe RSpecTracer::RSpec::Metadata do
+RSpec.describe TestSift::RSpec::Metadata do
   # Build minimal test doubles for the RSpec metadata walk. Real
   # RSpec::Core::ExampleGroup instances require a configuration +
   # subclass dance that is overkill for unit coverage of the walker.

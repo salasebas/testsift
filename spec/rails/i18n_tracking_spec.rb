@@ -4,18 +4,18 @@ require 'digest'
 require 'fileutils'
 require 'tmpdir'
 
-require 'rspec_tracer/tracker/input'
-require 'rspec_tracer/rails/notifications'
-require 'rspec_tracer/rails/i18n_tracking'
+require 'testsift/tracker/input'
+require 'testsift/rails/notifications'
+require 'testsift/rails/i18n_tracking'
 
-# Unit spec for RSpecTracer::Rails::I18nTracking. The dev Gemfile does
+# Unit spec for TestSift::Rails::I18nTracking. The dev Gemfile does
 # not carry I18n, so this spec stubs a minimal I18n::Backend::Base
 # surface. The prepend target is a freshly-created Class stubbed into
 # the object graph per example, so prepends from one example do not
 # persist into the next.
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Rails::I18nTracking do
-  let(:tmpdir) { Dir.mktmpdir('rspec-tracer-i18n') }
+RSpec.describe TestSift::Rails::I18nTracking do
+  let(:tmpdir) { Dir.mktmpdir('testsift-i18n') }
   let(:en_yml) { File.join(tmpdir, 'config/locales/en.yml') }
   let(:es_yml) { File.join(tmpdir, 'config/locales/es.yml') }
 
@@ -39,7 +39,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
   after do
     described_class.uninstall if described_class.installed?
-    RSpecTracer::Rails::Notifications.clear_bucket
+    TestSift::Rails::Notifications.clear_bucket
     FileUtils.remove_entry(tmpdir) if File.directory?(tmpdir)
   end
 
@@ -97,7 +97,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'is a no-op when uninstalled' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
       described_class.uninstall
 
       described_class.record_translations([en_yml, es_yml])
@@ -107,7 +107,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'records every filename in the array' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       described_class.record_translations([en_yml, es_yml])
 
@@ -117,7 +117,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'coerces non-array input into an array' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       described_class.record_translations(en_yml)
 
@@ -134,7 +134,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'is a no-op when uninstalled' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
       described_class.uninstall
 
       described_class.record_translation(en_yml)
@@ -148,7 +148,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'is a no-op when the path is not string-like' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
       not_a_path = Object.new
       not_a_path.singleton_class.undef_method(:to_s)
 
@@ -160,7 +160,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'is a no-op for paths outside the tracked root' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
       outside = File.expand_path('/tmp/not-under-root.yml')
 
       described_class.record_translation(outside)
@@ -170,7 +170,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'emits a :notification Input with the sha256 digest' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       described_class.record_translation(en_yml)
 
@@ -181,7 +181,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'dedups repeat records for the same path within a bucket' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       3.times { described_class.record_translation(en_yml) }
 
@@ -192,7 +192,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
       described_class.uninstall
       described_class.install(root: tmpdir, filter: ->(_path) { false })
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       described_class.record_translation(en_yml)
 
@@ -203,7 +203,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
       described_class.uninstall
       described_class.install(root: tmpdir, filter: ->(_path) { raise 'filter boom' })
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       expect { described_class.record_translation(en_yml) }.not_to raise_error
       expect(bucket).to be_empty
@@ -211,7 +211,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'swallows errors raised by Digest::SHA256.file' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
       allow(Digest::SHA256).to receive(:file).and_raise(Errno::EACCES)
 
       expect { described_class.record_translation(en_yml) }.not_to raise_error
@@ -224,7 +224,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
 
     it 'intercepts load_translations on a Base instance' do
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       I18n::Backend::Base.new.load_translations(en_yml, es_yml)
 
@@ -233,7 +233,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
     end
 
     it 'preserves the super return value' do
-      RSpecTracer::Rails::Notifications.set_bucket({})
+      TestSift::Rails::Notifications.set_bucket({})
 
       result = I18n::Backend::Base.new.load_translations(en_yml)
 
@@ -247,7 +247,7 @@ RSpec.describe RSpecTracer::Rails::I18nTracking do
         end
       end
       bucket = {}
-      RSpecTracer::Rails::Notifications.set_bucket(bucket)
+      TestSift::Rails::Notifications.set_bucket(bucket)
 
       sub.new.load_translations(en_yml)
 

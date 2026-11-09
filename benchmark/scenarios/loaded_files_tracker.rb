@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Microbenchmark for RSpecTracer::Tracker::LoadedFilesTracker#stop_example.
+# Microbenchmark for TestSift::Tracker::LoadedFilesTracker#stop_example.
 #
 # Contract: `stop_example` overhead stays <= 1 ms per example including
 # loaded-files attribution.
@@ -28,7 +28,7 @@ require 'fileutils'
 require 'tmpdir'
 
 $LOAD_PATH.unshift(File.expand_path('../../lib', __dir__))
-require 'rspec_tracer/tracker/loaded_files_tracker'
+require 'testsift/tracker/loaded_files_tracker'
 
 BOOT_FILES = Integer(ENV.fetch('BOOT_FILES', '500'))
 STEADY_ITERS = Integer(ENV.fetch('STEADY_ITERS', '10_000'))
@@ -54,7 +54,7 @@ begin
   # Steady-state: every snapshot has the same paths, @loaded_set is
   # primed with the same set, diff is empty every call. Measures the
   # hot-path cost (Set subtraction of big-but-identical sets).
-  steady_tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+  steady_tracker = TestSift::Tracker::LoadedFilesTracker.new(
     root: root, peek: -> { boot_paths }
   )
   steady_tracker.capture_boot_set!
@@ -69,7 +69,7 @@ begin
   # Growing: each call exposes one new file, so digest + Input.for_file
   # + @loaded_set.merge fire each iteration. Measures the
   # worst-realistic per-call cost.
-  growing_tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+  growing_tracker = TestSift::Tracker::LoadedFilesTracker.new(
     root: root, peek: -> { boot_paths }
   )
   growing_tracker.capture_boot_set!

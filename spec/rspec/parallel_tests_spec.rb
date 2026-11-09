@@ -4,16 +4,16 @@ require 'fileutils'
 require 'json'
 require 'tmpdir'
 
-require 'rspec_tracer/rspec/parallel_tests'
+require 'testsift/rspec/parallel_tests'
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/VerifiedDoubles
 # rubocop:disable RSpec/MultipleMemoizedHelpers, RSpec/StubbedMock, RSpec/MessageSpies
-RSpec.describe RSpecTracer::RSpec::ParallelTests do
+RSpec.describe TestSift::RSpec::ParallelTests do
   let(:tmp_base)    { Dir.mktmpdir }
-  let(:lock_file)   { File.join(tmp_base, 'rspec_tracer.lock') }
-  let(:cache_path)  { File.join(tmp_base, 'rspec_tracer_cache', 'parallel_tests_1') }
-  let(:report_path) { File.join(tmp_base, 'rspec_tracer_report', 'parallel_tests_1') }
-  let(:coverage_path) { File.join(tmp_base, 'rspec_tracer_coverage', 'parallel_tests_1') }
+  let(:lock_file)   { File.join(tmp_base, 'testsift.lock') }
+  let(:cache_path)  { File.join(tmp_base, 'testsift_cache', 'parallel_tests_1') }
+  let(:report_path) { File.join(tmp_base, 'testsift_report', 'parallel_tests_1') }
+  let(:coverage_path) { File.join(tmp_base, 'testsift_coverage', 'parallel_tests_1') }
   let(:logger) { spy('Logger') }
 
   # ENV scoping: snapshot + restore the three env vars this module reads
@@ -21,22 +21,22 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
   # the same file or across the suite). `around` guarantees the restore
   # runs even on example failure or raised exceptions.
   around do |example|
-    original_env = ENV.to_hash.slice('TEST_ENV_NUMBER', 'PARALLEL_TEST_GROUPS', 'RSPEC_TRACER_VERBOSE')
-    %w[TEST_ENV_NUMBER PARALLEL_TEST_GROUPS RSPEC_TRACER_VERBOSE].each { |k| ENV.delete(k) }
+    original_env = ENV.to_hash.slice('TEST_ENV_NUMBER', 'PARALLEL_TEST_GROUPS', 'TESTSIFT_VERBOSE')
+    %w[TEST_ENV_NUMBER PARALLEL_TEST_GROUPS TESTSIFT_VERBOSE].each { |k| ENV.delete(k) }
 
     example.run
   ensure
-    %w[TEST_ENV_NUMBER PARALLEL_TEST_GROUPS RSPEC_TRACER_VERBOSE].each { |k| ENV.delete(k) }
+    %w[TEST_ENV_NUMBER PARALLEL_TEST_GROUPS TESTSIFT_VERBOSE].each { |k| ENV.delete(k) }
     original_env.each { |k, v| ENV[k] = v }
   end
 
   before do
-    allow(RSpecTracer).to receive_messages(lock_file: lock_file, cache_path: cache_path,
-                                           report_path: report_path, coverage_path: coverage_path,
-                                           logger: logger, simplecov?: false,
-                                           cache_retention_local_count: nil,
-                                           cache_size_warn_per_file_mb: nil,
-                                           cache_size_warn_total_mb: nil)
+    allow(TestSift).to receive_messages(lock_file: lock_file, cache_path: cache_path,
+                                        report_path: report_path, coverage_path: coverage_path,
+                                        logger: logger, simplecov?: false,
+                                        cache_retention_local_count: nil,
+                                        cache_size_warn_per_file_mb: nil,
+                                        cache_size_warn_total_mb: nil)
     [cache_path, report_path, coverage_path].each { |p| FileUtils.mkdir_p(File.dirname(p)) }
   end
 
@@ -93,8 +93,8 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
       expect(described_class.verbose?).to be(false)
     end
 
-    it 'is true when RSPEC_TRACER_VERBOSE=true' do
-      ENV['RSPEC_TRACER_VERBOSE'] = 'true'
+    it 'is true when TESTSIFT_VERBOSE=true' do
+      ENV['TESTSIFT_VERBOSE'] = 'true'
       expect(described_class.verbose?).to be(true)
     end
   end
@@ -115,7 +115,7 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     it 'is true for a non-narrator worker when verbose is on' do
       ENV['TEST_ENV_NUMBER'] = '2'
       ENV['PARALLEL_TEST_GROUPS'] = '2'
-      ENV['RSPEC_TRACER_VERBOSE'] = 'true'
+      ENV['TESTSIFT_VERBOSE'] = 'true'
       expect(described_class.log_rollups?).to be(true)
     end
   end
@@ -162,7 +162,7 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
       expect(logger).to have_received(:error).with(/Failed to load parallel_tests/)
     end
 
-    it 'drops a .rspec_tracer_boot breadcrumb in this worker\'s cache dir' do
+    it 'drops a .testsift_boot breadcrumb in this worker\'s cache dir' do
       described_class.setup!
 
       boot_path = File.join(cache_path, described_class::BOOT_MARKER_FILENAME)
@@ -181,7 +181,7 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
   end
 
   describe '.touch_done!' do
-    it 'writes the .rspec_tracer_done marker into the worker cache dir' do
+    it 'writes the .testsift_done marker into the worker cache dir' do
       described_class.touch_done!
 
       done_path = File.join(cache_path, described_class::DONE_MARKER_FILENAME)
@@ -397,7 +397,7 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
       ENV['TEST_ENV_NUMBER'] = '2'
       described_class.finalize!
 
-      # `RSpecTracer.cache_path` is stubbed to a fixed path in this
+      # `TestSift.cache_path` is stubbed to a fixed path in this
       # spec (parallel_tests_1 in the helper); the non-elected
       # branch still routes through that stub, so .done lands there.
       expect(File).to exist(File.join(cache_path, described_class::DONE_MARKER_FILENAME))
@@ -416,7 +416,7 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     end
 
     it 'skips coverage merge when SimpleCov owns coverage emission' do
-      allow(RSpecTracer).to receive(:simplecov?).and_return(true)
+      allow(TestSift).to receive(:simplecov?).and_return(true)
 
       described_class.finalize!
 
@@ -476,35 +476,35 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
   describe '.emit_merged_reporters!' do
     let(:base_dir) { File.dirname(cache_path) }
     let(:top_report_dir) { File.dirname(report_path) }
-    let(:merged_snapshot) { instance_double(RSpecTracer::Storage::Snapshot) }
+    let(:merged_snapshot) { instance_double(TestSift::Storage::Snapshot) }
 
     before do
-      allow(RSpecTracer).to receive_messages(storage_backend: :json,
-                                             storage_backend_opts: {})
-      allow(RSpecTracer).to receive(:rails?).and_return(false)
+      allow(TestSift).to receive_messages(storage_backend: :json,
+                                          storage_backend_opts: {})
+      allow(TestSift).to receive(:rails?).and_return(false)
     end
 
     it 'is a no-op for non-:json storage backends (SqliteBackend)' do
-      allow(RSpecTracer).to receive(:storage_backend).and_return(:sqlite)
-      expect(RSpecTracer::Reporters::Registry).not_to receive(:emit_all)
+      allow(TestSift).to receive(:storage_backend).and_return(:sqlite)
+      expect(TestSift::Reporters::Registry).not_to receive(:emit_all)
 
       described_class.emit_merged_reporters!
     end
 
     it 'returns early when load_graph yields no merged snapshot' do
-      backend = instance_double(RSpecTracer::Storage::JsonBackend, load_graph: nil)
-      allow(RSpecTracer::Storage::JsonBackend).to receive(:new).and_return(backend)
-      expect(RSpecTracer::Reporters::Registry).not_to receive(:emit_all)
+      backend = instance_double(TestSift::Storage::JsonBackend, load_graph: nil)
+      allow(TestSift::Storage::JsonBackend).to receive(:new).and_return(backend)
+      expect(TestSift::Reporters::Registry).not_to receive(:emit_all)
 
       described_class.emit_merged_reporters!
     end
 
     it 'emits the registry against the merged snapshot at the top-level report dir' do
-      backend = instance_double(RSpecTracer::Storage::JsonBackend, load_graph: merged_snapshot)
-      allow(RSpecTracer::Storage::JsonBackend).to receive(:new).and_return(backend)
-      expect(RSpecTracer::Reporters::Registry).to receive(:emit_all).with(
+      backend = instance_double(TestSift::Storage::JsonBackend, load_graph: merged_snapshot)
+      allow(TestSift::Storage::JsonBackend).to receive(:new).and_return(backend)
+      expect(TestSift::Reporters::Registry).to receive(:emit_all).with(
         hash_including(
-          configuration: RSpecTracer,
+          configuration: TestSift,
           snapshot: merged_snapshot,
           report_dir: top_report_dir,
           run_metadata: hash_including(parallel_tests: true, cache_path: base_dir)
@@ -515,9 +515,9 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     end
 
     it 'logs and continues on StandardError (purge / lock cleanup not blocked)' do
-      backend = instance_double(RSpecTracer::Storage::JsonBackend)
+      backend = instance_double(TestSift::Storage::JsonBackend)
       allow(backend).to receive(:load_graph).and_raise(StandardError, 'boom')
-      allow(RSpecTracer::Storage::JsonBackend).to receive(:new).and_return(backend)
+      allow(TestSift::Storage::JsonBackend).to receive(:new).and_return(backend)
 
       expect { described_class.emit_merged_reporters! }.not_to raise_error
       expect(logger).to have_received(:warn).with(/merged reporter emission failed/)
@@ -525,7 +525,7 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
   end
 
   describe '.merge_snapshot!' do
-    let(:schema) { RSpecTracer::Storage::Schema::CURRENT }
+    let(:schema) { TestSift::Storage::Schema::CURRENT }
     let(:base_dir) { File.dirname(cache_path) }
 
     before do
@@ -542,8 +542,8 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     end
 
     it 'delegates to JsonBackend#merge_from_peers against the top-level cache dir' do
-      backend = instance_double(RSpecTracer::Storage::JsonBackend, merge_from_peers: nil)
-      expect(RSpecTracer::Storage::JsonBackend)
+      backend = instance_double(TestSift::Storage::JsonBackend, merge_from_peers: nil)
+      expect(TestSift::Storage::JsonBackend)
         .to receive(:new).with(hash_including(cache_path: base_dir, logger: logger))
         .and_return(backend)
 
@@ -556,8 +556,8 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     end
 
     it 'emits a debug log line only when this worker is the narrator' do
-      backend = instance_double(RSpecTracer::Storage::JsonBackend, merge_from_peers: nil)
-      allow(RSpecTracer::Storage::JsonBackend).to receive(:new).and_return(backend)
+      backend = instance_double(TestSift::Storage::JsonBackend, merge_from_peers: nil)
+      allow(TestSift::Storage::JsonBackend).to receive(:new).and_return(backend)
 
       described_class.merge_snapshot!
 
@@ -566,8 +566,8 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
 
     it 'suppresses the debug line for non-narrator workers unless verbose' do
       ENV['TEST_ENV_NUMBER'] = '2'
-      backend = instance_double(RSpecTracer::Storage::JsonBackend, merge_from_peers: nil)
-      allow(RSpecTracer::Storage::JsonBackend).to receive(:new).and_return(backend)
+      backend = instance_double(TestSift::Storage::JsonBackend, merge_from_peers: nil)
+      allow(TestSift::Storage::JsonBackend).to receive(:new).and_return(backend)
 
       described_class.merge_snapshot!
 
@@ -575,12 +575,12 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     end
 
     it 'is a no-op when storage_backend is not :json (sqlite has no JSON merge surface)' do
-      allow(RSpecTracer).to receive(:storage_backend).and_return(:sqlite)
-      allow(RSpecTracer::Storage::JsonBackend).to receive(:new)
+      allow(TestSift).to receive(:storage_backend).and_return(:sqlite)
+      allow(TestSift::Storage::JsonBackend).to receive(:new)
 
       described_class.merge_snapshot!
 
-      expect(RSpecTracer::Storage::JsonBackend).not_to have_received(:new)
+      expect(TestSift::Storage::JsonBackend).not_to have_received(:new)
     end
   end
 
@@ -601,14 +601,14 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     end
 
     it 'merges via Reporters::CoverageJsonReporter.merge_parallel + emits a debug rollup line' do
-      allow(RSpecTracer::Reporters::CoverageJsonReporter).to receive(:merge_parallel)
+      allow(TestSift::Reporters::CoverageJsonReporter).to receive(:merge_parallel)
       allow(described_class).to receive(:log_rollups?).and_return(true)
       logger = spy('Logger')
-      allow(RSpecTracer).to receive(:logger).and_return(logger)
+      allow(TestSift).to receive(:logger).and_return(logger)
 
       described_class.merge_coverage!
 
-      expect(RSpecTracer::Reporters::CoverageJsonReporter).to have_received(:merge_parallel).with(
+      expect(TestSift::Reporters::CoverageJsonReporter).to have_received(:merge_parallel).with(
         peer_paths: [File.join(base_dir, 'parallel_tests_1'), File.join(base_dir, 'parallel_tests_2')],
         output_path: File.join(base_dir, 'coverage.json'),
         logger: logger
@@ -617,14 +617,14 @@ RSpec.describe RSpecTracer::RSpec::ParallelTests do
     end
 
     it 'suppresses the debug rollup line when log_rollups? is false (non-narrator quiet path)' do
-      allow(RSpecTracer::Reporters::CoverageJsonReporter).to receive(:merge_parallel)
+      allow(TestSift::Reporters::CoverageJsonReporter).to receive(:merge_parallel)
       allow(described_class).to receive(:log_rollups?).and_return(false)
       logger = spy('Logger')
-      allow(RSpecTracer).to receive(:logger).and_return(logger)
+      allow(TestSift).to receive(:logger).and_return(logger)
 
       described_class.merge_coverage!
 
-      expect(RSpecTracer::Reporters::CoverageJsonReporter).to have_received(:merge_parallel)
+      expect(TestSift::Reporters::CoverageJsonReporter).to have_received(:merge_parallel)
       expect(logger).not_to have_received(:debug)
     end
   end

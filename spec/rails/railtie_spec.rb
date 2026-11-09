@@ -1,21 +1,21 @@
 # frozen_string_literal: true
 
-# Loading the preset defines `RSpecTracer::Rails`, the module the
+# Loading the preset defines `TestSift::Rails`, the module the
 # Railtie class lives inside. Railtie.rb itself expects
 # `::Rails::Railtie` to already be defined; the before-block below
 # stubs that base class so this spec can run without the real Rails
 # gem in the object graph.
-require 'rspec_tracer/rails/preset'
+require 'testsift/rails/preset'
 
-# Top-level string-form describe (rather than `describe RSpecTracer::Rails::Railtie`)
+# Top-level string-form describe (rather than `describe TestSift::Rails::Railtie`)
 # because the constant only comes into existence inside the before-block (after
 # Rails::Railtie is stubbed and railtie.rb is loaded) - a class-form describe
 # would NameError at file-load time. Mutant's first-token test-to-subject
-# mapping then credits these tests to `RSpecTracer::Rails::Railtie`, matching
+# mapping then credits these tests to `TestSift::Rails::Railtie`, matching
 # the subject scoped by `task test:mutation:rails`.
-RSpec.describe 'RSpecTracer::Rails::Railtie' do
+RSpec.describe 'TestSift::Rails::Railtie' do
   let(:railtie_path) do
-    File.expand_path('../../lib/rspec_tracer/rails/railtie.rb', __dir__)
+    File.expand_path('../../lib/testsift/rails/railtie.rb', __dir__)
   end
 
   # The dev Gemfile does not include Rails, so a real ::Rails::Railtie
@@ -42,31 +42,31 @@ RSpec.describe 'RSpecTracer::Rails::Railtie' do
     stub_const('Rails::Railtie', railtie_base)
 
     # rubocop:disable RSpec/RemoveConst
-    RSpecTracer::Rails.send(:remove_const, :Railtie) if RSpecTracer::Rails.const_defined?(:Railtie, false)
+    TestSift::Rails.send(:remove_const, :Railtie) if TestSift::Rails.const_defined?(:Railtie, false)
     # rubocop:enable RSpec/RemoveConst
 
     load railtie_path
   end
 
-  it 'defines the class under RSpecTracer::Rails' do
-    expect(RSpecTracer::Rails.const_defined?(:Railtie, false)).to be(true)
+  it 'defines the class under TestSift::Rails' do
+    expect(TestSift::Rails.const_defined?(:Railtie, false)).to be(true)
   end
 
   it 'subclasses the provided Rails::Railtie base' do
-    expect(RSpecTracer::Rails::Railtie).to be < railtie_base
+    expect(TestSift::Rails::Railtie).to be < railtie_base
   end
 
-  it 'registers exactly one initializer named rspec_tracer.setup' do
-    expect(RSpecTracer::Rails::Railtie.registered_initializers.keys)
-      .to contain_exactly('rspec_tracer.setup')
+  it 'registers exactly one initializer named testsift.setup' do
+    expect(TestSift::Rails::Railtie.registered_initializers.keys)
+      .to contain_exactly('testsift.setup')
   end
 
   it 'logs a confirmation line when the initializer block runs' do
-    allow(RSpecTracer.logger).to receive(:info)
+    allow(TestSift.logger).to receive(:info)
 
-    RSpecTracer::Rails::Railtie.registered_initializers['rspec_tracer.setup'].call
+    TestSift::Rails::Railtie.registered_initializers['testsift.setup'].call
 
-    expect(RSpecTracer.logger).to have_received(:info)
-      .with(/rspec-tracer Rails integration loaded/)
+    expect(TestSift.logger).to have_received(:info)
+      .with(/testsift Rails integration loaded/)
   end
 end

@@ -10,7 +10,7 @@
 #     SQLite3::CantOpenException for SqliteBackend) on a read-only
 #     cache_path. Reads work fine; the prior valid run stays
 #     loadable.
-#   - Engine integration (RSpecTracer.run_finalize): the rescue
+#   - Engine integration (TestSift.run_finalize): the rescue
 #     added alongside this spec logs + returns nil instead of propagating, so
 #     the at_exit pipeline downstream skips reports and the test
 #     suite exits cleanly.
@@ -25,14 +25,14 @@ require 'json'
 require 'logger'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 READONLY_FS_SQLITE_AVAILABLE =
   begin
     require 'sqlite3'
-    require 'rspec_tracer/storage/sqlite_backend'
+    require 'testsift/storage/sqlite_backend'
     RUBY_ENGINE == 'ruby'
   rescue LoadError
     false
@@ -40,9 +40,9 @@ READONLY_FS_SQLITE_AVAILABLE =
 
 # rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Read-only filesystem — graceful degradation' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_readonly_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_readonly_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
 
   # Restore writable mode before rm_rf — chmod 0o555 makes Dir.unlink
   # itself fail unless the parent dir's mode allows it. The chmod 0o755
@@ -53,8 +53,8 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
   end
 
   def build_snapshot(run_id, marker)
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: { marker => { id: marker, description: "from #{marker}" } },
       duplicate_examples: {},
@@ -75,7 +75,7 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
   end
 
   describe 'JsonBackend' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path) }
 
     before do
       backend.save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version)
@@ -89,7 +89,7 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
     end
 
     it 'still serves load_graph from a read-only cache_path (reads do not need write)' do
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
 
       expect(snap).not_to be_nil
@@ -103,7 +103,7 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
         # expected — covered by the prior example
       end
 
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
       expect(snap.run_id).to eq('alpha')
     end
@@ -116,7 +116,7 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
       FileUtils.chmod_R(0o555, cache_path)
     end
 
-    let(:backend) { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path) }
+    let(:backend) { TestSift::Storage::SqliteBackend.new(cache_path: cache_path) }
 
     it 'raises a SQLite3 / SystemCallError on save_graph against a read-only cache_path' do
       expect do
@@ -127,7 +127,7 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
     end
 
     it 'still serves load_graph from a read-only cache_path' do
-      reader = RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::SqliteBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
 
       expect(snap).not_to be_nil
@@ -136,7 +136,7 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
   end
 
   describe 'engine integration — run_finalize rescue' do
-    # Stubs the dependent surface around RSpecTracer.run_finalize so the
+    # Stubs the dependent surface around TestSift.run_finalize so the
     # rescue contract is observable without spinning up a full engine
     # against a real read-only fs. The realistic invariant: if
     # engine.finalize raises any StandardError, run_finalize swallows
@@ -144,15 +144,15 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
     # pipeline carries on.
 
     it 'returns nil + logs when engine.finalize raises Errno::EACCES (read-only fs simulation)' do
-      fake_engine = instance_double(RSpecTracer::Engine)
+      fake_engine = instance_double(TestSift::Engine)
       fake_logger = instance_double(Logger)
 
-      allow(RSpecTracer).to receive_messages(engine: fake_engine, logger: fake_logger)
+      allow(TestSift).to receive_messages(engine: fake_engine, logger: fake_logger)
       allow(fake_engine).to receive(:finalize).and_raise(Errno::EACCES, 'permission denied')
       allow(fake_logger).to receive(:warn)
       allow(fake_logger).to receive(:debug)
 
-      result = RSpecTracer.send(:run_finalize)
+      result = TestSift.send(:run_finalize)
 
       expect(result).to be_nil
       expect(fake_logger).to have_received(:warn).with(/cache persistence failed.*Errno::EACCES.*permission denied/)
@@ -161,15 +161,15 @@ RSpec.describe 'Read-only filesystem — graceful degradation' do
     it 'returns nil + logs when engine.finalize raises a SQLite3::Exception' do
       skip 'sqlite3 gem not installable on this Ruby' unless READONLY_FS_SQLITE_AVAILABLE
 
-      fake_engine = instance_double(RSpecTracer::Engine)
+      fake_engine = instance_double(TestSift::Engine)
       fake_logger = instance_double(Logger)
 
-      allow(RSpecTracer).to receive_messages(engine: fake_engine, logger: fake_logger)
+      allow(TestSift).to receive_messages(engine: fake_engine, logger: fake_logger)
       allow(fake_engine).to receive(:finalize).and_raise(SQLite3::Exception, 'database is locked')
       allow(fake_logger).to receive(:warn)
       allow(fake_logger).to receive(:debug)
 
-      expect(RSpecTracer.send(:run_finalize)).to be_nil
+      expect(TestSift.send(:run_finalize)).to be_nil
       expect(fake_logger).to have_received(:warn).with(/cache persistence failed.*SQLite3::Exception/)
     end
   end

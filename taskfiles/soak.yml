@@ -29,7 +29,7 @@ version: '3'
 # runners, so multi-iter cells would compound past the 4 h cap.
 
 vars:
-  RSPEC_TRACER_ROOT:
+  TESTSIFT_ROOT:
     sh: pwd
 
 tasks:
@@ -66,15 +66,15 @@ tasks:
 
   soak:setup:solidus:
     desc: >-
-      Inject rspec-tracer into Solidus Gemfile + bundle install +
+      Inject testsift into Solidus Gemfile + bundle install +
       generate dummy_app for the api engine. Used both locally
       (after soak:_clone:solidus) and from the CI workflow (after
       actions/checkout@v6 of the external repo).
     cmds:
       - cmd: |
           cd tmp/soak-fixtures/solidus
-          if ! grep -q "rspec-tracer" Gemfile; then
-            printf '\n# soak-injected\ngem "rspec-tracer", path: "{{.RSPEC_TRACER_ROOT}}"\n' >> Gemfile
+          if ! grep -q "testsift" Gemfile; then
+            printf '\n# soak-injected\ngem "testsift", path: "{{.TESTSIFT_ROOT}}"\n' >> Gemfile
           fi
           bundle config set --local path vendor/bundle
           DB=sqlite bundle check >/dev/null 2>&1 || { rm -f Gemfile.lock; DB=sqlite bundle install --jobs 4; }
@@ -130,14 +130,14 @@ tasks:
 
   soak:setup:refinery:
     desc: >-
-      Inject rspec-tracer into Refinery Gemfile + bundle install +
+      Inject testsift into Refinery Gemfile + bundle install +
       generate the testing dummy_app via the refinery:testing
       Rake task. Used both locally and from CI.
     cmds:
       - cmd: |
           cd tmp/soak-fixtures/refinery
-          if ! grep -q "rspec-tracer" Gemfile; then
-            printf '\n# soak-injected\ngem "rspec-tracer", path: "{{.RSPEC_TRACER_ROOT}}"\n' >> Gemfile
+          if ! grep -q "testsift" Gemfile; then
+            printf '\n# soak-injected\ngem "testsift", path: "{{.TESTSIFT_ROOT}}"\n' >> Gemfile
           fi
           bundle config set --local path vendor/bundle
           # Unset CI for bundle install. Refinery main's Gemfile has
@@ -197,7 +197,7 @@ tasks:
 
   soak:setup:spree:
     desc: >-
-      Inject rspec-tracer + the spree-umbrella gem (path '..') into
+      Inject testsift + the spree-umbrella gem (path '..') into
       spree/core/Gemfile + bundle install + generate test_app via
       core/Rakefile. The spree-umbrella gem provides the install
       generator that core/Rakefile's test_app task needs to migrate
@@ -208,8 +208,8 @@ tasks:
     cmds:
       - cmd: |
           cd tmp/soak-fixtures/spree/spree/core
-          if ! grep -q "rspec-tracer" Gemfile; then
-            printf '\n# soak-injected\ngem "rspec-tracer", path: "{{.RSPEC_TRACER_ROOT}}"\n' >> Gemfile
+          if ! grep -q "testsift" Gemfile; then
+            printf '\n# soak-injected\ngem "testsift", path: "{{.TESTSIFT_ROOT}}"\n' >> Gemfile
           fi
           if ! grep -qE '^gem "spree", path: "\.\."' Gemfile; then
             printf 'gem "spree", path: ".."\n' >> Gemfile

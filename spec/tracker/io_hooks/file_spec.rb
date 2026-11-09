@@ -2,10 +2,10 @@
 
 require 'fileutils'
 require 'tmpdir'
-require 'rspec_tracer/tracker/io_hooks'
-require 'rspec_tracer/tracker/io_hooks/file'
+require 'testsift/tracker/io_hooks'
+require 'testsift/tracker/io_hooks/file'
 
-RSpec.describe RSpecTracer::Tracker::IOHooks::FileReads do
+RSpec.describe TestSift::Tracker::IOHooks::FileReads do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
   let(:bucket) { {} }
@@ -18,15 +18,15 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::FileReads do
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   around do |example|
-    RSpecTracer::Tracker::IOHooks.install(root: root)
+    TestSift::Tracker::IOHooks.install(root: root)
     example.run
   ensure
-    RSpecTracer::Tracker::IOHooks.uninstall
+    TestSift::Tracker::IOHooks.uninstall
   end
 
   describe '#read' do
     let(:contents) do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { File.read(fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { File.read(fixture) }
     end
 
     it 'records the path' do
@@ -41,7 +41,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::FileReads do
 
   describe '#binread' do
     it 'records the path' do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { File.binread(fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { File.binread(fixture) }
 
       expect(bucket).to have_key('data:fixture.yml')
     end
@@ -49,16 +49,16 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::FileReads do
 
   describe '#readlines' do
     it 'records the path' do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { File.readlines(fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { File.readlines(fixture) }
 
       expect(bucket).to have_key('data:fixture.yml')
     end
 
     it 'forwards to super without recording when no bucket is active' do
-      # Outer rspec-tracer ReporterHook may have installed a bucket on
+      # Outer testsift ReporterHook may have installed a bucket on
       # this example; clear it explicitly so the readlines hot-path
       # else-branch (Thread.current[BUCKET_KEY] == nil) actually fires.
-      RSpecTracer::Tracker::IOHooks.clear_bucket
+      TestSift::Tracker::IOHooks.clear_bucket
 
       expect(File.readlines(fixture)).to eq(["a: 1\n"])
     end
@@ -66,7 +66,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::FileReads do
 
   describe '#open' do
     it 'records the path (no-block form)' do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) do
+      TestSift::Tracker::IOHooks.with_bucket(bucket) do
         File.open(fixture, 'r') { :noop } # block form avoids the FD-leak cop
       end
 
@@ -76,7 +76,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::FileReads do
     describe '(block form)' do
       let(:yielded) do
         captured = nil
-        RSpecTracer::Tracker::IOHooks.with_bucket(bucket) do
+        TestSift::Tracker::IOHooks.with_bucket(bucket) do
           File.open(fixture, 'r') { |f| captured = f.read }
         end
         captured

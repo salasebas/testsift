@@ -44,15 +44,15 @@ RSpec.describe 'coverage.json byte-equivalence round-trip vs golden' do
     Bundler.with_unbundled_env do
       # CI is unset so Rails uses lazy-load in the fixture's test env
       # (config/environments/test.rb gates eager_load on ENV['CI']).
-      # Eager-load runs during Rails boot - BEFORE rspec-tracer's
+      # Eager-load runs during Rails boot - BEFORE testsift's
       # Coverage.start - so files loaded eagerly miss coverage and the
       # subprocess's coverage.json shrinks to whatever loads after
       # Coverage.start. The golden was captured in lazy-load mode (no
       # CI env); pin lazy-load here so byte-equivalence holds across
       # CI runners and local dev regardless of the outer ENV.
       env = {
-        'RSPEC_TRACER' => '1',
-        'RSPEC_TRACER_FIXTURE_NO_SIMPLECOV' => '1',
+        'TESTSIFT' => '1',
+        'TESTSIFT_FIXTURE_NO_SIMPLECOV' => '1',
         'BUNDLE_FROZEN' => '1',
         'CI' => ''
       }
@@ -70,12 +70,12 @@ RSpec.describe 'coverage.json byte-equivalence round-trip vs golden' do
     expect(File).to exist(coverage_json_path)
 
     actual_payload = JSON.parse(File.read(coverage_json_path, encoding: 'UTF-8'))
-    actual_relativized = relativize(actual_payload['RSpecTracer']['coverage'])
+    actual_relativized = relativize(actual_payload['TestSift']['coverage'])
 
-    if ENV['RSPEC_TRACER_M8_REGEN_GOLDEN'] == '1'
+    if ENV['TESTSIFT_M8_REGEN_GOLDEN'] == '1'
       File.write(
         golden_path,
-        "#{JSON.pretty_generate(RSpecTracer: { coverage: actual_relativized, timestamp: 0 })}\n",
+        "#{JSON.pretty_generate(TestSift: { coverage: actual_relativized, timestamp: 0 })}\n",
         encoding: 'UTF-8'
       )
       warn "[coverage.json golden capture] wrote #{actual_relativized.size} keys -> #{golden_path}"
@@ -84,12 +84,12 @@ RSpec.describe 'coverage.json byte-equivalence round-trip vs golden' do
 
     golden_payload = JSON.parse(File.read(golden_path, encoding: 'UTF-8'))
 
-    expect(actual_payload['RSpecTracer']['timestamp']).to be_a(Integer)
+    expect(actual_payload['TestSift']['timestamp']).to be_a(Integer)
     expect(actual_relativized).not_to be_empty
-    if actual_relativized != golden_payload['RSpecTracer']['coverage']
+    if actual_relativized != golden_payload['TestSift']['coverage']
       warn "[coverage.json round-trip diff debug] inner rspec output:\n#{@rspec_out}"
     end
-    expect(actual_relativized).to eq(golden_payload['RSpecTracer']['coverage'])
+    expect(actual_relativized).to eq(golden_payload['TestSift']['coverage'])
   end
 
   def relativize(coverage_hash)

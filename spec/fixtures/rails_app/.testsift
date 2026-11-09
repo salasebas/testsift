@@ -1,0 +1,26 @@
+# testsift configuration for the reference Rails 7.2+ fixture.
+# The integration matrix runs this fixture under testsift and
+# asserts the behavior matrix from docs. The :views and :schema
+# opt-outs plus `track_ar_schema_notifications` are what drive the
+# narrower "only renderers" / "only DB-touchers" semantics the
+# behavior-matrix scenarios require:
+#
+#   :views    - dropped from declared-globs; ActionView notification
+#               subscribers emit :template Inputs per rendered
+#               template, so a template edit re-runs only the examples
+#               that actually rendered it.
+#   :schema   - dropped from declared-globs; the sql.active_record
+#               subscriber (opt-in via track_ar_schema_notifications)
+#               emits :notification Inputs for db/schema.rb +
+#               db/structure.sql on the first AR query per example, so
+#               a schema edit re-runs only the examples that actually
+#               touched the DB.
+#
+# :locales, :fixtures, :factories, :helpers, :config stay in the
+# declared-glob set - their edits fall back to the coarse-safe
+# whole-suite path, which is the conservative default unless the
+# per-example metadata DSL narrows it.
+TestSift.configure do
+  track_rails_defaults except: [:views, :schema]
+  track_ar_schema_notifications
+end

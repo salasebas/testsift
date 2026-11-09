@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/rails/preset'
+require 'testsift/rails/preset'
 
-RSpec.describe RSpecTracer::Rails::Preset do
+RSpec.describe TestSift::Rails::Preset do
   describe '.globs' do
     context 'with no exclusions' do
       it 'returns every glob from every DEFAULTS category' do
@@ -67,19 +67,19 @@ RSpec.describe RSpecTracer::Rails::Preset do
       it 'raises for an unknown category key' do
         expect { described_class.globs(except: [:bogus]) }
           .to raise_error(
-            RSpecTracer::Configuration::InvalidUsageError,
+            TestSift::Configuration::InvalidUsageError,
             /unknown track_rails_defaults keys/
           )
       end
 
       it 'lists every unknown key in the error message' do
         expect { described_class.globs(except: %i[bogus mystery]) }
-          .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /:bogus.*:mystery|:mystery.*:bogus/)
+          .to raise_error(TestSift::Configuration::InvalidUsageError, /:bogus.*:mystery|:mystery.*:bogus/)
       end
 
       it 'reports allowed keys in the error message' do
         expect { described_class.globs(except: [:bogus]) }
-          .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /allowed:/)
+          .to raise_error(TestSift::Configuration::InvalidUsageError, /allowed:/)
       end
     end
   end
@@ -150,7 +150,7 @@ RSpec.describe RSpecTracer::Rails::Preset do
 
     it 'raises when any key is not in ALLOWED_KEYS' do
       expect { described_class.validate_excluded!([:bogus]) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError)
+        .to raise_error(TestSift::Configuration::InvalidUsageError)
     end
   end
 end

@@ -3,9 +3,9 @@
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/tracker/new_file_detector'
+require 'testsift/tracker/new_file_detector'
 
-RSpec.describe RSpecTracer::Tracker::NewFileDetector do
+RSpec.describe TestSift::Tracker::NewFileDetector do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
 

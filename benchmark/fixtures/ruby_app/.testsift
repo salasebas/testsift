@@ -1,0 +1,14 @@
+# frozen_string_literal: true
+
+TestSift.configure do
+  coverage_track_files 'app/**/*.rb'
+
+  # Config-level wildcard env tracking. The wildcard expands to
+  # concrete env keys matching the prefix at run start; the
+  # `track_env_warm_mismatch` benchmark scenario flips
+  # `TESTSIFT_BENCH_CONFIG_KEY` between iterations to exercise the
+  # config-level env_changed path. Other scenarios don't set any
+  # `TESTSIFT_BENCH_CONFIG_*` env, so this declaration is a no-op
+  # for them (expand returns []; persistence + filter checks skip).
+  track_env 'TESTSIFT_BENCH_CONFIG_*'
+end

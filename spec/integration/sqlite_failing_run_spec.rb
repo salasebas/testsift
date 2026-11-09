@@ -23,12 +23,12 @@ RSpec.describe 'SQLite cache persistence across failing runs' do
   let(:lib_path) { File.expand_path('../../lib', __dir__) }
 
   before do
-    File.write(File.join(root, '.rspec-tracer'), "RSpecTracer.configure do\n  storage_backend :sqlite\nend\n")
+    File.write(File.join(root, '.testsift'), "TestSift.configure do\n  storage_backend :sqlite\nend\n")
     FileUtils.mkdir_p(File.join(root, 'lib'))
     File.write(File.join(root, 'lib/thing.rb'), "module Thing\n  VALUE = 1\nend\n")
     File.write(File.join(root, 'red_spec.rb'), <<~RUBY)
-      require 'rspec_tracer'
-      RSpecTracer.start
+      require 'testsift'
+      TestSift.start
       require_relative 'lib/thing'
 
       RSpec.describe 'red suite' do
@@ -54,7 +54,7 @@ RSpec.describe 'SQLite cache persistence across failing runs' do
     expect(second_status.exitstatus).to eq(1), second
     expect(second).not_to include('not a valid SQLite database')
     expect(second).to include('running 1 examples (actual: 2, skipped: 1)')
-    expect(second).to include('rspec-tracer: 2 examples tracked')
+    expect(second).to include('testsift: 2 examples tracked')
   end
 end
 # rubocop:enable RSpec/DescribeClass, RSpec/ExampleLength, RSpec/MultipleExpectations

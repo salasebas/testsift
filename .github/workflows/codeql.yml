@@ -3,7 +3,7 @@ name: codeql
 
 on:
   push:
-    branches: [main]
+    branches: [testsift]
   pull_request:
   schedule:
     - cron: '23 9 * * 1'
