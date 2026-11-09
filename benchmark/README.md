@@ -21,6 +21,13 @@ shared example-boundary snapshot and per-run filter decisions with the same driv
 The [Ruby optimization report](results/2026-11-09-ruby-optimization/REPORT.md)
 breaks down where the time goes after those changes and where native work could help.
 
+## Real OSS suites
+
+The [OSS runner](oss/README.md) measures pinned RuboCop, Mastodon, and Discourse
+suites with plain RSpec, rspec-tracer, and TestSift (`task benchmark:oss`). It
+checks every traced selection against an independent plain run of the same
+change. These runs are opt-in and take minutes to hours.
+
 ## Scenarios
 
 | Name | What it measures | Fixture |

@@ -1,0 +1,45 @@
+# Database services for the OSS corpus, started by benchmark/oss/run.rb with
+# `docker compose -p testsift-oss up -d --wait <services>`. Images follow
+# each project's upstream CI: Mastodon's test-ruby.yml services, and the
+# PostgreSQL major and test settings of Discourse's discourse_test image
+# (script/start_test_db.rb), with pgvector because db/structure.sql creates
+# the `vector` extension. Ports bind to loopback only.
+name: testsift-oss
+services:
+  mastodon-postgres:
+    image: postgres:14-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports: ['127.0.0.1:55414:5432']
+    healthcheck:
+      test: [CMD, pg_isready, -U, postgres]
+      interval: 1s
+      retries: 60
+  mastodon-redis:
+    image: redis:7-alpine
+    ports: ['127.0.0.1:56380:6379']
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 1s
+      retries: 60
+  discourse-postgres:
+    image: pgvector/pgvector:pg18
+    environment:
+      POSTGRES_USER: discourse
+      POSTGRES_PASSWORD: discourse
+    command: [postgres, -c, fsync=off, -c, synchronous_commit=off, -c, full_page_writes=off,
+              -c, wal_level=minimal, -c, max_wal_senders=0, -c, shared_buffers=500MB, -c, max_connections=300]
+    shm_size: 1gb
+    ports: ['127.0.0.1:55418:5432']
+    healthcheck:
+      test: [CMD, pg_isready, -U, discourse]
+      interval: 1s
+      retries: 60
+  discourse-redis:
+    image: redis:7-alpine
+    ports: ['127.0.0.1:56381:6379']
+    healthcheck:
+      test: [CMD, redis-cli, ping]
+      interval: 1s
+      retries: 60

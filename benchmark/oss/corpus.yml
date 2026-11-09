@@ -1,0 +1,204 @@
+# Pinned OSS corpus for `task benchmark:oss`. See README.md in this directory.
+#
+# Every project field is read by run.rb:
+#   repository, tag, commit  clone source; the tag must resolve to the commit
+#   license                  upstream license, recorded in metadata
+#   ruby                     exact interpreter version the runner must find
+#   lockfile                 optional corpus lockfile for projects that commit none
+#   env                      environment for every project command; the value
+#                            {workers} is substituted
+#   requires                 executables that must be on PATH before setup
+#   services                 docker compose services from services.yml
+#   setup                    commands run once per campaign after `bundle install`;
+#                            `creates` skips a step when that path already exists
+#   reset                    commands run before every sample, outside the timer
+#   runners                  named test entry points, each with a command
+#                            ({seed} and {workers} are substituted), workers,
+#                            and extra_processes; the command must start
+#                            workers + extra_processes RSpec processes
+#   default_runner           runner used unless --runner names another
+#   tracer_config            DSL lines written to .testsift and .rspec-tracer
+#   suites                   spec paths appended to the command; [] runs the
+#                            project's default discovery
+#   changes                  real upstream commits replayed as `git diff C^ C`
+#   fault                    one-line source defect; the plain oracle must fail
+#   versions                 extra tool version probes recorded in metadata
+version: 1
+projects:
+  rubocop:
+    repository: https://github.com/rubocop/rubocop.git
+    tag: v1.92.2
+    commit: d6ef1f955827ed04696af6d263ca44c532da0618
+    license: MIT
+    ruby: 3.4.12
+    # RuboCop commits no Gemfile.lock. This resolution was produced from the
+    # pinned Gemfile with Ruby 3.4.12 and Bundler 2.6.9.
+    lockfile: locks/rubocop/Gemfile.lock
+    env: {}
+    requires: [git]
+    services: []
+    setup: []
+    reset: []
+    # `rake spec` forks test-queue workers; serial RSpec is the entry point
+    # both tracers support.
+    default_runner: rspec
+    runners:
+      rspec: {command: [bundle, exec, rspec, --seed, '{seed}'], workers: 1, extra_processes: 0}
+    # RuboCop has 5,179 examples whose description and location collide.
+    # With the default `fail_on_duplicates true`, both tracers exit 1 before
+    # persisting their cache, so no run is ever warm.
+    tracer_config:
+      - fail_on_duplicates false
+    suites:
+      full: []
+      # Unrelated Naming and CLI specs plus the specs each change and the fault touch.
+      subset: [spec/rubocop/cop/naming, spec/rubocop/cli, spec/rubocop/cop/style/for_spec.rb,
+               spec/rubocop/cop/style/dig_chain_spec.rb, spec/rubocop/cop/style/redundant_initialize_spec.rb,
+               spec/rubocop/cop/message_annotator_spec.rb]
+      smoke: [spec/rubocop/cop/style/for_spec.rb, spec/rubocop/cop/style/dig_chain_spec.rb,
+              spec/rubocop/cop/message_annotator_spec.rb]
+    changes:
+      - name: style_for
+        commit: c3b57f1584f2e44a52c8797cc29e1628861fd6c3
+        summary: one cop and its spec (Style/For autocorrect)
+      - name: comments_help
+        commit: b44c098cbf044f88314ea4665558fc07e2ff7516
+        summary: shared cop mixin used by many cops, plus two specs
+      - name: message_annotator
+        commit: 9f025c8d1a0af3370a9207229e81e4b7436f012f
+        summary: core offense-message annotation used by every cop
+    fault:
+      path: lib/rubocop/cop/style/for.rb
+      from: "PREFER_EACH = 'Prefer `each` over `for`.'"
+      to: "PREFER_EACH = 'Prefer `each` to `for`.'"
+    versions: []
+
+  mastodon:
+    repository: https://github.com/mastodon/mastodon.git
+    tag: v4.7.5
+    commit: 24cd1c875a1ac393e587421726394d5692ff5496
+    license: AGPL-3.0
+    ruby: 4.0.9
+    env:
+      RAILS_ENV: test
+      DB_HOST: 127.0.0.1
+      DB_PORT: '55414'
+      DB_USER: postgres
+      DB_PASS: postgres
+      REDIS_HOST: 127.0.0.1
+      REDIS_PORT: '56380'
+    requires: [git, docker, node, npx, vips, ffmpeg]
+    services: [mastodon-postgres, mastodon-redis]
+    # Mirrors .github/workflows/test-ruby.yml: the test environment reads the
+    # production Vite build in public/packs. Node 25+ ships without corepack,
+    # so the pinned corepack resolves package.json's yarn version.
+    setup:
+      - run: [npx, --yes, corepack@0.36.0, yarn, install, --immutable]
+      - run: [npx, --yes, corepack@0.36.0, yarn, build:production]
+        creates: public/packs/.vite/manifest.json
+      - run: [bin/rails, db:create]
+      - run: [bin/rails, db:schema:load]
+    reset:
+      - [docker, exec, testsift-oss-mastodon-redis-1, redis-cli, FLUSHALL]
+    # CI runs `bin/flatware rspec`; serial bin/rspec is the entry point both
+    # tracers support.
+    default_runner: rspec
+    runners:
+      rspec: {command: [bin/rspec, --seed, '{seed}'], workers: 1, extra_processes: 0}
+    tracer_config: []
+    suites:
+      full: []
+      subset: [spec/lib, spec/models/account_spec.rb, spec/helpers]
+      smoke: [spec/lib/search_query_transformer_spec.rb, spec/helpers/settings_helper_spec.rb]
+    changes:
+      - name: search_query_transformer
+        commit: 1855e57bfa193ea8d201e64656d071f6fb1a6148
+        summary: one library class and its spec
+      - name: settings_helper
+        commit: 78d0af926a41ddf8e530b26ff5d8bc9c40f5d185
+        summary: removes a view helper method
+      - name: account_merging
+        commit: ea123f3e9bc4b42977391b7e0fb6dcf6b24d2d87
+        summary: Account model concern and a CLI command
+    fault:
+      path: app/lib/search_query_transformer.rb
+      from: "        when '-'\n          :must_not\n"
+      to: "        when '-'\n          :must\n"
+    versions:
+      - [vips, --version]
+      - [ffmpeg, -version]
+      - [node, --version]
+      - [docker, exec, testsift-oss-mastodon-postgres-1, postgres, --version]
+      - [docker, exec, testsift-oss-mastodon-redis-1, redis-server, --version]
+
+  discourse:
+    repository: https://github.com/discourse/discourse.git
+    tag: v2026.10.0
+    commit: 05445c3bf999c5502ccbe1e13539a15e88d9c9a9
+    license: GPL-2.0
+    ruby: 3.4.12
+    env:
+      RAILS_ENV: test
+      PGHOST: 127.0.0.1
+      PGPORT: '55418'
+      PGUSER: discourse
+      PGPASSWORD: discourse
+      DISCOURSE_REDIS_HOST: 127.0.0.1
+      DISCOURSE_REDIS_PORT: '56381'
+      DISCOURSE_MESSAGE_BUS_REDIS_HOST: 127.0.0.1
+      DISCOURSE_MESSAGE_BUS_REDIS_PORT: '56381'
+      LOAD_PLUGINS: '0'
+      PARALLEL_TEST_PROCESSORS: '{workers}'
+      BUNDLE_WITHOUT: development
+    # Rails loads db/structure.sql with psql (Homebrew: libpq/bin). With
+    # TEST_ENV_NUMBER set, config/boot.rb spawns a local redis-server per worker.
+    requires: [git, docker, node, pnpm, psql, redis-server, magick, oxipng, pngquant, jpegoptim, gifsicle, optipng]
+    services: [discourse-postgres, discourse-redis]
+    # Mirrors the core backend job of .github/workflows/tests.yml.
+    setup:
+      - run: [pnpm, install, --frozen-lockfile]
+      - run: [bin/rake, db:create]
+      - run: [bin/rake, db:migrate]
+      - run: [bin/rake, parallel:create]
+      - run: [bin/rake, parallel:migrate]
+      - run: [bin/rake, assets:precompile:asset_processor, assets:precompile:pretty_text]
+    reset:
+      - [docker, exec, testsift-oss-discourse-redis-1, redis-cli, FLUSHALL]
+    default_runner: turbo
+    runners:
+      # Without file arguments turbo_rspec groups by a runtime log it also
+      # rewrites, so the run order would drift between samples. Passing
+      # `spec` with the system-test exclusion keeps the same file set.
+      # turbo starts one worker per group plus a multisite process.
+      turbo:
+        command: [bin/turbo_rspec, '--seed={seed}', '--exclude-pattern=spec/system/*']
+        workers: 8
+        extra_processes: 1
+      rspec: {command: [bin/rspec, --seed, '{seed}', --exclude-pattern, 'spec/system/**/*_spec.rb'],
+              workers: 1, extra_processes: 0}
+    tracer_config: []
+    suites:
+      full: [spec]
+      subset: [spec/lib/topics_filter_spec.rb, spec/models/sitemap_spec.rb, spec/requests/sitemap_controller_spec.rb,
+               spec/models/topic_spec.rb, spec/lib/archetype_spec.rb, spec/lib/guardian_spec.rb]
+      smoke: [spec/lib/topics_filter_spec.rb, spec/models/sitemap_spec.rb]
+    changes:
+      - name: topics_filter
+        commit: c38b12da3273b0e20ae3fbc132f3d6a2cbd0f8d4
+        summary: one library class and its spec
+      - name: sitemap
+        commit: ce5f8cfc3207dbae99c7c127e85052846dd27db6
+        summary: model, controller, and their specs
+      - name: topic_archetype
+        commit: 3fc5966b51fe72396de020cec552c4067e49dd87
+        summary: Topic model, Archetype, and Guardian
+    fault:
+      path: lib/topics_filter.rb
+      from: '@scope.where("topics.closed")'
+      to: '@scope.where("NOT topics.closed")'
+    versions:
+      - [pnpm, --version]
+      - [node, --version]
+      - [magick, --version]
+      - [docker, exec, testsift-oss-discourse-postgres-1, postgres, --version]
+      - [docker, exec, testsift-oss-discourse-redis-1, redis-server, --version]

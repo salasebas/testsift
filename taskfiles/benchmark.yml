@@ -115,6 +115,13 @@ tasks:
     cmds:
       - ruby benchmark/evidence/input_fault.rb {{.CLI_ARGS}}
 
+  benchmark:oss:
+    desc: >-
+      Measure plain RSpec, rspec-tracer, and TestSift on the pinned OSS corpus
+      (benchmark/oss/corpus.yml), e.g. task benchmark:oss -- --projects rubocop --output tmp/oss/rubocop
+    cmds:
+      - ruby benchmark/oss/run.rb {{.CLI_ARGS}}
+
   benchmark:ratchet:update:
     desc: Regenerate benchmark/ratchet.json from a fresh 10-iter run (requires --yes to confirm)
     deps: [benchmark:bundle]
