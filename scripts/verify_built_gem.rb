@@ -8,8 +8,8 @@
 #   1. `require 'testsift'` resolves to the installed gem at the expected
 #      version.
 #   2. The `testsift` executable prints that version.
-#   3. A copy of the Ruby benchmark fixture runs cold (nothing skipped),
-#      then warm (examples skipped from the cache the cold run wrote).
+#   3. A copy of the Ruby benchmark fixture runs cold (all re-run, nothing skipped),
+#      then warm (none re-run, all skipped from the cache the cold run wrote).
 #
 # Usage: ruby scripts/verify_built_gem.rb pkg/testsift-X.Y.Z.gem
 # Run via: task release:verify
@@ -25,7 +25,7 @@ require 'tmpdir'
 ROOT = File.expand_path('..', __dir__)
 FIXTURE = File.join(ROOT, 'benchmark/fixtures/ruby_app')
 FIXTURE_FILES = %w[.rspec .testsift app spec].freeze
-SUMMARY = /testsift: (?<tracked>\d+) examples tracked .* (?<skipped>\d+) skipped/
+SUMMARY = /testsift: (?<tracked>\d+) examples tracked \S+ (?<rerun>\d+) re-run \S+ (?<skipped>\d+) skipped/
 
 gem_file = File.expand_path(ARGV.fetch(0) { abort 'usage: ruby scripts/verify_built_gem.rb pkg/testsift-X.Y.Z.gem' })
 version = File.basename(gem_file)[/\Atestsift-(.+)\.gem\z/, 1] || abort("not a testsift gem file: #{gem_file}")
@@ -85,13 +85,13 @@ def verify_fixture(env, app)
   # rspec-core falls back to `spec/` only when $0 is `rspec`; under
   # `ruby -e` the directory has to be named.
   cold = summary_of(run_executable!(env, 'rspec-core', 'rspec', 'spec', chdir: app))
-  check("cold run executes all #{cold['tracked']} examples") do
-    cold['tracked'].positive? && cold['skipped'].zero?
+  check("cold run re-runs all #{cold['tracked']} examples") do
+    cold['tracked'].positive? && cold['rerun'] == cold['tracked'] && cold['skipped'].zero?
   end
 
   warm = summary_of(run_executable!(env, 'rspec-core', 'rspec', 'spec', chdir: app))
-  check("warm run skips all #{warm['tracked']} unchanged examples") do
-    warm['tracked'] == cold['tracked'] && warm['skipped'] == warm['tracked']
+  check("warm run skips all #{warm['tracked']} unchanged examples and re-runs none") do
+    warm['tracked'] == cold['tracked'] && warm['rerun'].zero? && warm['skipped'] == warm['tracked']
   end
 end
 
