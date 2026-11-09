@@ -7,9 +7,15 @@ driver, fixture set, and dependency resolution:
 | --- | --- | --- |
 | baseline | `e225fbf` | Engine of the [issue #20 report](../2026-11-04-issue-20/REPORT.md) |
 | first slice | `bb26fc3` | Shared finish snapshot (#21), per-path filter decisions in attribution and normalization (#22) |
-| optimized | `7d95a29` | Memoized path, absolute-path, and filter helpers; graph sets built once; no Set copies in snapshot projection; identical `@all_files` entries kept; project-path list reused across snapshots; spec-file lookup built once per report |
+| optimized | `7d95a29` | Memoized path, absolute-path, and filter helpers; graph sets built once; no Set copies in snapshot projection; identical `@all_files` entries kept; project-path list reused across snapshots (removed after review, see below); spec-file lookup built once per report |
 
-No native code is added. The [issue #21 report](../2026-11-08-issue-21/REPORT.md)
+No native code is added. Review removed one `7d95a29` change after these
+measurements: `CoverageAdapter#normalize` reused its list of project paths while
+the snapshot's key count was unchanged. A restarted Coverage can replace files
+without changing that count, so the list could miss a dependency. Normalization
+walks every key again; on the large full run it took 0.84 s at `bb26fc3`,
+against 0.51 s with the cache, so expect about 0.3 s (2.5%) more there than the
+`7d95a29` rows show. The [issue #21 report](../2026-11-08-issue-21/REPORT.md)
 covers the first slice alone. Absolute times from different reports are not
 comparable: hosts and load differ.
 

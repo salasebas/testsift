@@ -161,6 +161,15 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
       expect(adapter.peek.keys).to eq([inside_root, later])
     end
 
+    it 'follows a restarted Coverage whose file set changed without changing size' do
+      replacement = write_file('lib/replacement.rb', "puts 3\n")
+      snapshots = [inside_root, replacement].map { |path| { path => { lines: [1] }, outside_root => { lines: [1] } } }
+      allow(Coverage).to receive(:peek_result).and_return(*snapshots)
+      adapter = described_class.new(root: root, mode: :hash).tap(&:peek)
+
+      expect(adapter.peek).to eq(replacement => [1])
+    end
+
     it 'normalizes hash-mode (SimpleCov branch tracking) to line arrays' do
       allow(Coverage).to receive(:peek_result).and_return(
         inside_root => { lines: [1, 0], branches: { foo: {} } }
