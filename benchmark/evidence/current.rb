@@ -29,7 +29,11 @@ module PerformanceEvidence
       super
       return if @options[:lockfiles]
 
-      command('bundle', 'install', chdir: cwd(fixture), env: { 'BUNDLE_GEMFILE' => gemfile })
+      env = { 'BUNDLE_GEMFILE' => gemfile }
+      # The fixture lockfile lists generic `aarch64-linux`, which sqlite3 publishes only as -gnu/-musl gems;
+      # Bundler cannot resolve that foreign platform from macOS until it is normalized.
+      command('bundle', 'lock', '--normalize-platforms', chdir: cwd(fixture), env: env)
+      command('bundle', 'install', chdir: cwd(fixture), env: env)
     end
 
     def metadata
