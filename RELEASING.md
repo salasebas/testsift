@@ -82,15 +82,26 @@ checks the built artifact.
   publisher expires 12 hours after it is created and does not reserve
   the name, so create it just before merging the first release PR. The
   first successful push turns it into a permanent publisher and makes
-  you the gem owner. No API key is stored in the repository.
+  you the gem owner. No API key is stored in the repository. The
+  `publish` job names the owning account (`RUBYGEMS_OWNER`, a RubyGems
+  handle or numeric user ID); RubyGems requires it to create a new gem.
 
 ## If publishing fails
 
-The tag and the GitHub release already exist when `publish` runs. Fix
-the cause, then re-run the failed `publish` job from the Actions tab:
-it checks out the same tag and pushes the same version. If RubyGems
-already accepted the gem, the re-run fails at `gem push`; the release
-is complete and nothing else is needed.
+The tag and the GitHub release already exist when `publish` runs.
+
+- If the cause was transient (a network error, a missing approval),
+  re-run the failed `publish` job from the Actions tab. A re-run uses
+  the workflow file from the release commit.
+- If the workflow itself needed a fix, merge the fix, then publish the
+  existing tag with the current workflow:
+
+  ```sh
+  gh workflow run release.yml --ref testsift -f tag=vX.Y.Z
+  ```
+
+If RubyGems already accepted the gem, `gem push` fails on any retry;
+the release is complete and nothing else is needed.
 
 ## After a release
 
