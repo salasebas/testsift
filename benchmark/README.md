@@ -18,6 +18,8 @@ scale corpora, independent input-failure oracles, backend checks, and runtime
 comparisons. Its measurements stay outside the frozen imported-baseline dataset.
 The [issue #21 comparison](results/2026-11-08-issue-21/REPORT.md) measures the
 shared example-boundary snapshot and per-run filter decisions with the same driver.
+The [Ruby optimization report](results/2026-11-09-ruby-optimization/REPORT.md)
+breaks down where the time goes after those changes and where native work could help.
 
 ## Scenarios
 
