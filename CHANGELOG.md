@@ -3,6 +3,22 @@
 All notable changes to TestSift. release-please writes each entry from
 the Conventional Commit messages merged since the previous release.
 
+## [0.1.0](https://github.com/salasebas/testsift/compare/v0.0.1...v0.1.0) (2026-11-09)
+
+
+### ⚠ BREAKING CHANGES
+
+* remove the reports_s3_path and use_local_aws shims that read unpublished TESTSIFT_ variables ([#46](https://github.com/salasebas/testsift/issues/46))
+
+### Bug Fixes
+
+* report 0 re-run on warm runs instead of counting cached examples ([#45](https://github.com/salasebas/testsift/issues/45)) ([68f3ec5](https://github.com/salasebas/testsift/commit/68f3ec5256d91565cdc64456888e0dfaea29fc8b))
+
+
+### Code Refactoring
+
+* remove the reports_s3_path and use_local_aws shims that read unpublished TESTSIFT_ variables ([#46](https://github.com/salasebas/testsift/issues/46)) ([2e53b2a](https://github.com/salasebas/testsift/commit/2e53b2accc30167cce0b734848f73e53ddf63f6a))
+
 ## 0.0.1 (2026-11-09)
 
 
