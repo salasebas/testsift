@@ -1,5 +1,6 @@
 # frozen_string_literal: true
 
+require 'English'
 require 'fileutils'
 require 'json'
 require 'set'
@@ -144,11 +145,8 @@ module RSpecTracer
       # @api private
       def last_run_id
         with_connection do |db|
-          row = db.get_first_row('SELECT run_id FROM meta LIMIT 1')
-          run_id = row&.first
-          return nil if run_id.nil? || run_id.to_s.empty?
-
-          run_id
+          run_id = db.get_first_row('SELECT run_id FROM meta LIMIT 1')&.first
+          run_id unless run_id.nil? || run_id.to_s.empty?
         end
       rescue StandardError
         nil
@@ -158,17 +156,17 @@ module RSpecTracer
       # @api private
       def load_graph(schema_version:)
         with_connection do |db|
-          return nil unless meta_table_exists?(db)
+          next nil unless meta_table_exists?(db)
 
           row = db.get_first_row('SELECT schema_version, run_id FROM meta LIMIT 1')
-          return nil if row.nil?
+          next nil if row.nil?
 
           stored_sv, run_id = row
           unless Schema.supported?(stored_sv) && stored_sv == schema_version
             info("schema_version mismatch (stored=#{stored_sv.inspect}, expected=#{schema_version}); cold run")
-            return nil
+            next nil
           end
-          return nil if run_id.nil? || run_id.to_s.empty?
+          next nil if run_id.nil? || run_id.to_s.empty?
 
           LazySnapshot.new(
             schema_version: stored_sv, run_id: run_id,
@@ -264,11 +262,13 @@ module RSpecTracer
       def with_connection
         return nil unless File.file?(db_path)
 
-        db = ::SQLite3::Database.new(db_path)
-        configure_connection(db)
-        yield db
-      ensure
-        db&.close
+        outside_pending_exception do
+          db = ::SQLite3::Database.new(db_path)
+          configure_connection(db)
+          yield db
+        ensure
+          db&.close
+        end
       end
 
       # Internal method on the tracer pipeline.
@@ -276,12 +276,28 @@ module RSpecTracer
       def with_write_connection
         FileUtils.mkdir_p(@cache_path)
         reset_corrupt_db_file!
-        db = ::SQLite3::Database.new(db_path)
-        configure_connection(db)
-        ensure_schema!(db)
-        yield db
-      ensure
-        db&.close
+        outside_pending_exception do
+          db = ::SQLite3::Database.new(db_path)
+          configure_connection(db)
+          ensure_schema!(db)
+          yield db
+        ensure
+          db&.close
+        end
+      end
+
+      # sqlite3 1.x re-raises the calling thread's pending exception from
+      # Statement#step. Cache persistence runs in at_exit, where a failing
+      # suite's SystemExit is still pending, so every statement raised it
+      # and the cache was never saved. A new thread starts with no pending
+      # exception; Thread#value re-raises what the body raises.
+      def outside_pending_exception
+        return yield if $ERROR_INFO.nil?
+
+        Thread.new do
+          Thread.current.report_on_exception = false
+          yield
+        end.value
       end
 
       # Probe db_path's leading bytes against SQLite's magic header.
