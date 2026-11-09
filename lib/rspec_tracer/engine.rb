@@ -75,6 +75,7 @@ module RSpecTracer
       @duplicate_examples = {}
       @examples_coverage = {}
       @all_files = {}
+      @attributed_file_names = {}
       @tracks_files = Hash.new { |h, id| h[id] = Set.new } # id => Set<abs_path>
       @tracks_env = Hash.new { |h, id| h[id] = Set.new }   # id => Set<env_name>
       @tracked_env_names = Set.new
@@ -768,16 +769,22 @@ module RSpecTracer
     def attribute_to_example(example_id, inputs)
       paths = Set.new
       inputs.each do |input|
-        next if @configuration.filters.any? { |f| f.match?(file_name: path_to_file_name(input.path)) }
+        file_name = attributed_file_name(input.path)
+        next if file_name.nil?
 
         paths << input.path
-        @all_files[input.path] = {
-          file_name: path_to_file_name(input.path),
-          file_path: input.path,
-          digest: input.digest
-        }
+        @all_files[input.path] = { file_name: file_name, file_path: input.path, digest: input.digest }
       end
       @graph.register_example(example_id, paths)
+    end
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def attributed_file_name(path)
+      @attributed_file_names.fetch(path) do
+        file_name = -path_to_file_name(path)
+        @attributed_file_names[path] = filtered_by_current_filters?(file_name) ? nil : file_name
+      end
     end
 
     # Internal method on the tracer pipeline.

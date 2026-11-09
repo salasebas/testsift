@@ -222,6 +222,22 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
 
       expect(Coverage).to have_received(:peek_result).once
     end
+
+    it 'keeps each path\'s filter decision across repeated snapshots' do
+      adapter = described_class.new(root: root, filters: [RSpecTracer::Filter.register(%r{/vendor/})])
+      adapter.peek_with_paths
+
+      expect(adapter.peek_with_paths.first).to eq(kept => [1])
+    end
+
+    it 'evaluates the filters once per path per run' do
+      names = []
+      filter = RSpecTracer::Filter.register(->(source) { names.push(source[:file_name]).empty? })
+
+      described_class.new(root: root, filters: [filter]).tap(&:peek_with_paths).peek_with_paths
+
+      expect(names).to contain_exactly('/lib/foo.rb', '/vendor/bar.rb')
+    end
   end
 
   describe '#peek_unfiltered' do

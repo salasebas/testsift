@@ -43,6 +43,7 @@ module RSpecTracer
         @root = File.expand_path(root)
         @root_prefix = "#{@root}/"
         @filters = filters
+        @filter_decisions = {}
         @mode = mode
       end
 
@@ -154,23 +155,19 @@ module RSpecTracer
       def filtered?(path)
         return false if @filters.empty?
 
-        # Legacy filter convention: file_name is root-stripped with
-        # leading slash. Keep it so existing .rspec-tracer filter
-        # strings/regexes work under the new adapter unchanged.
-        file_name = path.sub(@root, '')
-        @filters.any? { |f| f.match?(file_name: file_name) }
+        @filter_decisions.fetch(path) do
+          # Legacy filter convention: file_name is root-stripped with
+          # leading slash. Keep it so existing .rspec-tracer filter
+          # strings/regexes work under the new adapter unchanged.
+          file_name = path.sub(@root, '')
+          @filter_decisions[path] = @filters.any? { |f| f.match?(file_name: file_name) }
+        end
       end
 
       # Internal method on the tracer pipeline.
       # @api private
       def delta?(before, after)
-        return true if before.nil? || after.nil?
-        return true if before.length != after.length
-
-        before.each_with_index do |bv, i|
-          return true unless bv == after[i]
-        end
-        false
+        before.nil? || after.nil? || before != after
       end
 
       # Internal method on the tracer pipeline.

@@ -870,6 +870,20 @@ RSpec.describe RSpecTracer::Engine do
     end
   end
 
+  describe 'attribution filters' do
+    it 'evaluates the filters once per path across examples' do
+      names = []
+      filter = RSpecTracer::Filter.register(->(source) { names.push(source[:file_name]).empty? })
+      tracker = build_tracker(stub_configuration(filters: [filter])).tap(&:setup)
+      a_path = File.join(root, 'lib/a.rb')
+      stub_example_snapshots(tracker, { a_path => [0] }, { a_path => [1] })
+
+      %w[ex1 ex2].each { |id| tracker.tap(&:example_started).example_finished(id) }
+
+      expect(names).to eq(['/lib/a.rb'])
+    end
+  end
+
   # The seed_*_from_previous methods carry forward the prior run's
   # @all_files entries + dependency-graph edges. Without re-applying
   # the current filter list, a filter added between runs would NOT
