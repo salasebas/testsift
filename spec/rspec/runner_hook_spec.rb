@@ -75,9 +75,8 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
     context 'when there are zero examples' do
       before { allow(world).to receive(:example_count).and_return(0) }
 
-      it 'flips the no_examples + running flags and forwards to super unchanged' do
-        runner.run_specs([:group_a])
-
+      it 'flips the no_examples + running flags and returns the exit code from super' do
+        expect(runner.run_specs([:group_a])).to eq(:super_result)
         expect(RSpecTracer).to have_received(:running=).with(true)
         expect(RSpecTracer).to have_received(:no_examples=).with(true)
         expect(runner.super_calls).to eq([[:group_a]])
