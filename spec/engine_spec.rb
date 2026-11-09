@@ -178,7 +178,7 @@ RSpec.describe RSpecTracer::Engine do
         { a_path => [1, 0, 1] },
         { a_path => [1, 1, 1] }
       ]
-      allow(tracker.coverage_adapter).to receive(:peek).and_return(*peeks)
+      stub_example_snapshots(tracker, *peeks)
       tracker.register_example(build_example('ex1'))
       tracker.example_started
       tracker.example_finished('ex1')
@@ -189,7 +189,7 @@ RSpec.describe RSpecTracer::Engine do
     it 'example_finished installs a graph entry for the example' do
       a_path = File.join(root, 'lib/a.rb')
       peeks = [{ a_path => [1, 0, 1] }, { a_path => [1, 1, 1] }]
-      allow(tracker.coverage_adapter).to receive(:peek).and_return(*peeks)
+      stub_example_snapshots(tracker, *peeks)
       tracker.register_example(build_example('ex1'))
       tracker.example_started
       tracker.example_finished('ex1')
@@ -198,7 +198,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     it 'clears the IOHooks bucket after example_finished' do
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
       tracker.register_example(build_example('ex1'))
       tracker.example_started
       tracker.example_finished('ex1')
@@ -207,7 +207,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     it 'on_example_passed records the execution result on the metadata hash' do
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
       tracker.register_example(build_example('ex1'))
       tracker.example_started
       tracker.example_finished('ex1')
@@ -250,7 +250,7 @@ RSpec.describe RSpecTracer::Engine do
     subject(:tracker) { build_tracker.tap(&:setup) }
 
     it 'writes a v2 cache under cache_path' do
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
       tracker.register_example(build_example('ex1'))
       tracker.example_started
       tracker.example_finished('ex1')
@@ -262,7 +262,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     it 'stamps the cache with the current schema_version' do
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
       tracker.register_example(build_example('ex1'))
       tracker.example_started
       tracker.example_finished('ex1')
@@ -354,7 +354,7 @@ RSpec.describe RSpecTracer::Engine do
     end
 
     def run_one(tracker, id, outcome)
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
       tracker.register_example(build_example(id))
       tracker.example_started
       tracker.example_finished(id)
@@ -460,7 +460,7 @@ RSpec.describe RSpecTracer::Engine do
       prime_previous_cache
       tracker = build_tracker.tap(&:setup)
       new_peek = [{}, { '/lib/b.rb' => [nil, 1] }]
-      allow(tracker.coverage_adapter).to receive(:peek).and_return(*new_peek)
+      stub_example_snapshots(tracker, *new_peek)
       tracker.register_example(build_example('overwritten'))
       tracker.example_started
       tracker.example_finished('overwritten')
@@ -473,7 +473,7 @@ RSpec.describe RSpecTracer::Engine do
 
     it 'is an identity merge when there is no previous snapshot (cold run)' do
       tracker = build_tracker.tap(&:setup)
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
       tracker.register_example(build_example('ex_cold'))
       tracker.example_started
       tracker.example_finished('ex_cold')
@@ -491,7 +491,7 @@ RSpec.describe RSpecTracer::Engine do
 
     it 'adds declared-kind inputs for each tracked glob to the example dep set' do
       write_project_file('config/settings.yml', "feature: enabled\n")
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
 
       tracker.register_tracks('ex1', files: Set.new(['config/*.yml']), env: Set.new)
       tracker.register_example(build_example('ex1'))
@@ -814,7 +814,7 @@ RSpec.describe RSpecTracer::Engine do
       prior = build_tracker
       prior.setup
       prior.register_example(build_example('ex1'))
-      allow(prior.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(prior, {}, {})
       prior.example_started
       prior.example_finished('ex1')
       prior.on_example_passed('ex1', build_execution_result(status: :passed))
@@ -843,6 +843,30 @@ RSpec.describe RSpecTracer::Engine do
       tracker.example_finished('ex-peek-count')
 
       expect(Coverage).to have_received(:peek_result).exactly(2).times
+    end
+
+    it 'keeps two snapshots per example when loaded-file tracking reuses the finish snapshot' do
+      tracker = build_tracker(stub_configuration(transitive_load_tracking: true)).tap(&:setup)
+      allow(Coverage).to receive(:peek_result).and_return({})
+
+      tracker.example_started
+      tracker.example_finished('ex-peek-count')
+
+      expect(Coverage).to have_received(:peek_result).exactly(2).times
+    end
+
+    it 'attributes a file loaded before the example without new line hits to that example' do
+      lazy = File.join(root, 'lib/lazy.rb').tap { |path| FileUtils.mkdir_p(File.dirname(path)) }
+      File.write(lazy, "LAZY = 1\n")
+      tracker = build_tracker(stub_configuration(transitive_load_tracking: true))
+      allow(Coverage).to receive(:peek_result).and_return({}, { lazy => [1] })
+      tracker.setup
+
+      tracker.example_started
+      tracker.example_finished('ex-lazy')
+
+      expect(tracker.graph.paths_for('ex-lazy')).to include(lazy)
+      expect(tracker.loaded_files_tracker.loaded_set).to include(lazy)
     end
   end
 
@@ -965,7 +989,7 @@ RSpec.describe RSpecTracer::Engine do
       prime_previous_cache
       tracker = build_tracker.tap(&:setup)
       fresh_example = build_example('ex_failed').merge(run_reason: 'Failed previously')
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
 
       tracker.register_example(fresh_example)
       tracker.example_started

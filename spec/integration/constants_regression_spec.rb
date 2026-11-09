@@ -53,18 +53,11 @@ RSpec.describe 'constants-lookup blind-spot regression' do
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   def build_tracker(enabled: true)
-    # Peek script: the trigger example loads both files; the reader
-    # example sees the same two keys (already loaded, no new diffs).
-    # Coverage.peek_result.keys is monotonic across a process, so
-    # after ex_trigger, both files stay in peek output forever.
-    peek_script = [
-      [],                                # capture_boot_set! (nothing loaded yet)
-      [user_path, constants_path],       # after ex_trigger stop
-      [user_path, constants_path]        # after ex_reader stop
-    ]
-    RSpecTracer::Tracker::LoadedFilesTracker.new(
-      root: root, peek: -> { peek_script.shift || [] }, enabled: enabled
-    )
+    # capture_boot_set! sees nothing loaded yet. The trigger example
+    # loads both files; the reader example's finish snapshot lists the
+    # same two keys (already loaded, no new diffs). Coverage keys are
+    # monotonic across a process.
+    RSpecTracer::Tracker::LoadedFilesTracker.new(root: root, peek: -> { [] }, enabled: enabled)
   end
 
   # Simulates what the engine wires in production: at start_example time, the caller
@@ -80,7 +73,7 @@ RSpec.describe 'constants-lookup blind-spot regression' do
     # ex_trigger: coverage-diff observed user_path executing, and as a
     # side effect pulled constants_path into the process.
     trigger_baseline = tracker.loaded_set_inputs
-    trigger_new = tracker.stop_example('ex_trigger')
+    trigger_new = tracker.stop_example('ex_trigger', [user_path, constants_path])
     graph.register_example('ex_trigger', trigger_baseline | trigger_new)
 
     # ex_reader: coverage diff produces NOTHING for constants_path
@@ -88,7 +81,7 @@ RSpec.describe 'constants-lookup blind-spot regression' do
     # this window). loaded_set_inputs carries it in as a transitive
     # dep.
     reader_baseline = tracker.loaded_set_inputs
-    reader_new = tracker.stop_example('ex_reader')
+    reader_new = tracker.stop_example('ex_reader', [user_path, constants_path])
     graph.register_example('ex_reader', reader_baseline | reader_new)
 
     [graph, registry]

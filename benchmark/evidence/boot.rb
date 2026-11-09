@@ -49,10 +49,16 @@ module Evidence
     target.prepend(hook)
   end
 
+  # Engines before the shared example-boundary snapshot named this step peek_normalized.
+  def self.normalization_method
+    adapter = RSpecTracer::Tracker::CoverageAdapter
+    adapter.private_method_defined?(:normalize) ? :normalize : :peek_normalized
+  end
+
   def self.observer_targets
     {
       RSpecTracer::Tracker::CoverageAdapter => {
-        compute_diff: 'dependency_delta', peek_normalized: 'coverage_normalize'
+        compute_diff: 'dependency_delta', normalization_method => 'coverage_normalize'
       },
       RSpecTracer::Tracker::LoadedFilesTracker => {
         capture_boot_set!: 'loaded_attribution', loaded_set_inputs: 'loaded_attribution',
@@ -164,7 +170,7 @@ module Evidence
       end
     end)
     RSpecTracer::Tracker::LoadedFilesTracker.prepend(Module.new do
-      def stop_example(example_id)
+      def stop_example(*)
         original = @peek
         @peek = -> { Evidence.instance_variable_get(:@latest_coverage_keys) }
         super

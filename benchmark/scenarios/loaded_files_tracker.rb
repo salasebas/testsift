@@ -51,7 +51,7 @@ begin
     p
   end
 
-  # Steady-state: peek always returns the same set, @loaded_set is
+  # Steady-state: every snapshot has the same paths, @loaded_set is
   # primed with the same set, diff is empty every call. Measures the
   # hot-path cost (Set subtraction of big-but-identical sets).
   steady_tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
@@ -59,29 +59,24 @@ begin
   )
   steady_tracker.capture_boot_set!
 
-  steady_tracker.stop_example('warm') # warm
+  steady_tracker.stop_example('warm', boot_paths) # warm
 
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
-  STEADY_ITERS.times { |i| steady_tracker.stop_example("ex#{i}") }
+  STEADY_ITERS.times { |i| steady_tracker.stop_example("ex#{i}", boot_paths) }
   steady_total = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
   steady_per_call_us = steady_total * 1e6 / STEADY_ITERS
 
   # Growing: each call exposes one new file, so digest + Input.for_file
   # + @loaded_set.merge fire each iteration. Measures the
   # worst-realistic per-call cost.
-  growing_peek_cursor = 0
-  growing_peek = lambda do
-    boot_paths + growing_paths[0...growing_peek_cursor]
-  end
   growing_tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
-    root: root, peek: growing_peek
+    root: root, peek: -> { boot_paths }
   )
   growing_tracker.capture_boot_set!
 
   t0 = Process.clock_gettime(Process::CLOCK_MONOTONIC)
   GROWING_ITERS.times do |i|
-    growing_peek_cursor = i + 1
-    growing_tracker.stop_example("ex#{i}")
+    growing_tracker.stop_example("ex#{i}", boot_paths + growing_paths[0..i])
   end
   growing_total = Process.clock_gettime(Process::CLOCK_MONOTONIC) - t0
   growing_per_call_us = growing_total * 1e6 / GROWING_ITERS

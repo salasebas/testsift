@@ -217,7 +217,7 @@ module RSpecTracer
     # Internal method on the tracer pipeline.
     # @api private
     def example_finished(example_id)
-      after_peek = @coverage_adapter.peek
+      after_peek, coverage_paths = @coverage_adapter.peek_with_paths
       record_coverage_delta(example_id, @before_peek, after_peek)
       io_inputs = @current_bucket.values
       rails_inputs = @current_rails_bucket ? @current_rails_bucket.values : []
@@ -225,7 +225,7 @@ module RSpecTracer
       clear_rails_bucket
 
       transitive_inputs = @loaded_files_tracker.loaded_set_inputs |
-        @loaded_files_tracker.stop_example(example_id)
+        @loaded_files_tracker.stop_example(example_id, coverage_paths)
       coverage_inputs = @coverage_adapter.compute_diff(@before_peek, after_peek)
       declared_inputs = @declared_globs.walk
       tracks_inputs = per_example_tracks_inputs(example_id)

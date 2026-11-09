@@ -46,6 +46,12 @@ RSpec.shared_context 'with engine configuration' do
     end
   end
 
+  # The example-start boundary reads #peek; the finish boundary reads
+  # #peek_with_paths so loaded-file tracking shares that snapshot.
+  def stub_example_snapshots(engine, before, after)
+    allow(engine.coverage_adapter).to receive_messages(peek: before, peek_with_paths: [after, after.keys])
+  end
+
   def build_tracker(configuration_override = configuration)
     RSpecTracer::Engine.new(configuration: configuration_override)
   end

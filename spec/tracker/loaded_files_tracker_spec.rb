@@ -338,7 +338,7 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
       tracker = described_class.new(root: root, peek: peek_lambda([]), enabled: false)
       tracker.capture_boot_set!
 
-      expect(tracker.stop_example('ex1')).to eq(Set.new)
+      expect(tracker.stop_example('ex1', [])).to eq(Set.new)
     end
 
     it 'returns an empty Set and does no digest work when disabled even with unseen peek paths' do
@@ -348,7 +348,7 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
       tracker = described_class.new(root: root, peek: peek_lambda([boot]), enabled: false)
       tracker.capture_boot_set!
 
-      expect(tracker.stop_example('ex1')).to eq(Set.new)
+      expect(tracker.stop_example('ex1', [boot])).to eq(Set.new)
     end
 
     it 'returns an empty Set when no paths have been newly loaded' do
@@ -356,17 +356,17 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
       tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
 
-      expect(tracker.stop_example('ex1')).to eq(Set.new)
+      expect(tracker.stop_example('ex1', [boot])).to eq(Set.new)
     end
 
     it 'returns Inputs for newly-loaded paths and grows @loaded_set' do
       boot = write_file('lib/boot.rb')
       lazy = write_file('lib/lazy.rb')
-      peek_sequence = [[boot], [boot, lazy]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, lazy]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
 
-      new_inputs = tracker.stop_example('ex1')
+      new_inputs = tracker.stop_example('ex1', finish_paths[0])
 
       expect(new_inputs.map(&:path)).to eq([lazy])
       expect(tracker.loaded_set).to include(boot, lazy)
@@ -376,11 +376,11 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
       boot = write_file('lib/boot.rb')
       lazy_a = write_file('lib/lazy_a.rb')
       lazy_b = write_file('lib/lazy_b.rb')
-      peek_sequence = [[boot], [boot, lazy_a], [boot, lazy_a, lazy_b]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, lazy_a], [boot, lazy_a, lazy_b]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
-      tracker.stop_example('ex1')
-      tracker.stop_example('ex2')
+      tracker.stop_example('ex1', finish_paths[0])
+      tracker.stop_example('ex2', finish_paths[1])
 
       expect(tracker.loaded_set).to include(boot, lazy_a, lazy_b)
     end
@@ -388,35 +388,35 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     it 'filters newly-observed paths outside the project root' do
       boot = write_file('lib/boot.rb')
       outside = File.join(tmp_base, 'outside.rb').tap { |p| File.write(p, "x\n") }
-      peek_sequence = [[boot], [boot, outside]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, outside]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
 
-      expect(tracker.stop_example('ex1')).to eq(Set.new)
+      expect(tracker.stop_example('ex1', finish_paths[0])).to eq(Set.new)
     end
 
     it 'drops non-string entries on the growing peek path' do
       # Proves the is_a?(String) guard in new_filtered_paths survives:
       # without it, path.start_with? on 42 / nil would raise NoMethodError.
       boot = write_file('lib/boot.rb')
-      peek_sequence = [[boot], [boot, 42, nil]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, 42, nil]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
 
-      expect(tracker.stop_example('ex1')).to eq(Set.new)
+      expect(tracker.stop_example('ex1', finish_paths[0])).to eq(Set.new)
     end
 
     it 'reuses cached Inputs (no re-digesting) when a path was already observed' do
       boot = write_file('lib/boot.rb')
       lazy = write_file('lib/lazy.rb', "v1\n")
-      peek_sequence = [[boot], [boot, lazy], [boot, lazy]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, lazy], [boot, lazy]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
-      first = tracker.stop_example('ex1').first
+      first = tracker.stop_example('ex1', finish_paths[0]).first
       File.write(lazy, "v2\n")
-      # Force re-peek that includes lazy again; its digest should not
+      # The next snapshot includes lazy again; its digest should not
       # be recomputed because the path is already in @loaded_set.
-      tracker.stop_example('ex2')
+      tracker.stop_example('ex2', finish_paths[1])
 
       expect(tracker.loaded_set_inputs.find { |i| i.path == lazy }.digest).to eq(first.digest)
     end
@@ -424,12 +424,12 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     it 'skips paths whose digest fails (graceful degradation)' do
       boot = write_file('lib/boot.rb')
       lazy = write_file('lib/lazy.rb')
-      peek_sequence = [[boot], [boot, lazy]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, lazy]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
       allow(Digest::SHA256).to receive(:file).and_raise(Errno::EACCES)
 
-      new_inputs = tracker.stop_example('ex1')
+      new_inputs = tracker.stop_example('ex1', finish_paths[0])
 
       expect(new_inputs).to eq(Set.new)
     end
@@ -437,11 +437,11 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     it 'does not mark failed-digest paths as loaded (retry on next call)' do
       boot = write_file('lib/boot.rb')
       lazy = write_file('lib/lazy.rb')
-      peek_sequence = [[boot], [boot, lazy]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, lazy]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
       allow(Digest::SHA256).to receive(:file).and_raise(Errno::EACCES)
-      tracker.stop_example('ex1')
+      tracker.stop_example('ex1', finish_paths[0])
 
       expect(tracker.loaded_set).not_to include(lazy)
     end
@@ -449,28 +449,14 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     it 'skips newly-observed paths that have vanished from disk' do
       boot = write_file('lib/boot.rb')
       lazy = write_file('lib/lazy.rb')
-      peek_sequence = [[boot], [boot, lazy]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, lazy]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
       File.delete(lazy)
 
-      new_inputs = tracker.stop_example('ex1')
+      new_inputs = tracker.stop_example('ex1', finish_paths[0])
 
       expect(new_inputs).to eq(Set.new)
-    end
-
-    it 'tolerates peek raising inside stop_example (graceful degradation)' do
-      peeks = 0
-      peek = lambda do
-        peeks += 1
-        raise 'peek failed' if peeks > 1
-
-        []
-      end
-      tracker = described_class.new(root: root, peek: peek)
-      tracker.capture_boot_set!
-
-      expect(tracker.stop_example('ex1')).to eq(Set.new)
     end
   end
 
@@ -488,10 +474,10 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     it '#loaded_set_size reflects the current count' do
       boot = write_file('lib/boot.rb')
       lazy = write_file('lib/lazy.rb')
-      peek_sequence = [[boot], [boot, lazy]]
-      tracker = described_class.new(root: root, peek: -> { peek_sequence.shift })
+      finish_paths = [[boot, lazy]]
+      tracker = described_class.new(root: root, peek: peek_lambda([boot]))
       tracker.capture_boot_set!
-      tracker.stop_example('ex1')
+      tracker.stop_example('ex1', finish_paths[0])
 
       expect(tracker.loaded_set_size).to eq(2)
     end

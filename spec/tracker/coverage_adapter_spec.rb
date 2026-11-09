@@ -201,6 +201,29 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
     end
   end
 
+  describe '#peek_with_paths' do
+    let(:kept) { write_file('lib/foo.rb', "puts 1\n") }
+    let(:filtered) { write_file('vendor/bar.rb', "puts 2\n") }
+    let(:snapshot) do
+      { kept => { lines: [1], branches: {} }, filtered => { lines: [2], branches: {} },
+        '/elsewhere/lib/foo.rb' => { lines: [3] } }
+    end
+
+    before { allow(Coverage).to receive(:peek_result).and_return(snapshot) }
+
+    it 'returns the filtered line map and every tracked path from one snapshot' do
+      adapter = described_class.new(root: root, filters: [RSpecTracer::Filter.register(%r{/vendor/})])
+
+      expect(adapter.peek_with_paths).to eq([{ kept => [1] }, [kept, filtered, '/elsewhere/lib/foo.rb']])
+    end
+
+    it 'requests a single Coverage snapshot' do
+      described_class.new(root: root).peek_with_paths
+
+      expect(Coverage).to have_received(:peek_result).once
+    end
+  end
+
   describe '#peek_unfiltered' do
     let(:inside_root) { write_file('lib/foo.rb', "puts 1\n") }
     let(:outside_root) { '/elsewhere/lib/foo.rb' }

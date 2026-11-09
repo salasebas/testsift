@@ -180,8 +180,10 @@ module RSpecTracer
         @input_cache.values.to_set
       end
 
-      # Diff-and-grow. Called after an example finishes: peeks
-      # ::Coverage, finds paths the tracker hadn't seen yet, digests
+      # Diff-and-grow. Called after an example finishes with the paths
+      # of the same ::Coverage snapshot the engine took at that
+      # boundary, so the tracker never requests a snapshot of its own
+      # per example. Finds paths the tracker hadn't seen yet, digests
       # them, adds them to @loaded_set + @input_cache, and returns the
       # new-paths-only Input set so the caller can attribute them to
       # the just-completed example.
@@ -191,12 +193,12 @@ module RSpecTracer
       # (useful if the failure was transient) and keeps the
       # "@loaded_set => @input_cache has an entry" invariant.
       #
-      # Steady state (no new files loaded this example) is ~O(|peek|)
-      # with no digest work.
-      def stop_example(_example_id)
+      # Steady state (no new files loaded this example) is one length
+      # comparison with no digest work.
+      def stop_example(_example_id, coverage_paths)
         return Set.new unless @enabled
 
-        new_paths = new_filtered_paths
+        new_paths = new_filtered_paths(coverage_paths)
         return Set.new if new_paths.empty?
 
         new_inputs = build_inputs(new_paths)
@@ -230,20 +232,15 @@ module RSpecTracer
         Set.new
       end
 
-      # Diff-filtered peek - returns only paths not yet in @loaded_set.
-      # One hash lookup per peek entry (vs. the two a Set.new + Set - Set
-      # pipeline would pay). Halves stop_example steady-state cost.
+      # Diff-filtered paths - returns only paths not yet in @loaded_set.
+      # One hash lookup per path (vs. the two a Set.new + Set - Set
+      # pipeline would pay).
       #
       # Steady-state fast-path: ::Coverage's tracked-file set grows
-      # monotonically across the run, so when peek_result.length matches
-      # the cached length from the previous call no new project paths
-      # can have appeared. Returns [] without iterating - cuts the
-      # per-call cost from ~70 us (full filter loop over ~500 paths) to
-      # one Array#length comparison. A profile pass identified this
-      # loop as the dominant per-example cost in the engine microbench
-      # (16% TOTAL); the fast-path drops it to <1%.
-      def new_filtered_paths
-        paths = @peek.call
+      # monotonically across the run, so when the snapshot's path count
+      # matches the count from the previous call no new project paths
+      # can have appeared. Returns [] without iterating.
+      def new_filtered_paths(paths)
         return [] if @last_peek_length == paths.length
 
         @last_peek_length = paths.length
@@ -254,8 +251,6 @@ module RSpecTracer
 
           acc << path
         end
-      rescue StandardError
-        []
       end
 
       # Builds Input objects for paths not yet cached; returns the Set

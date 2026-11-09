@@ -52,7 +52,16 @@ module RSpecTracer
       # component -- 2.0 ignores branch coverage (same as 1.x; noted in
       # the upgrade docs).
       def peek
-        peek_normalized { |path| filtered?(path) }
+        normalize(coverage_result) { |path| filtered?(path) }
+      end
+
+      # One ::Coverage snapshot read two ways: `[#peek's filtered line
+      # map, every path Coverage tracks]`. The example-finish boundary
+      # hands the paths to LoadedFilesTracker so loaded-file tracking
+      # consumes this snapshot instead of producing another one.
+      def peek_with_paths
+        raw = coverage_result
+        [normalize(raw) { |path| filtered?(path) }, raw.keys]
       end
 
       # Same shape as #peek but only filters by `@root_prefix` -- skips
@@ -66,7 +75,7 @@ module RSpecTracer
       # (one per file: this adapter, rspec/installation, and
       # tracker/loaded_files_tracker) instead of adding a fourth.
       def peek_unfiltered
-        peek_normalized { false }
+        normalize(coverage_result) { false }
       end
 
       # Same root-prefix scoping as #peek_unfiltered, but preserves
@@ -85,10 +94,7 @@ module RSpecTracer
       # do not change `peek_unfiltered` to do otherwise without bumping
       # the storage schema.
       def peek_unfiltered_full
-        raw = ::Coverage.peek_result
-        @mode = detect_mode(raw) if @mode == :auto
-
-        raw.each_with_object({}) do |(path, stats), acc|
+        coverage_result.each_with_object({}) do |(path, stats), acc|
           next unless path.start_with?(@root_prefix)
 
           acc[path] = stats
@@ -116,14 +122,17 @@ module RSpecTracer
 
       private
 
-      # Single owner of the `::Coverage.peek_result` call site for
-      # `peek` and `peek_unfiltered`. Skip block decides exclusion;
-      # everything that survives gets normalized through the array/hash
-      # mode handling.
-      def peek_normalized
+      # Single owner of this adapter's `::Coverage.peek_result` call
+      # site. Every public peek produces exactly one snapshot here.
+      def coverage_result
         raw = ::Coverage.peek_result
         @mode = detect_mode(raw) if @mode == :auto
+        raw
+      end
 
+      # Skip block decides exclusion; everything that survives gets
+      # normalized through the array/hash mode handling.
+      def normalize(raw)
         raw.each_with_object({}) do |(path, stats), acc|
           next unless path.start_with?(@root_prefix)
           next if yield(path)
