@@ -208,7 +208,7 @@ module OSSBenchmark
     validate_names(options, projects)
     raise ArgumentError, 'repetitions must be positive' unless options[:repetitions].positive?
     raise ArgumentError, 'pass --revision or --testsift-version, not both' if options[:testsift_version] &&
-                                                                          options[:revision]
+      options[:revision]
 
     options[:projects].each { |name| validate_project(name, projects.fetch(name), options) }
   end
