@@ -10,12 +10,12 @@ last-process election → merge → report emission → cleanup.
 
 ## Detection at boot
 
-`RSpecTracer.start` checks `RSpecTracer::RSpec::ParallelTests.active?`,
+`TestSift.start` checks `TestSift::RSpec::ParallelTests.active?`,
 which returns `true` if `ParallelTests.first_process?` resolves
 without raising (which it does only when `parallel_tests` set the
 environment).
 
-Memoized as `RSpecTracer.parallel_tests?`. Every downstream
+Memoized as `TestSift.parallel_tests?`. Every downstream
 component branches on this flag.
 
 ## Per-worker directory layout
@@ -24,7 +24,7 @@ Each worker writes into a per-worker subdirectory under each of the
 3 canonical directories:
 
 ```
-rspec_tracer_cache/
+testsift_cache/
 ├── parallel_tests_1/      ← worker 1
 │   ├── last_run.json
 │   └── <run_id>/
@@ -33,18 +33,18 @@ rspec_tracer_cache/
 │   └── ...
 └── ... (etc.)
 
-rspec_tracer_coverage/
+testsift_coverage/
 ├── parallel_tests_1/
 └── ...
 
-rspec_tracer_report/
+testsift_report/
 ├── parallel_tests_1/
 └── ...
 ```
 
 The per-worker subdir name comes from `Configuration#parallel_tests_id`:
 `parallel_tests_<TEST_ENV_NUMBER>`. So worker N's `cache_path` is
-`<root>/rspec_tracer_cache/parallel_tests_<N>`.
+`<root>/testsift_cache/parallel_tests_<N>`.
 
 This isolation is mandatory: workers run concurrently with no shared
 locks on cache writes. Without per-worker dirs, two workers writing
@@ -93,19 +93,19 @@ The elected worker runs:
      workers since env is per-process and parent-spawned.
 3. **`emit_merged_reporters!`** — emits HTML / JSON / terminal
    reports against the MERGED top-level snapshot, into the top-
-   level `rspec_tracer_report/` (NOT `rspec_tracer_report/
+   level `testsift_report/` (NOT `testsift_report/
    parallel_tests_N/`). This produces the single user-visible report
    set.
 4. **`purge_worker_dirs!`** — removes every `parallel_tests_N/`
    subdirectory under the cache + coverage + report roots. The
    merged output supersedes the per-worker raw data.
-5. **`remove_lock_file!`** — deletes `rspec_tracer.lock` so the
+5. **`remove_lock_file!`** — deletes `testsift.lock` so the
    next run starts clean.
 
 ## Why reporters emit AFTER merge, not per-worker
 
 Pre-2.0 (and in some early 2.0 betas), per-worker `at_exit`
-emitted reports into each `rspec_tracer_report/parallel_tests_N/`
+emitted reports into each `testsift_report/parallel_tests_N/`
 directory, then `purge_worker_dirs!` removed those directories.
 Net result: every parallel_tests user got ZERO usable reports at
 run-end.
@@ -125,25 +125,25 @@ contract).
 
 Coverage data from `::Coverage.peek_result` is per-process and not
 trivially mergeable. Each worker writes its own `coverage.json` to
-`rspec_tracer_coverage/parallel_tests_N/`; users typically rely on
+`testsift_coverage/parallel_tests_N/`; users typically rely on
 SimpleCov's own collation (which understands the per-worker layout
 via `SimpleCov.collate`).
 
 If you don't use SimpleCov + you need merged coverage, your
-collation step happens AFTER rspec-tracer's `purge_worker_dirs!`
+collation step happens AFTER TestSift's `purge_worker_dirs!`
 runs. Workaround: copy the per-worker files to a sibling location
 in a `before(:suite)` shutdown hook.
 
 ## Interruption recovery
 
 Killing the parent `parallel_rspec` process mid-run leaves the
-lock file (`rspec_tracer.lock`) in place. The next run sees the
+lock file (`testsift.lock`) in place. The next run sees the
 stale lock and refuses to start.
 
 Recovery:
 
 ```sh
-rm -f rspec_tracer.lock && bundle exec parallel_rspec spec/
+rm -f testsift.lock && bundle exec parallel_rspec spec/
 ```
 
 We don't auto-clean the lock at startup because doing so would mask
@@ -160,9 +160,9 @@ collide.
 - **`TEST_ENV_NUMBER`+`TEST_SUITE_ID` interaction**: when both env
   vars are set (e.g. sharded CI suite running parallel_tests
   inside each shard), the cache_path nests:
-  `<root>/rspec_tracer_cache/<TEST_SUITE_ID>/parallel_tests_<N>/`.
+  `<root>/testsift_cache/<TEST_SUITE_ID>/parallel_tests_<N>/`.
   Merge happens within one shard; cross-shard merging is not
-  rspec-tracer's concern (the remote-cache backend handles
+  TestSift's concern (the remote-cache backend handles
   cross-shard distribution).
 - **Custom storage backends + parallel_tests**: a custom
   storage backend MUST handle per-worker isolation itself. The
@@ -172,9 +172,9 @@ collide.
 
 ## Where to read code
 
-- `lib/rspec_tracer/rspec/parallel_tests.rb` — election + lifecycle
+- `lib/testsift/rspec/parallel_tests.rb` — election + lifecycle
   hooks.
-- `lib/rspec_tracer/storage/json_backend.rb` (`Merger` class) — the
+- `lib/testsift/storage/json_backend.rb` (`Merger` class) — the
   per-field merge implementations.
 - `spec/integration/parallel_tests_spec.rb` — end-to-end test
   driving the actual fixture under `parallel_rspec`.

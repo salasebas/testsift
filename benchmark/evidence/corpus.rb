@@ -32,7 +32,7 @@ module PerformanceEvidence
       dimensions.fetch(:inputs).times do |index|
         File.write(File.join(root, "inputs/input_#{index}.json"), "{\"value\":1}\n")
       end
-      File.write(File.join(root, '.rspec-tracer'), configuration)
+      File.write(File.join(root, '.testsift'), configuration)
       File.write(File.join(root, 'spec/spec_helper.rb'), helper)
       4.times { |shard| File.write(File.join(root, "spec/work_#{shard}_spec.rb"), spec(shard)) }
       File.write(File.join(root, 'corpus.json'), JSON.pretty_generate(dimensions))
@@ -46,7 +46,7 @@ module PerformanceEvidence
     end
 
     def configuration
-      "RSpecTracer.configure do\n  coverage_track_files 'app/**/*.rb'\nend\n"
+      "TestSift.configure do\n  coverage_track_files 'app/**/*.rb'\nend\n"
     end
 
     def helper
@@ -56,8 +56,8 @@ module PerformanceEvidence
       <<~RUBY
         require 'json'
         if ENV['EVIDENCE_TRACER'] == '1'
-          require 'rspec_tracer'
-          RSpecTracer.start
+          require 'testsift'
+          TestSift.start
         end
         #{eager}
       RUBY

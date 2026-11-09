@@ -7,7 +7,7 @@ require 'json'
 require 'open3'
 require 'tmpdir'
 
-# rspec-tracer in a non-git directory (graceful degradation).
+# testsift in a non-git directory (graceful degradation).
 #
 # Real-world scenarios where this happens:
 #   - User runs rspec in a tarball-extracted source dir.
@@ -30,14 +30,14 @@ require 'tmpdir'
 # parent directory; verifies the run produces a usable cache.
 #
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleExpectations, RSpec/ExampleLength
-RSpec.describe 'rspec-tracer in a non-git working directory' do
+RSpec.describe 'testsift in a non-git working directory' do
   let(:project_root) { File.expand_path('../..', __dir__) }
   let(:gemfile_path) { File.join(project_root, 'Gemfile') }
 
   let(:inline_spec_body) do
     <<~RUBY
-      require "rspec_tracer"
-      RSpecTracer.start
+      require "testsift"
+      TestSift.start
 
       RSpec.describe "non-git invocation" do
         it "runs to completion without crashing on missing git history" do
@@ -80,11 +80,11 @@ RSpec.describe 'rspec-tracer in a non-git working directory' do
         "rspec subprocess in non-git dir failed (exit=#{status.exitstatus}):\n#{out}"
       )
 
-      cache_dir = File.join(dir, 'rspec_tracer_cache')
+      cache_dir = File.join(dir, 'testsift_cache')
       manifest_path = File.join(cache_dir, 'last_run.json')
       expect(File).to(
         exist(manifest_path),
-        "expected rspec-tracer cache manifest at #{manifest_path}; got: " \
+        "expected testsift cache manifest at #{manifest_path}; got: " \
         "#{Dir.exist?(cache_dir) ? Dir.children(cache_dir).inspect : '(no cache dir)'}"
       )
 

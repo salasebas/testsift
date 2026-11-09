@@ -5,7 +5,7 @@
 # write-side locking contracts must serialize concurrent save_graph
 # calls without dropping bytes or wedging either writer.
 #
-#   - JsonBackend: exclusive flock on `.rspec_tracer.lock` blocks
+#   - JsonBackend: exclusive flock on `.testsift.lock` blocks
 #     the second writer until the first finishes the
 #     transactional_save. Default flock semantics block, so this is
 #     naturally robust.
@@ -30,13 +30,13 @@ return unless Process.respond_to?(:fork)
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 CONCURRENT_WRITE_SQLITE_AVAILABLE =
   begin
     require 'sqlite3'
-    require 'rspec_tracer/storage/sqlite_backend'
+    require 'testsift/storage/sqlite_backend'
     RUBY_ENGINE == 'ruby'
   rescue LoadError
     false
@@ -44,15 +44,15 @@ CONCURRENT_WRITE_SQLITE_AVAILABLE =
 
 # rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Concurrent writers — last-writer-wins under lock contention' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_concurrent_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_concurrent_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   def build_snapshot(run_id, marker)
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: { marker => { id: marker, description: "from #{marker}" } },
       duplicate_examples: {},
@@ -121,14 +121,14 @@ RSpec.describe 'Concurrent writers — last-writer-wins under lock contention' d
     it 'persists one writer\'s snapshot via the flock-serialized transaction' do
       FileUtils.mkdir_p(cache_path)
 
-      make_a = -> { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version) }
-      make_b = -> { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('beta', 'ex_b'), schema_version: schema_version) }
+      make_a = -> { TestSift::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version) }
+      make_b = -> { TestSift::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('beta', 'ex_b'), schema_version: schema_version) }
       status_a, status_b = race_two_writers(make_a, make_b)
 
       expect(status_a).to eq(0), "child A failed (exit #{status_a})"
       expect(status_b).to eq(0), "child B failed (exit #{status_b})"
 
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
 
       expect(snap).not_to be_nil
@@ -136,7 +136,7 @@ RSpec.describe 'Concurrent writers — last-writer-wins under lock contention' d
 
       # Every per-run file present in the winning run-id dir.
       run_dir = File.join(cache_path, snap.run_id)
-      RSpecTracer::Storage::JsonBackend::FILENAMES.each do |filename|
+      TestSift::Storage::JsonBackend::FILENAMES.each do |filename|
         expect(File).to exist(File.join(run_dir, filename)), "missing #{filename} in winning run-id dir #{snap.run_id}"
       end
 
@@ -146,17 +146,17 @@ RSpec.describe 'Concurrent writers — last-writer-wins under lock contention' d
 
       # Lock file persists by design (flock semantics; the file is
       # the lock-state holder, not deleted on release).
-      expect(File.exist?(File.join(cache_path, RSpecTracer::Storage::JsonBackend::LOCK_FILENAME))).to be(true)
+      expect(File.exist?(File.join(cache_path, TestSift::Storage::JsonBackend::LOCK_FILENAME))).to be(true)
     end
 
     it 'leaves the cache loadable by a third reader after the race resolves' do
       FileUtils.mkdir_p(cache_path)
 
-      make_a = -> { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version) }
-      make_b = -> { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('beta', 'ex_b'), schema_version: schema_version) }
+      make_a = -> { TestSift::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version) }
+      make_b = -> { TestSift::Storage::JsonBackend.new(cache_path: cache_path).save_graph(build_snapshot('beta', 'ex_b'), schema_version: schema_version) }
       race_two_writers(make_a, make_b)
 
-      reader = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
 
       expect(snap.all_examples.keys).to eq(['ex_a']).or eq(['ex_b'])
@@ -171,14 +171,14 @@ RSpec.describe 'Concurrent writers — last-writer-wins under lock contention' d
     it 'persists one writer\'s snapshot via BEGIN IMMEDIATE + busy_timeout' do
       FileUtils.mkdir_p(cache_path)
 
-      make_a = -> { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path).save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version) }
-      make_b = -> { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path).save_graph(build_snapshot('beta', 'ex_b'), schema_version: schema_version) }
+      make_a = -> { TestSift::Storage::SqliteBackend.new(cache_path: cache_path).save_graph(build_snapshot('alpha', 'ex_a'), schema_version: schema_version) }
+      make_b = -> { TestSift::Storage::SqliteBackend.new(cache_path: cache_path).save_graph(build_snapshot('beta', 'ex_b'), schema_version: schema_version) }
       status_a, status_b = race_two_writers(make_a, make_b)
 
       expect(status_a).to eq(0), "child A failed (exit #{status_a}) — busy_timeout missing or too short?"
       expect(status_b).to eq(0), "child B failed (exit #{status_b}) — busy_timeout missing or too short?"
 
-      reader = RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path)
+      reader = TestSift::Storage::SqliteBackend.new(cache_path: cache_path)
       snap = reader.load_graph(schema_version: schema_version)
 
       expect(snap).not_to be_nil

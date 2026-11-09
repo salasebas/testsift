@@ -11,13 +11,13 @@ tasks:
     deps: [reporters:html:build]
     cmds:
       - mkdir -p pkg
-      - gem build rspec-tracer.gemspec -o pkg/rspec-tracer-{{.VERSION}}.gem
+      - gem build testsift.gemspec -o pkg/testsift-{{.VERSION}}.gem
 
   gem:install:local:
     desc: Build + install locally for manual smoke testing
     cmds:
       - task: gem:build
-      - gem install pkg/rspec-tracer-{{.VERSION}}.gem --local --no-doc
+      - gem install pkg/testsift-{{.VERSION}}.gem --local --no-doc
 
   gem:push:
     desc: Push the built gem to RubyGems
@@ -25,4 +25,4 @@ tasks:
       - sh: test -n "${RUBYGEMS_API_KEY:-}"
         msg: "RUBYGEMS_API_KEY must be set"
     cmds:
-      - gem push pkg/rspec-tracer-{{.VERSION}}.gem
+      - gem push pkg/testsift-{{.VERSION}}.gem

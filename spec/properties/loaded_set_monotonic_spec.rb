@@ -7,7 +7,7 @@ require 'fileutils'
 require 'set'
 require 'tmpdir'
 require 'rantly/rspec_extensions'
-require 'rspec_tracer/tracker/loaded_files_tracker'
+require 'testsift/tracker/loaded_files_tracker'
 
 # Fixed alphabet of project-root paths. Rantly permutes the "peek
 # sequences" returned per example - the property is that @loaded_set
@@ -58,7 +58,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
     it 'only grows @loaded_set: after N calls, every prior snapshot is a subset of the current one' do
       property_of { LoadedSetMonotonicGen.peek_sequence(5) }.check(500) do |rels_sequence|
         peek_sequence = rels_sequence.map { |rels| abs_paths(rels) }
-        tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+        tracker = TestSift::Tracker::LoadedFilesTracker.new(
           root: root, peek: -> { peek_sequence.shift || [] }
         )
         tracker.capture_boot_set!
@@ -76,7 +76,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
     it 'loaded_set_size is non-decreasing across consecutive stop_example calls' do
       property_of { LoadedSetMonotonicGen.peek_sequence(4) }.check(500) do |rels_sequence|
         peek_sequence = rels_sequence.map { |rels| abs_paths(rels) }
-        tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+        tracker = TestSift::Tracker::LoadedFilesTracker.new(
           root: root, peek: -> { peek_sequence.shift || [] }
         )
         tracker.capture_boot_set!
@@ -94,7 +94,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
     it 'returned new_inputs are disjoint from @loaded_set-before-the-call' do
       property_of { LoadedSetMonotonicGen.peek_sequence(3) }.check(500) do |rels_sequence|
         peek_sequence = rels_sequence.map { |rels| abs_paths(rels) }
-        tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+        tracker = TestSift::Tracker::LoadedFilesTracker.new(
           root: root, peek: -> { peek_sequence.shift || [] }
         )
         tracker.capture_boot_set!
@@ -114,7 +114,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
     it 'is monotonic in inclusion across a sequence of stop_example calls' do
       property_of { LoadedSetMonotonicGen.peek_sequence(4) }.check(500) do |rels_sequence|
         peek_sequence = rels_sequence.map { |rels| abs_paths(rels) }
-        tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+        tracker = TestSift::Tracker::LoadedFilesTracker.new(
           root: root, peek: -> { peek_sequence.shift || [] }
         )
         tracker.capture_boot_set!

@@ -25,10 +25,10 @@ require 'set'
 # fixture's bundle - RSpec disallows memoized accessors there.
 module ParallelTestsSpecHelpers
   FIXTURE_ROOT = File.expand_path('../../benchmark/fixtures/ruby_app', __dir__)
-  CACHE_ROOT = File.join(FIXTURE_ROOT, 'rspec_tracer_cache')
-  REPORT_ROOT = File.join(FIXTURE_ROOT, 'rspec_tracer_report')
-  COVERAGE_ROOT = File.join(FIXTURE_ROOT, 'rspec_tracer_coverage')
-  LOCK_FILE = File.join(FIXTURE_ROOT, 'rspec_tracer.lock')
+  CACHE_ROOT = File.join(FIXTURE_ROOT, 'testsift_cache')
+  REPORT_ROOT = File.join(FIXTURE_ROOT, 'testsift_report')
+  COVERAGE_ROOT = File.join(FIXTURE_ROOT, 'testsift_coverage')
+  LOCK_FILE = File.join(FIXTURE_ROOT, 'testsift.lock')
   SCRUB_PATHS = [CACHE_ROOT, REPORT_ROOT, COVERAGE_ROOT, LOCK_FILE].freeze
 
   module_function
@@ -96,7 +96,7 @@ RSpec.describe 'parallel_tests v2 engine integration' do
       run_parallel
 
       run_id = load_last_run.fetch('run_id')
-      RSpecTracer::Storage::JsonBackend::FILENAMES.each do |filename|
+      TestSift::Storage::JsonBackend::FILENAMES.each do |filename|
         expect(File).to exist(File.join(ParallelTestsSpecHelpers::CACHE_ROOT, run_id, filename)), "missing #{filename}"
       end
     end
@@ -129,9 +129,9 @@ RSpec.describe 'parallel_tests v2 engine integration' do
 
       report_root = ParallelTestsSpecHelpers::REPORT_ROOT
       expect(File).to(exist(File.join(report_root, 'index.html')),
-                      'expected merged HTML report at rspec_tracer_report/index.html')
+                      'expected merged HTML report at testsift_report/index.html')
       expect(File).to(exist(File.join(report_root, 'report.json')),
-                      'expected merged JSON report at rspec_tracer_report/report.json')
+                      'expected merged JSON report at testsift_report/report.json')
 
       stragglers = Dir.glob(File.join(report_root, 'parallel_tests_*'))
       expect(stragglers).to(be_empty, "leftover per-worker report dirs: #{stragglers.inspect}")

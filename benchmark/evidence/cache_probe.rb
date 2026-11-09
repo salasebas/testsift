@@ -1,16 +1,16 @@
 # frozen_string_literal: true
 
 require 'json'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/sqlite_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/sqlite_backend'
+require 'testsift/storage/schema'
 
 backend = if ARGV[1] == 'sqlite'
-            RSpecTracer::Storage::SqliteBackend.new(cache_path: ARGV[0])
+            TestSift::Storage::SqliteBackend.new(cache_path: ARGV[0])
           else
-            RSpecTracer::Storage::JsonBackend.new(cache_path: ARGV[0], serializer: ARGV[2].to_sym)
+            TestSift::Storage::JsonBackend.new(cache_path: ARGV[0], serializer: ARGV[2].to_sym)
           end
-snapshot = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+snapshot = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 raise 'missing cache snapshot' unless snapshot
 
 if ARGV[3] == 'count'

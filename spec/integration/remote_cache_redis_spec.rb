@@ -6,8 +6,8 @@ require 'json'
 require 'securerandom'
 require 'tmpdir'
 
-require 'rspec_tracer/remote_cache/redis_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/remote_cache/redis_backend'
+require 'testsift/storage/schema'
 
 # Integration test: RedisBackend round-trip against a real Redis
 # server. Skips gracefully when `redis` gem is missing or localhost:6379
@@ -42,7 +42,7 @@ RSpec.describe 'RemoteCache::RedisBackend against localhost Redis', :integration
     skip 'Redis not reachable; skipping integration specs' unless redis_reachable?
 
     require 'redis'
-    @prefix = "rspec-tracer-it-#{SecureRandom.hex(4)}"
+    @prefix = "testsift-it-#{SecureRandom.hex(4)}"
     @client = Redis.new(url: REDIS_URL)
     # Start clean on this prefix in case a prior aborted run left keys.
     flush_prefix
@@ -62,7 +62,7 @@ RSpec.describe 'RemoteCache::RedisBackend against localhost Redis', :integration
     end
   end
 
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
   around do |example|
     Dir.mktmpdir do |dir|
@@ -80,7 +80,7 @@ RSpec.describe 'RemoteCache::RedisBackend against localhost Redis', :integration
   end
 
   def build_backend(branch:, default_branch: 'main', test_suite_id: nil)
-    RSpecTracer::RemoteCache::RedisBackend.new(
+    TestSift::RemoteCache::RedisBackend.new(
       prefix: @prefix,
       branch: branch,
       default_branch: default_branch,
@@ -243,7 +243,7 @@ RSpec.describe 'RemoteCache::RedisBackend against localhost Redis', :integration
 
   describe 'ttl: per-key EXPIRE (atomic with HSET inside MULTI)' do
     def build_backend_with_ttl(branch:, ttl:, default_branch: 'main')
-      RSpecTracer::RemoteCache::RedisBackend.new(
+      TestSift::RemoteCache::RedisBackend.new(
         prefix: @prefix, branch: branch, default_branch: default_branch,
         cache_path: @cache_path, url: REDIS_URL, ttl: ttl
       )

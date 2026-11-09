@@ -32,19 +32,19 @@ skips quietly on those platforms rather than erroring out.
 ### Per-module subtasks
 
 The full mutation pass is split across 7 per-module Taskfile subtasks
-that each cover a `lib/rspec_tracer/<subdir>/` lane. Each subtask
+that each cover a `lib/testsift/<subdir>/` lane. Each subtask
 carries per-subject carve-out gates with inline rationale comments;
 inspect the Taskfile when investigating a subject's gate value.
 
 | Subtask                             | Subdir                              |
 |-------------------------------------|-------------------------------------|
-| `task test:mutation:tracker`        | `lib/rspec_tracer/tracker/`         |
-| `task test:mutation:storage`        | `lib/rspec_tracer/storage/`         |
-| `task test:mutation:rspec`          | `lib/rspec_tracer/rspec/`           |
-| `task test:mutation:top-level`      | `lib/rspec_tracer.rb`               |
-| `task test:mutation:remote-cache`   | `lib/rspec_tracer/remote_cache/`    |
-| `task test:mutation:rails`          | `lib/rspec_tracer/rails/`           |
-| `task test:mutation:reporters`      | `lib/rspec_tracer/reporters/`       |
+| `task test:mutation:tracker`        | `lib/testsift/tracker/`         |
+| `task test:mutation:storage`        | `lib/testsift/storage/`         |
+| `task test:mutation:rspec`          | `lib/testsift/rspec/`           |
+| `task test:mutation:top-level`      | `lib/testsift.rb`               |
+| `task test:mutation:remote-cache`   | `lib/testsift/remote_cache/`    |
+| `task test:mutation:rails`          | `lib/testsift/rails/`           |
+| `task test:mutation:reporters`      | `lib/testsift/reporters/`       |
 
 CI runs them as parallel jobs in
 [`.github/workflows/lint-and-specs.yml`](../.github/workflows/lint-and-specs.yml)
@@ -54,8 +54,8 @@ on; it succeeds iff every parallel job below it succeeded.
 
 ### Interaction with the tracer
 
-`spec/spec_helper.rb` skips `RSpecTracer.start` when
-`RSPEC_TRACER_DISABLE=1` is set in the environment. Mutant tasks set
+`spec/spec_helper.rb` skips `TestSift.start` when
+`TESTSIFT_DISABLE=1` is set in the environment. Mutant tasks set
 that flag automatically. Reason: the tracer's own `start` path calls
 `TimeFormatter.format_time`; a mutation that makes that raise would
 crash spec-helper setup before any test could run, which mutant would
@@ -71,7 +71,7 @@ branch:
 **1. Spec-helper crash mistaken for "alive".** Mutant cannot distinguish
 "0 tests failed" from "0 tests ran." If the mutation makes spec-helper
 setup raise, every test in the suite is skipped and mutant reports
-100% alive. Fix: set `RSPEC_TRACER_DISABLE=1` in the Taskfile env
+100% alive. Fix: set `TESTSIFT_DISABLE=1` in the Taskfile env
 block (every per-module subtask already does); confirm the spec_helper
 honors the flag.
 

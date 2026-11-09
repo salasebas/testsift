@@ -1,6 +1,6 @@
 # Internals
 
-Detailed walkthroughs of how rspec-tracer's subsystems work. These
+Detailed walkthroughs of how TestSift's subsystems work. These
 docs go below the level of [`ARCHITECTURE.md`](../../ARCHITECTURE.md):
 that file gives the layered mental model + protocols; these docs walk
 the actual code paths for specific scenarios.

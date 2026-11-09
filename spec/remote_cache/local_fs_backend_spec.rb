@@ -5,15 +5,15 @@ require 'fileutils'
 require 'json'
 require 'tmpdir'
 
-require 'rspec_tracer/remote_cache/local_fs_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/remote_cache/local_fs_backend'
+require 'testsift/storage/schema'
 require_relative '../contracts/remote_cache_backend'
 
 # rubocop:disable RSpec/InstanceVariable, RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::RemoteCache::LocalFsBackend do
+RSpec.describe TestSift::RemoteCache::LocalFsBackend do
   around do |example|
-    Dir.mktmpdir('rspec-tracer-local-cache-') do |cache|
-      Dir.mktmpdir('rspec-tracer-local-root-') do |root|
+    Dir.mktmpdir('testsift-local-cache-') do |cache|
+      Dir.mktmpdir('testsift-local-root-') do |root|
         @cache_path = cache
         @root = root
         example.run
@@ -21,7 +21,7 @@ RSpec.describe RSpecTracer::RemoteCache::LocalFsBackend do
     end
   end
 
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
   def new_backend(branch: 'main', default_branch: 'main', test_suite_id: nil, root: nil)
     described_class.new(
@@ -320,7 +320,7 @@ RSpec.describe RSpecTracer::RemoteCache::LocalFsBackend do
     end
 
     it 'returns 0 and logs when whole-branch delete fails' do
-      logger = instance_double(RSpecTracer::Logger)
+      logger = instance_double(TestSift::Logger)
       allow(logger).to receive(:debug)
       allow(logger).to receive(:warn)
       pr = described_class.new(root: @root, branch: 'feat', default_branch: 'main',
@@ -384,7 +384,7 @@ RSpec.describe RSpecTracer::RemoteCache::LocalFsBackend do
     end
 
     it 'continues on per-ref delete failures and logs' do
-      logger = instance_double(RSpecTracer::Logger)
+      logger = instance_double(TestSift::Logger)
       allow(logger).to receive(:debug)
       allow(logger).to receive(:warn)
       backend = described_class.new(root: @root, branch: 'main', default_branch: 'main',

@@ -6,7 +6,7 @@ name: combinations
 #
 # (1) Exhaustive cross-product of every supported runtime-dep major-line
 #     combination on every supported Ruby (`combo-3.x` / `combo-4.0-*` /
-#     `combo-jruby` / `combo-redis-service`). Per-PR + per-main runs use
+#     `combo-jruby` / `combo-redis-service`). Per-PR + per-push runs use
 #     Option-A relaxed pins (root Gemfile uses `>= floor` for each
 #     multi-line dep, so Bundler resolves latest-of-everything-installable
 #     per cell - matching what an end user gets). This workflow flips
@@ -41,7 +41,7 @@ name: combinations
 on:
   schedule:
     # Weekly: Sunday 02:00 UTC. Detection window for upstream-dep
-    # regressions that the relaxed-pin per-PR/per-main runs would only
+    # regressions that the relaxed-pin per-PR/per-push runs would only
     # catch when a contributor next pushes.
     - cron: '0 2 * * 0'
   workflow_dispatch: {}
@@ -69,11 +69,11 @@ jobs:
         parallel_tests: ['~> 4.10.0', '~> 5.7.0']
         rspec: ['~> 3.12.0', '~> 3.13.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
-      RSPEC_TRACER_SQLITE3_VERSION: "~> 1.7.0"
+      TESTSIFT_SQLITE3_VERSION: "~> 1.7.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -112,12 +112,12 @@ jobs:
         rspec: ['~> 3.12.0', '~> 3.13.0']
         sqlite3: ['~> 1.7.0', '~> 2.9.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
-      RSPEC_TRACER_SQLITE3_VERSION: ${{ matrix.sqlite3 }}
+      TESTSIFT_SQLITE3_VERSION: ${{ matrix.sqlite3 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -157,13 +157,13 @@ jobs:
         rspec: ['~> 3.12.0', '~> 3.13.0']
         sqlite3: ['~> 1.7.0', '~> 2.9.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_VERSION: ${{ matrix.parallel }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_VERSION: ${{ matrix.parallel }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
-      RSPEC_TRACER_SQLITE3_VERSION: ${{ matrix.sqlite3 }}
+      TESTSIFT_SQLITE3_VERSION: ${{ matrix.sqlite3 }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -202,13 +202,13 @@ jobs:
         parallel_tests: ['~> 4.10.0', '~> 5.7.0']
         rspec: ['~> 3.12.0', '~> 3.13.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_VERSION: ${{ matrix.parallel }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_VERSION: ${{ matrix.parallel }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
-      RSPEC_TRACER_SQLITE3_VERSION: "~> 2.9.0"
+      TESTSIFT_SQLITE3_VERSION: "~> 2.9.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -249,13 +249,13 @@ jobs:
         parallel_tests: ['~> 4.10.0', '~> 5.7.0']
         rspec: ['~> 3.12.0', '~> 3.13.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_VERSION: ${{ matrix.parallel }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_VERSION: ${{ matrix.parallel }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
-      RSPEC_TRACER_SQLITE3_VERSION: "~> 1.7.0"
+      TESTSIFT_SQLITE3_VERSION: "~> 1.7.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -296,13 +296,13 @@ jobs:
         parallel_tests: ['~> 4.10.0', '~> 5.7.0']
         rspec: ['~> 3.12.0', '~> 3.13.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_VERSION: ${{ matrix.parallel }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_VERSION: ${{ matrix.parallel }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
-      RSPEC_TRACER_SQLITE3_VERSION: "~> 2.9.0"
+      TESTSIFT_SQLITE3_VERSION: "~> 2.9.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -340,13 +340,13 @@ jobs:
         parallel_tests: ['~> 4.10.0', '~> 5.7.0']
         rspec: ['~> 3.12.0', '~> 3.13.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_VERSION: ${{ matrix.parallel }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_VERSION: ${{ matrix.parallel }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
-      RSPEC_TRACER_SQLITE3_VERSION: "~> 1.7.0"
+      TESTSIFT_SQLITE3_VERSION: "~> 1.7.0"
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -389,9 +389,9 @@ jobs:
         parallel_tests: ['~> 4.10.0', '~> 5.7.0']
         rspec: ['~> 3.12.0', '~> 3.13.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_PARALLEL_TESTS_VERSION: ${{ matrix.parallel_tests }}
       RSPEC_VERSION: ${{ matrix.rspec }}
     steps:
       - name: Checkout
@@ -445,9 +445,9 @@ jobs:
         msgpack: ['~> 1.7.0', '~> 1.8.0']
         rspec: ['~> 3.12.0', '~> 3.13.0']
     env:
-      RSPEC_TRACER_REDIS_VERSION: ${{ matrix.redis }}
-      RSPEC_TRACER_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
-      RSPEC_TRACER_MSGPACK_VERSION: ${{ matrix.msgpack }}
+      TESTSIFT_REDIS_VERSION: ${{ matrix.redis }}
+      TESTSIFT_CONNECTION_POOL_VERSION: ${{ matrix.connection_pool }}
+      TESTSIFT_MSGPACK_VERSION: ${{ matrix.msgpack }}
       RSPEC_VERSION: ${{ matrix.rspec }}
       REDIS_URL: redis://localhost:6379/15
     steps:
@@ -490,7 +490,7 @@ jobs:
 
   combo_mutation_rails:
     name: combo-mutation-rails
-    # Mutation pass on lib/rspec_tracer/rails/ (3 net-new subjects:
+    # Mutation pass on lib/testsift/rails/ (3 net-new subjects:
     # Notifications, I18nTracking, Railtie; Preset stays in per-PR
     # smoke). Smaller surface than remote-cache / reporters; 30 min
     # cap matches the original lint-and-specs cell. Carve-outs sized
@@ -523,7 +523,7 @@ jobs:
 
   combo_mutation_reporters:
     name: combo-mutation-reporters
-    # Mutation pass on lib/rspec_tracer/reporters/ (6 subjects: Base,
+    # Mutation pass on lib/testsift/reporters/ (6 subjects: Base,
     # JsonReporter, TerminalReporter, HtmlReporter, PayloadBuilder,
     # Registry). HtmlReporter (218 LOC) + PayloadBuilder (203 LOC) carry
     # the bulk; 60 min cap matches the original lint-and-specs cell.
@@ -556,7 +556,7 @@ jobs:
 
   combo_mutation_remote_cache:
     name: combo-mutation-remote-cache
-    # Mutation pass on lib/rspec_tracer/remote_cache/ (8 subjects:
+    # Mutation pass on lib/testsift/remote_cache/ (8 subjects:
     # Backend, Validator, Archive, GitAncestry, UserTasks, LocalFsBackend,
     # RedisBackend, S3Backend). S3Backend (~567 LOC) is the bulk; sized
     # comparable to per-PR test-mutation-storage's SqliteBackend (581

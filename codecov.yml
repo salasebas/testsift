@@ -24,7 +24,7 @@ coverage:
   status:
     project:
       default:
-        # No coverage drop on main. Threshold 0% allows fluctuation
+        # No coverage drop on the default branch. Threshold 0% allows fluctuation
         # within rounding precision but anything that meaningfully
         # lowers project coverage trips the status check.
         target: auto
@@ -60,10 +60,10 @@ ignore:
   - "vendor/"
   - "tmp/"
   - "coverage/"
-  - "lib/rspec_tracer/reporters/html/"
+  - "lib/testsift/reporters/html/"
   # Metadata-only file. The single VERSION constant assignment fires
   # at gem load time; SimpleCov's per-suite collate path treats it
   # as 0% covered on a version bump, tripping the patch gate every
   # release. Same category as CHANGELOG / README — not behavior, not
   # test surface.
-  - "lib/rspec_tracer/version.rb"
+  - "lib/testsift/version.rb"

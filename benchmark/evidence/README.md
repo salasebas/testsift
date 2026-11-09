@@ -52,7 +52,7 @@ samples when comparing hosts.
 | `warm` | Restore the same seed cache, with no source changes. |
 | `changed_source` | Restore the seed, then make an equivalent executable Ruby expression change. |
 | `changed_input` | Restore the seed, then change bytes in a Ruby spec or Rails JSON input. |
-| `invalidated` | Restore the seed, then change `.rspec-tracer` bytes. The entire suite must run. |
+| `invalidated` | Restore the seed, then change `.testsift` bytes. The entire suite must run. |
 | `fault` | Restore the seed, then introduce a source defect. Compare selected and failing example IDs against an independent full RSpec run of that defect. |
 | `parallel_full` | Ruby fixture only. Run two workers from an empty cache, wait for exit and merge, and verify the merged cache contains all examples. |
 

@@ -14,7 +14,7 @@
 #   - JsonBackend :msgpack targeted: msgpack-decoded-but-wrong-shape,
 #     zlib-decompressed garbage, raw .msgpack bytes without zlib wrap.
 #   - SqliteBackend property fuzz (1000 iter Rantly across
-#     rspec_tracer.sqlite3).
+#     testsift.sqlite3).
 #   - SqliteBackend targeted: missing meta table, wrong
 #     schema_version, truncated db file, cache_path with no
 #     .sqlite3 file.
@@ -30,12 +30,12 @@ require 'set'
 require 'tmpdir'
 require 'zlib'
 require 'rantly/rspec_extensions'
-require 'rspec_tracer/storage/json_backend'
+require 'testsift/storage/json_backend'
 
 SQLITE_AVAILABLE =
   begin
     require 'sqlite3'
-    require 'rspec_tracer/storage/sqlite_backend'
+    require 'testsift/storage/sqlite_backend'
     RUBY_ENGINE == 'ruby'
   rescue LoadError
     false
@@ -55,8 +55,8 @@ module CacheCorruptionGen
   # Targets for the msgpack property fuzz. last_run.json is always
   # plain JSON regardless of serializer; per-field files take the
   # `.msgpack.gz` extension.
-  MSGPACK_TARGETS = [RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME] +
-    RSpecTracer::Storage::JsonBackend::FIELD_NAMES.map { |f| "run-corrupt/#{f}.msgpack.gz" }
+  MSGPACK_TARGETS = [TestSift::Storage::JsonBackend::LAST_RUN_FILENAME] +
+    TestSift::Storage::JsonBackend::FIELD_NAMES.map { |f| "run-corrupt/#{f}.msgpack.gz" }
 
   def msgpack_target
     Rantly { choose(*MSGPACK_TARGETS) }
@@ -65,9 +65,9 @@ end
 
 # rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Cache corruption — graceful degradation' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_corruption_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_corruption_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
@@ -75,8 +75,8 @@ RSpec.describe 'Cache corruption — graceful degradation' do
   # matches what the engine emits at finalize time so corruption
   # exercises the same parse path a real warm run hits.
   def build_sample_snapshot(run_id)
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: { 'ex1' => { id: 'ex1', description: 'desc' } },
       duplicate_examples: {},
@@ -97,7 +97,7 @@ RSpec.describe 'Cache corruption — graceful degradation' do
   end
 
   describe 'cache directory layout (backend-agnostic via JsonBackend :json)' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path) }
 
     before do
       snap = build_sample_snapshot('run-layout')
@@ -105,20 +105,20 @@ RSpec.describe 'Cache corruption — graceful degradation' do
     end
 
     it 'returns nil when last_run.json is missing' do
-      File.delete(File.join(cache_path, RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME))
+      File.delete(File.join(cache_path, TestSift::Storage::JsonBackend::LAST_RUN_FILENAME))
 
       expect(backend.load_graph(schema_version: schema_version)).to be_nil
     end
 
     it 'returns nil when last_run.json is malformed (truncated mid-string)' do
-      path = File.join(cache_path, RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME)
+      path = File.join(cache_path, TestSift::Storage::JsonBackend::LAST_RUN_FILENAME)
       File.binwrite(path, '{"schema_version": 3, "run_i')
 
       expect(backend.load_graph(schema_version: schema_version)).to be_nil
     end
 
     it 'returns nil when last_run.json points at a missing run-id directory' do
-      manifest = JSON.parse(File.read(File.join(cache_path, RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME)))
+      manifest = JSON.parse(File.read(File.join(cache_path, TestSift::Storage::JsonBackend::LAST_RUN_FILENAME)))
       run_id = manifest.fetch('run_id')
       FileUtils.rm_rf(File.join(cache_path, run_id))
 
@@ -127,13 +127,13 @@ RSpec.describe 'Cache corruption — graceful degradation' do
 
     it 'returns nil when the cache_path itself does not exist' do
       FileUtils.rm_rf(cache_path)
-      fresh_backend = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+      fresh_backend = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
 
       expect(fresh_backend.load_graph(schema_version: schema_version)).to be_nil
     end
 
     it 'returns nil when last_run.json carries a schema_version mismatch' do
-      path = File.join(cache_path, RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME)
+      path = File.join(cache_path, TestSift::Storage::JsonBackend::LAST_RUN_FILENAME)
       manifest = JSON.parse(File.read(path))
       manifest['schema_version'] = 999
       File.write(path, JSON.pretty_generate(manifest))
@@ -144,7 +144,7 @@ RSpec.describe 'Cache corruption — graceful degradation' do
     it 'never raises on a load_graph called against a fresh empty cache_path' do
       pristine = File.join(tmp_base, 'pristine')
       FileUtils.mkdir_p(pristine)
-      fresh_backend = RSpecTracer::Storage::JsonBackend.new(cache_path: pristine)
+      fresh_backend = TestSift::Storage::JsonBackend.new(cache_path: pristine)
 
       expect { fresh_backend.load_graph(schema_version: schema_version) }.not_to raise_error
       expect(fresh_backend.load_graph(schema_version: schema_version)).to be_nil
@@ -152,7 +152,7 @@ RSpec.describe 'Cache corruption — graceful degradation' do
   end
 
   describe 'JsonBackend with serializer: :msgpack' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
 
     before do
       snap = build_sample_snapshot('run-corrupt')
@@ -218,8 +218,8 @@ RSpec.describe 'Cache corruption — graceful degradation' do
       backend.save_graph(snap, schema_version: schema_version)
     end
 
-    let(:backend) { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path) }
-    let(:db_path) { File.join(cache_path, RSpecTracer::Storage::SqliteBackend::DB_FILENAME) }
+    let(:backend) { TestSift::Storage::SqliteBackend.new(cache_path: cache_path) }
+    let(:db_path) { File.join(cache_path, TestSift::Storage::SqliteBackend::DB_FILENAME) }
 
     describe 'property fuzz' do
       it 'never raises across 1000 random-byte overwrites of the sqlite3 file' do

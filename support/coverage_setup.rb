@@ -15,22 +15,22 @@ def setup_simplecov
   end
 end
 
-def setup_rspec_tracer
+def setup_testsift
   return unless ENV.fetch('SKIP_COVERAGE_VALIDATION', 'false') == 'true'
 
-  require File.join(File.expand_path('..', __dir__), 'lib', 'rspec_tracer')
+  require File.join(File.expand_path('..', __dir__), 'lib', 'testsift')
 
   # The DSL wrappers are installed by `Configuration#configure` during
   # `load_default_config` (auto-triggered by the `require` above). No
   # second install needed here.
 
-  RSpecTracer.add_filter %w[
+  TestSift.add_filter %w[
     /.rbenv/versions/ /.asdf/installs/ruby/ /.rubies/ruby-head/
     /.rvm/gems/ /.rvm/rubies/ /bundler/gems/ /opt/hostedtoolcache/
-    /rspec-tracer/ /ruby/gems/ /vendor/bundle/
+    /testsift/ /ruby/gems/ /vendor/bundle/
   ]
 
-  RSpecTracer.add_coverage_filter %w[
+  TestSift.add_coverage_filter %w[
     /.rbenv/versions/ /.asdf/installs/ruby/ /.rubies/ruby-head/
     /.rvm/gems/ /.rvm/rubies/ /bundler/gems/ /autotest/
     /features/ /opt/hostedtoolcache/ /ruby/gems/ /spec/ /test/ /vendor/bundle/
@@ -39,9 +39,9 @@ end
 
 if ENV.fetch('SKIP_COVERAGE_VALIDATION', 'false') == 'true' && File.file?('Gemfile.lock')
   setup_simplecov
-  setup_rspec_tracer
+  setup_testsift
 
-  module RSpecTracerCoverageReporter
+  module TestSiftCoverageReporter
     def peek_coverage
       data = ::Coverage.peek_result
 
@@ -51,8 +51,8 @@ if ENV.fetch('SKIP_COVERAGE_VALIDATION', 'false') == 'true' && File.file?('Gemfi
     end
   end
 
-  main_clazz = RSpecTracer::CoverageReporter
-  clazz = RSpecTracerCoverageReporter
+  main_clazz = TestSift::CoverageReporter
+  clazz = TestSiftCoverageReporter
 
   main_clazz.prepend(clazz) unless main_clazz.ancestors.include?(clazz)
 end

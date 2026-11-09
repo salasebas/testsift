@@ -2,7 +2,7 @@
 
 # Test-only boot helper for mutant. The dev Gemfile does not include
 # Rails, so `::Rails::Railtie` is not in the object graph. Defining a
-# minimal stub here lets `lib/rspec_tracer/rails/railtie.rb`'s
+# minimal stub here lets `lib/testsift/rails/railtie.rb`'s
 # `class Railtie < ::Rails::Railtie` declaration evaluate at file load,
 # which is required for mutant to bootstrap the subject. The spec at
 # `spec/rails/railtie_spec.rb` independently stubs `Rails::Railtie`
@@ -21,4 +21,4 @@ unless defined?(Rails::Railtie)
   end
 end
 
-require 'rspec_tracer/rails/railtie'
+require 'testsift/rails/railtie'

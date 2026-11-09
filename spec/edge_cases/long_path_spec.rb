@@ -18,13 +18,13 @@
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 LONG_PATH_SQLITE_AVAILABLE =
   begin
     require 'sqlite3'
-    require 'rspec_tracer/storage/sqlite_backend'
+    require 'testsift/storage/sqlite_backend'
     RUBY_ENGINE == 'ruby'
   rescue LoadError
     false
@@ -60,9 +60,9 @@ end
 
 # rubocop:disable RSpec/DescribeClass
 RSpec.describe 'Long paths + long string values in cache content' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_long_path_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_long_path_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
@@ -72,8 +72,8 @@ RSpec.describe 'Long paths + long string values in cache content' do
     realistic = LongPathGen.realistic_long
     long_desc = LongPathGen.long_string
 
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: {
         'ex_near' => { id: 'ex_near', description: long_desc, file_path: near_name },
@@ -147,7 +147,7 @@ RSpec.describe 'Long paths + long string values in cache content' do
   end
 
   describe 'JsonBackend :json' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
 
     before { backend.save_graph(build_long_snapshot('run-long-json'), schema_version: schema_version) }
 
@@ -155,7 +155,7 @@ RSpec.describe 'Long paths + long string values in cache content' do
   end
 
   describe 'JsonBackend :msgpack' do
-    let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
+    let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
 
     before { backend.save_graph(build_long_snapshot('run-long-msgpack'), schema_version: schema_version) }
 
@@ -168,7 +168,7 @@ RSpec.describe 'Long paths + long string values in cache content' do
       backend.save_graph(build_long_snapshot('run-long-sqlite'), schema_version: schema_version)
     end
 
-    let(:backend) { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path) }
+    let(:backend) { TestSift::Storage::SqliteBackend.new(cache_path: cache_path) }
 
     it_behaves_like 'round-trips long paths + long strings'
   end

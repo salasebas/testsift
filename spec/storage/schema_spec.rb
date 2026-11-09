@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/storage/schema'
+require 'testsift/storage/schema'
 
-RSpec.describe RSpecTracer::Storage::Schema do
+RSpec.describe TestSift::Storage::Schema do
   describe 'CURRENT' do
     it 'is 5 (schema 5 reshaped unnamed-example identity; schema-4 caches no longer match)' do
       expect(described_class::CURRENT).to eq(5)

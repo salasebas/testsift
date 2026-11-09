@@ -14,7 +14,7 @@ module PerformanceEvidence
   ROOT = File.expand_path('../..', __dir__)
   BOOT = File.join(__dir__, 'boot.rb')
   FIXTURES = { 'ruby' => 'benchmark/fixtures/ruby_app', 'rails' => 'spec/fixtures/rails_app' }.freeze
-  OUTPUTS = %w[rspec_tracer_cache rspec_tracer_report rspec_tracer_coverage coverage rspec_tracer.lock
+  OUTPUTS = %w[testsift_cache testsift_report testsift_coverage coverage testsift.lock
                evidence_branch_report].freeze
   CASES = %w[plain coverage_control full warm changed_source changed_input invalidated fault].freeze
 
@@ -65,8 +65,8 @@ module PerformanceEvidence
       copy_lockfile(fixture, destination)
       if fixture == 'ruby'
         helper = File.join(destination, 'spec/spec_helper.rb')
-        replacement = "if ENV['EVIDENCE_TRACER'] == '1'\n  require 'rspec_tracer'\n  RSpecTracer.start\nend"
-        File.write(helper, File.read(helper).sub("require 'rspec_tracer'\n\nRSpecTracer.start", replacement))
+        replacement = "if ENV['EVIDENCE_TRACER'] == '1'\n  require 'testsift'\n  TestSift.start\nend"
+        File.write(helper, File.read(helper).sub("require 'testsift'\n\nTestSift.start", replacement))
       else
         env = { 'RAILS_ENV' => 'test', 'BUNDLE_GEMFILE' => File.join(destination, 'Gemfile') }
         command('bundle', 'exec', 'rails', 'db:test:prepare', chdir: destination, env: env)
@@ -105,9 +105,9 @@ module PerformanceEvidence
 
     def paths(fixture)
       if fixture == 'ruby'
-        { source: 'app/discount.rb', input: 'spec/discount_spec.rb', invalidator: '.rspec-tracer' }
+        { source: 'app/discount.rb', input: 'spec/discount_spec.rb', invalidator: '.testsift' }
       else
-        { source: 'app/services/feature_flags.rb', input: 'config/features.json', invalidator: '.rspec-tracer' }
+        { source: 'app/services/feature_flags.rb', input: 'config/features.json', invalidator: '.testsift' }
       end
     end
 
@@ -288,8 +288,8 @@ module PerformanceEvidence
       { 'EVIDENCE_MODE' => scenario == 'plain' ? 'plain' : mode, 'EVIDENCE_TRACER' => tracer ? '1' : '0',
         'EVIDENCE_PROFILE' => iteration.fetch(:profile) ? '1' : '0',
         'EVIDENCE_TELEMETRY' => File.join(directory, 'telemetry'),
-        'RSPEC_TRACER' => tracer ? '1' : '0', 'RSPEC_TRACER_FIXTURE_NO_SIMPLECOV' => '1',
-        'RAILS_ENV' => 'test', 'COVERAGE' => 'false', 'RSPEC_TRACER_DISABLE' => nil,
+        'TESTSIFT' => tracer ? '1' : '0', 'TESTSIFT_FIXTURE_NO_SIMPLECOV' => '1',
+        'RAILS_ENV' => 'test', 'COVERAGE' => 'false', 'TESTSIFT_DISABLE' => nil,
         'BUNDLE_GEMFILE' => File.join(cwd(fixture), 'Gemfile'), 'EVIDENCE_VARIANT' => iteration.fetch(:variant) }
     end
 
@@ -325,12 +325,12 @@ module PerformanceEvidence
     end
 
     def cache_size(fixture)
-      paths = Dir.glob(File.join(cwd(fixture), 'rspec_tracer_cache/**/*'))
+      paths = Dir.glob(File.join(cwd(fixture), 'testsift_cache/**/*'))
       paths.select { |path| File.file?(path) }.sum { |path| File.size(path) }
     end
 
     def cache_examples(fixture)
-      root = File.join(cwd(fixture), 'rspec_tracer_cache')
+      root = File.join(cwd(fixture), 'testsift_cache')
       manifest = File.join(root, 'last_run.json')
       return 0 unless File.file?(manifest)
 

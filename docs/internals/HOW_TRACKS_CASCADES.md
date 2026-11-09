@@ -53,12 +53,12 @@ unintentionally removed it.
 
 ## Our walker: union explicitly
 
-`RSpecTracer::RSpec::Metadata.tracks_for(example)` walks the example
+`TestSift::RSpec::Metadata.tracks_for(example)` walks the example
 group ancestor chain bottom-up and unions the `:files` + `:env`
 values:
 
 ```ruby
-# Pseudocode of the walker shape (see lib/rspec_tracer/rspec/metadata.rb)
+# Pseudocode of the walker shape (see lib/testsift/rspec/metadata.rb)
 def self.tracks_for(example)
   files = Set.new
   envs  = Set.new
@@ -81,7 +81,7 @@ Walking bottom-up + accumulating into Sets means:
   ultimately stores file digests, not ordering.
 
 The walker's actual implementation is at
-[`lib/rspec_tracer/rspec/metadata.rb`](../../lib/rspec_tracer/rspec/metadata.rb)
+[`lib/testsift/rspec/metadata.rb`](../../lib/testsift/rspec/metadata.rb)
 with unit specs at `spec/rspec/metadata_inheritance_spec.rb` covering
 the cascade interaction (single group / nested / cousin groups /
 shared examples).
@@ -138,7 +138,7 @@ Pattern grammar (rejected at config-load time with `ArgumentError`):
 - Character classes / negation / glob `?` / `\\`: `'A_[X]'`,
   `'A_!B'`, `'A_?'`
 
-The full grammar lives in `lib/rspec_tracer/tracker/env_matcher.rb`.
+The full grammar lives in `lib/testsift/tracker/env_matcher.rb`.
 
 ## Cascade with shared examples
 
@@ -172,7 +172,7 @@ other group. Both contributions union.
 
 ## Debugging cascade
 
-`bin/rspec-tracer explain <example_id>` shows the resolved per-
+`bin/testsift explain <example_id>` shows the resolved per-
 example deps including `:tracks:`-attributed files and env names.
 If a cascade isn't behaving as expected, that's the fastest way to
 see what the walker actually unioned.

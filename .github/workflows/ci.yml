@@ -3,16 +3,16 @@ name: ci
 
 on:
   push:
-    branches: [main]
+    branches: [testsift]
   pull_request:
   workflow_dispatch:
 
 concurrency:
   # Group per PR (cancel superseded force-pushes / amends) but per ref
-  # for everything else (main pushes, tags, manual dispatch). Setting
+  # for everything else (testsift pushes, tags, manual dispatch). Setting
   # cancel-in-progress only when the trigger is a pull_request keeps
-  # main / merge runs running to completion - we want every commit on
-  # main fully validated, never cancelled because a later commit
+  # testsift / merge runs running to completion - we want every commit on
+  # testsift fully validated, never cancelled because a later commit
   # arrived. PRs still cancel their predecessors so iteration stays
   # fast.
   group: ci-${{ github.event.pull_request.number || github.ref }}
@@ -50,13 +50,13 @@ jobs:
           # Per-subject mutation flags. When a PR's diff doesn't
           # touch a subject's lib/+spec/ surface, that subject's
           # mutation gate is skipped on the per-PR run — same coverage
-          # signal still runs at merge-to-main (full-matrix path) and
+          # signal still runs at merge-to-testsift (full-matrix path) and
           # weekly. The flags are bash booleans converted to 'true' /
           # 'false' strings at output time so lint-and-specs.yml's
           # workflow_call inputs can consume them as YAML booleans.
           # Cross-cutting safety net (rolled in below): touching
           # Gemfile / Gemfile.lock / .ruby-version / Taskfile.yml /
-          # lib/rspec_tracer.rb / .github/workflows/* OR the
+          # lib/testsift.rb / .github/workflows/* OR the
           # gemspec OR multiple subjects flips ALL subject flags
           # to true so a refactor that ripples across subjects can't
           # silently miss any one of them.
@@ -73,7 +73,7 @@ jobs:
           if [ "$EVENT" = "pull_request" ]; then
             FILES=$(git diff --name-only "$BASE_SHA".."$HEAD_SHA")
           else
-            # push to main / workflow_dispatch: always run everything.
+            # push to testsift / workflow_dispatch: always run everything.
             FILES=""
           fi
 
@@ -113,23 +113,23 @@ jobs:
             [ -z "$f" ] && continue
 
             # Per-subject mutation flags from lib/+spec/ paths.
-            # `lib/rspec_tracer.rb` (the top-level file) flips
+            # `lib/testsift.rb` (the top-level file) flips
             # mut_top_level AND triggers FORCE_ALL since it's the
             # entry-point that other subjects consume.
             case "$f" in
-              lib/rspec_tracer/tracker/*|spec/tracker/*)
+              lib/testsift/tracker/*|spec/tracker/*)
                 MUT_TRACKER=1
                 ;;
-              lib/rspec_tracer/storage/*|spec/storage/*)
+              lib/testsift/storage/*|spec/storage/*)
                 MUT_STORAGE=1
                 ;;
-              lib/rspec_tracer/rspec/*|spec/rspec/*)
+              lib/testsift/rspec/*|spec/rspec/*)
                 MUT_RSPEC=1
                 ;;
-              lib/rspec_tracer/configuration.rb|lib/rspec_tracer/version.rb|lib/rspec_tracer/errors.rb|lib/rspec_tracer/time_formatter.rb|spec/top_level/*|spec/configuration_spec.rb|spec/rspec_tracer_spec.rb)
+              lib/testsift/configuration.rb|lib/testsift/version.rb|lib/testsift/errors.rb|lib/testsift/time_formatter.rb|spec/top_level/*|spec/configuration_spec.rb|spec/testsift_spec.rb)
                 MUT_TOP_LEVEL=1
                 ;;
-              lib/rspec_tracer/cli.rb|lib/rspec_tracer/cli/*|spec/cli/*)
+              lib/testsift/cli.rb|lib/testsift/cli/*|spec/cli/*)
                 MUT_CLI=1
                 ;;
             esac
@@ -139,7 +139,7 @@ jobs:
             # could ripple across multiple subjects without showing
             # up in any subject's lib/+spec/ surface directly.
             case "$f" in
-              Gemfile|Gemfile.lock|.ruby-version|.tool-versions|Taskfile.yml|*.gemspec|lib/rspec_tracer.rb|.github/workflows/*|.github/actions/*)
+              Gemfile|Gemfile.lock|.ruby-version|.tool-versions|Taskfile.yml|*.gemspec|lib/testsift.rb|.github/workflows/*|.github/actions/*)
                 MUT_FORCE_ALL=1
                 ;;
             esac

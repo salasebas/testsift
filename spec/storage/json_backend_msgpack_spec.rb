@@ -4,7 +4,7 @@ require 'fileutils'
 require 'set'
 require 'tmpdir'
 require 'zlib'
-require 'rspec_tracer/storage/json_backend'
+require 'testsift/storage/json_backend'
 
 require_relative '../contracts/storage_backend'
 
@@ -14,7 +14,7 @@ require_relative '../contracts/storage_backend'
 # files land under `.msgpack.gz` extensions, bytes inflate through
 # zlib, and the fallback path fires cleanly when the gem is absent.
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/MultipleMemoizedHelpers
-RSpec.describe RSpecTracer::Storage::JsonBackend do
+RSpec.describe TestSift::Storage::JsonBackend do
   context 'with serializer: :msgpack' do
     let(:tmp_base) { Dir.mktmpdir }
     let(:cache_path) { File.join(tmp_base, 'cache') }
@@ -26,8 +26,8 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
     def build_sample_snapshot(run_id)
-      RSpecTracer::Storage::Snapshot.new(
-        schema_version: RSpecTracer::Storage::Schema::CURRENT,
+      TestSift::Storage::Snapshot.new(
+        schema_version: TestSift::Storage::Schema::CURRENT,
         run_id: run_id,
         all_examples: { 'ex1' => { id: 'ex1', description: 'desc' } },
         duplicate_examples: { 'ex1' => [{ id: 'ex1', file: 'a.rb' }] },
@@ -52,7 +52,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     # drive. last_run.json is always plain JSON regardless of the
     # per-field serializer, so the same bytes work for both variants.
     def corrupt_backend_storage!
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       last_run = File.join(cache_path, described_class::LAST_RUN_FILENAME)
       File.binwrite(last_run, "\x00\xFF not json \xC2\x00")
     end
@@ -60,7 +60,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     it_behaves_like 'a Storage::Backend'
 
     describe 'on-disk layout' do
-      before { backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT) }
+      before { backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT) }
 
       it 'writes per-field files with .msgpack.gz extension' do
         run_dir = File.join(cache_path, sample_snapshot.run_id)
@@ -78,7 +78,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
         manifest_path = File.join(cache_path, described_class::LAST_RUN_FILENAME)
 
         expect(JSON.parse(File.read(manifest_path))['schema_version'])
-          .to eq(RSpecTracer::Storage::Schema::CURRENT)
+          .to eq(TestSift::Storage::Schema::CURRENT)
       end
 
       it 'produces zlib-compressed msgpack bytes on disk (inflates cleanly)' do
@@ -104,9 +104,9 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
             recorded_at: Time.utc(2026, 5, 13, 12, 0, 0)
           }
         }
-        backend.save_graph(snap_with_time, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+        backend.save_graph(snap_with_time, schema_version: TestSift::Storage::Schema::CURRENT)
 
-        loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+        loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
         expect(loaded.all_examples['ex1'][:recorded_at]).to eq(Time.utc(2026, 5, 13, 12, 0, 0))
       end
@@ -116,9 +116,9 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
         snap_with_symbols.all_examples = {
           'ex1' => { id: 'ex1', status: :flaky, tags: %i[slow integration] }
         }
-        backend.save_graph(snap_with_symbols, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+        backend.save_graph(snap_with_symbols, schema_version: TestSift::Storage::Schema::CURRENT)
 
-        loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+        loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
         expect(loaded.all_examples['ex1'][:status]).to eq(:flaky)
         expect(loaded.all_examples['ex1'][:tags]).to eq(%i[slow integration])
@@ -135,9 +135,9 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
         json_cache = File.join(tmp_base, 'json_cache')
         msgpack_cache = File.join(tmp_base, 'msgpack_cache')
         described_class.new(cache_path: json_cache, serializer: :json)
-          .save_graph(fat_snap, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+          .save_graph(fat_snap, schema_version: TestSift::Storage::Schema::CURRENT)
         described_class.new(cache_path: msgpack_cache, serializer: :msgpack)
-          .save_graph(fat_snap, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+          .save_graph(fat_snap, schema_version: TestSift::Storage::Schema::CURRENT)
 
         json_size = Dir[File.join(json_cache, '**', '*.json')].sum { |f| File.size(f) }
         mp_size = Dir[File.join(msgpack_cache, '**', '*.msgpack.gz')].sum { |f| File.size(f) }
@@ -149,14 +149,14 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     describe 'missing msgpack gem fallback' do
-      let(:logger) { instance_double(RSpecTracer::Logger, warn: nil) }
+      let(:logger) { instance_double(TestSift::Logger, warn: nil) }
 
       it 'warns and falls back to :json when the msgpack gem is missing' do
-        allow(RSpecTracer::Storage::Serializer::Msgpack).to receive(:available?).and_return(false)
+        allow(TestSift::Storage::Serializer::Msgpack).to receive(:available?).and_return(false)
 
         b = described_class.new(cache_path: cache_path, serializer: :msgpack, logger: logger)
 
-        expect(b.serializer).to eq(RSpecTracer::Storage::Serializer::Json)
+        expect(b.serializer).to eq(TestSift::Storage::Serializer::Json)
         expect(logger).to have_received(:warn).with(/msgpack gem is not installed/)
       end
     end

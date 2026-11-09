@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-# Dogfooding: run rspec-tracer against a trivial sample project (the
+# Dogfooding: run testsift against a trivial sample project (the
 # benchmark ruby_app fixture) via subprocess and assert the basic
 # cold-then-warm behaviour. This is the "our gem runs our gem's tests"
 # smoke test — the ultimate integration check.
@@ -20,11 +20,11 @@ require 'open3'
 # cops would scatter the sequential narrative across unrelated `it`
 # blocks without clarifying anything.
 # rubocop:disable RSpec/DescribeClass
-RSpec.describe 'rspec-tracer dogfood' do
+RSpec.describe 'testsift dogfood' do
   let(:fixture_root) { File.expand_path('../../benchmark/fixtures/ruby_app', __dir__) }
-  let(:cache_dir)    { File.join(fixture_root, 'rspec_tracer_cache') }
-  let(:report_dir)   { File.join(fixture_root, 'rspec_tracer_report') }
-  let(:coverage_dir) { File.join(fixture_root, 'rspec_tracer_coverage') }
+  let(:cache_dir)    { File.join(fixture_root, 'testsift_cache') }
+  let(:report_dir)   { File.join(fixture_root, 'testsift_report') }
+  let(:coverage_dir) { File.join(fixture_root, 'testsift_coverage') }
 
   around do |example|
     Bundler.with_unbundled_env do
@@ -67,8 +67,8 @@ RSpec.describe 'rspec-tracer dogfood' do
     expect(last_run_id(cache_dir)).to match(/\A[0-9a-f]+\z/)
     # Warm run prints tracer-authored output to STDOUT (skipped/cached
     # examples, summary line). Exact content varies by version, but the
-    # "RSpec tracer" banner always appears.
-    expect(warm_out).to include('RSpec tracer')
+    # "TestSift" banner always appears.
+    expect(warm_out).to include('TestSift')
   end
 
   it 'runs green cold and warm, and produces a reusable cache' do

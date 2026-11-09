@@ -4,11 +4,11 @@ require 'spec_helper'
 require 'tmpdir'
 require 'logger'
 
-require 'rspec_tracer/remote_cache/user_tasks'
-require 'rspec_tracer/remote_cache/git_ancestry'
+require 'testsift/remote_cache/user_tasks'
+require 'testsift/remote_cache/git_ancestry'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::RemoteCache::UserTasks do
+RSpec.describe TestSift::RemoteCache::UserTasks do
   # Stand-in backend class: records every method call for inspection,
   # returns configurable responses.
   let(:fake_backend_class) do
@@ -87,7 +87,7 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
 
   let(:captured_logs) { [] }
   let(:logger) do
-    logger_double = instance_double(RSpecTracer::Logger)
+    logger_double = instance_double(TestSift::Logger)
     %i[debug info warn error].each do |level|
       allow(logger_double).to receive(level) { |msg| captured_logs << [level, msg] }
     end
@@ -99,8 +99,8 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
   after { FileUtils.rm_rf(cache_path) }
 
   # Config double with stubbable accessors. Uses an unverified `double`
-  # instead of `instance_double(RSpecTracer::Configuration)` because
-  # Configuration is a module mixed into RSpecTracer at runtime; the
+  # instead of `instance_double(TestSift::Configuration)` because
+  # Configuration is a module mixed into TestSift at runtime; the
   # verifying-double machinery can't resolve methods on a module without
   # an including class in the test context.
   # rubocop:disable RSpec/VerifiedDoubles
@@ -125,12 +125,12 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
 
   def stub_ancestry(branch: 'main', default_branch: 'main', branch_ref: 'abc',
                     ancestry_refs: {}, pr_build: nil)
-    ancestry_double = instance_double(RSpecTracer::RemoteCache::GitAncestry)
+    ancestry_double = instance_double(TestSift::RemoteCache::GitAncestry)
     allow(ancestry_double).to receive_messages(branch_name: branch, default_branch_name: default_branch,
                                                branch_ref: branch_ref, ancestry_refs: ancestry_refs,
                                                pr_build?: pr_build.nil? ? branch != default_branch : pr_build)
     allow(ancestry_double).to receive(:merge_base_branch!)
-    allow(RSpecTracer::RemoteCache::GitAncestry).to receive(:new).and_return(ancestry_double)
+    allow(TestSift::RemoteCache::GitAncestry).to receive(:new).and_return(ancestry_double)
     ancestry_double
   end
 
@@ -281,7 +281,7 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
       described_class.new(configuration: config, env: build_env).download!
 
       info_messages = captured_logs.select { |(level, _)| level == :info }.map(&:last)
-      expect(info_messages).to include('rspec-tracer remote_cache: restored cache from main-sha')
+      expect(info_messages).to include('testsift remote_cache: restored cache from main-sha')
     end
 
     it 'qualifies the INFO log with "(cross-branch fallback)" when a PR build hits an ancestry ref' do
@@ -297,7 +297,7 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
 
       info_messages = captured_logs.select { |(level, _)| level == :info }.map(&:last)
       expect(info_messages).to include(
-        'rspec-tracer remote_cache: restored cache from main-sha (cross-branch fallback)'
+        'testsift remote_cache: restored cache from main-sha (cross-branch fallback)'
       )
     end
 
@@ -313,7 +313,7 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
       described_class.new(configuration: config, env: build_env(branch: 'feat')).download!
 
       info_messages = captured_logs.select { |(level, _)| level == :info }.map(&:last)
-      expect(info_messages).to include('rspec-tracer remote_cache: restored cache from br1')
+      expect(info_messages).to include('testsift remote_cache: restored cache from br1')
       expect(info_messages).not_to(include(a_string_including('cross-branch fallback')))
     end
 
@@ -368,7 +368,7 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
         use_local_aws: true
       )
       stub_ancestry(ancestry_refs: { 'sha1' => 100 })
-      stub_const('RSpecTracer::RemoteCache::UserTasks::BUILT_IN_BACKENDS', s3: fake_backend_class)
+      stub_const('TestSift::RemoteCache::UserTasks::BUILT_IN_BACKENDS', s3: fake_backend_class)
 
       described_class.new(configuration: config, env: build_env).download!
 
@@ -426,7 +426,7 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
       described_class.new(configuration: config, env: build_env).upload!
 
       info_messages = captured_logs.select { |(level, _)| level == :info }.map(&:last)
-      expect(info_messages).to include('rspec-tracer remote_cache: uploaded cache to main-sha')
+      expect(info_messages).to include('testsift remote_cache: uploaded cache to main-sha')
     end
 
     it 'uploads and updates branch_refs on pr tier' do
@@ -711,11 +711,11 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
     end
 
     it 'resolves :local_fs to LocalFsBackend' do
-      expect(described_class::BUILT_IN_BACKENDS[:local_fs]).to eq(RSpecTracer::RemoteCache::LocalFsBackend)
+      expect(described_class::BUILT_IN_BACKENDS[:local_fs]).to eq(TestSift::RemoteCache::LocalFsBackend)
     end
 
     it 'resolves :redis to RedisBackend' do
-      expect(described_class::BUILT_IN_BACKENDS[:redis]).to eq(RSpecTracer::RemoteCache::RedisBackend)
+      expect(described_class::BUILT_IN_BACKENDS[:redis]).to eq(TestSift::RemoteCache::RedisBackend)
     end
   end
 
@@ -754,7 +754,7 @@ RSpec.describe RSpecTracer::RemoteCache::UserTasks do
       tasks.prune_all!
 
       info_messages = captured_logs.select { |(level, _)| level == :info }.map(&:last)
-      expect(info_messages).to include('rspec-tracer remote_cache: prune_all removed 3 refs')
+      expect(info_messages).to include('testsift remote_cache: prune_all removed 3 refs')
     end
 
     it 'returns 0 and logs on StandardError from the backend' do

@@ -26,7 +26,7 @@ Every run prints the PRNG seed. To replay:
 
 | File                       | Target                                                                                                  |
 |----------------------------|---------------------------------------------------------------------------------------------------------|
-| `json_backend_fuzz.rb`     | `RSpecTracer::Storage::JsonBackend#load_graph` (`:json` serializer) on arbitrary bytes.                 |
+| `json_backend_fuzz.rb`     | `TestSift::Storage::JsonBackend#load_graph` (`:json` serializer) on arbitrary bytes.                 |
 | `cache_loader_fuzz.rb`     | All 3 backends — `JsonBackend :json` + `JsonBackend :msgpack` (zlib + MessagePack pipeline) + `SqliteBackend` (sqlite3 C bindings). Iterations split evenly per backend. |
 | `coverage_adapter_fuzz.rb` | `Tracker::CoverageAdapter#compute_diff` against pathological coverage maps — mixed nil / huge counts / negative ints / Hash vs Array shapes / mode flips. |
 

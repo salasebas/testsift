@@ -1,15 +1,15 @@
 # frozen_string_literal: true
 
-# 100%-line + 100%-branch coverage gate scoped to the lib/rspec_tracer
+# 100%-line + 100%-branch coverage gate scoped to the lib/testsift
 # subdirectories listed in GATED_SUBDIRS. Legacy files get no retroactive
 # pressure; mutation is the stronger signal for those.
 #
 # Activation is per-file, keyed on the lib/spec pairing convention
-# (lib/rspec_tracer/<subdir>/X.rb <-> spec/<subdir>/X_spec.rb). Running
+# (lib/testsift/<subdir>/X.rb <-> spec/<subdir>/X_spec.rb). Running
 # a single spec file only gates the lib module it covers; unrelated runs
 # (e.g. spec/time_formatter_spec.rb) don't trigger at all.
 module TrackerCoverageGate
-  LIB_ROOT = File.expand_path('../../lib/rspec_tracer', __dir__)
+  LIB_ROOT = File.expand_path('../../lib/testsift', __dir__)
   GATED_SUBDIRS = %w[tracker rails rspec reporters remote_cache].freeze
   GATED_PREFIXES = GATED_SUBDIRS.map { |subdir| "#{File.join(LIB_ROOT, subdir)}/" }.freeze
   EPSILON = 0.001 # guard float equality of "100.0%"
@@ -42,10 +42,10 @@ module TrackerCoverageGate
   # covered by the `require` side-effect and the gate would fire inside
   # mutant's forked test subprocess, which mutant interprets as "the
   # mutation survived" (exit 1 ⟹ 0% mutation coverage). Same dogfood
-  # spirit as spec_helper's RSPEC_TRACER_DISABLE guard: the
+  # spirit as spec_helper's TESTSIFT_DISABLE guard: the
   # gate is a full-suite assertion, not something mutant cares about.
   def self.skip?
-    defined?(::Mutant) || ENV['RSPEC_TRACER_DISABLE'] == '1'
+    defined?(::Mutant) || ENV['TESTSIFT_DISABLE'] == '1'
   end
 
   # Only the gated lib files whose paired spec file was actually in this

@@ -4,16 +4,16 @@ require 'digest'
 require 'fileutils'
 require 'tmpdir'
 
-require 'rspec_tracer/tracker/input'
-require 'rspec_tracer/rails/notifications'
+require 'testsift/tracker/input'
+require 'testsift/rails/notifications'
 
-# Unit spec for RSpecTracer::Rails::Notifications. The dev Gemfile does
+# Unit spec for TestSift::Rails::Notifications. The dev Gemfile does
 # not carry Rails / ActiveSupport, so this spec stubs a minimal
 # AS::Notifications surface that records subscribe / unsubscribe /
 # publish calls. Full real-Rails fixture boot is integration-matrix territory.
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Rails::Notifications do
-  let(:tmpdir) { Dir.mktmpdir('rspec-tracer-notifications') }
+RSpec.describe TestSift::Rails::Notifications do
+  let(:tmpdir) { Dir.mktmpdir('testsift-notifications') }
   let(:template_path) { File.join(tmpdir, 'app/views/users/show.erb') }
   let(:schema_rb) { File.join(tmpdir, 'db/schema.rb') }
   let(:structure_sql) { File.join(tmpdir, 'db/structure.sql') }
@@ -441,7 +441,7 @@ RSpec.describe RSpecTracer::Rails::Notifications do
     end
 
     it 'drops ar_schema_paths entries whose digest compute returns nil (e.g. racey delete)' do
-      allow(RSpecTracer::Tracker::FileDigest).to receive(:compute).and_return(nil)
+      allow(TestSift::Tracker::FileDigest).to receive(:compute).and_return(nil)
 
       expect { described_class.install(root: tmpdir, ar_schema_paths: [schema_rb]) }.not_to raise_error
       expect(described_class.instance_variable_get(:@ar_schema_inputs)).to be_empty

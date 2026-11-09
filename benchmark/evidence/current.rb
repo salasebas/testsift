@@ -51,7 +51,7 @@ module PerformanceEvidence
     def paths(fixture)
       return super unless @options[:corpus]
 
-      { source: 'app/work_0.rb', input: 'inputs/input_0.json', invalidator: '.rspec-tracer' }
+      { source: 'app/work_0.rb', input: 'inputs/input_0.json', invalidator: '.testsift' }
     end
 
     def mutate(fixture, scenario)
@@ -105,13 +105,13 @@ module PerformanceEvidence
     end
 
     def environment(fixture, mode, scenario, directory, iteration)
-      environment = super.merge('RSPEC_TRACER_STORAGE' => @options.fetch(:backend),
-                                'RSPEC_TRACER_STORAGE_SERIALIZER' => @options.fetch(:serializer),
+      environment = super.merge('TESTSIFT_STORAGE' => @options.fetch(:backend),
+                                'TESTSIFT_STORAGE_SERIALIZER' => @options.fetch(:serializer),
                                 'PARALLEL_TEST_GROUPS' => @options.fetch(:workers).to_s,
                                 'EVIDENCE_MALLOC_PROBE' => @malloc_probe)
       if scenario == 'unwrapped_plain'
         environment['EVIDENCE_TRACER'] = '0'
-        environment['RSPEC_TRACER'] = '0'
+        environment['TESTSIFT'] = '0'
       end
       environment
     end
@@ -129,7 +129,7 @@ module PerformanceEvidence
     end
 
     def cache_examples(fixture)
-      root = File.join(cwd(fixture), 'rspec_tracer_cache')
+      root = File.join(cwd(fixture), 'testsift_cache')
       return super if @options.fetch(:serializer) == 'json' && @options.fetch(:backend) == 'json'
       return 0 unless File.directory?(root)
 
@@ -137,7 +137,7 @@ module PerformanceEvidence
     end
 
     def inspect_cache(fixture, field)
-      root = File.join(cwd(fixture), 'rspec_tracer_cache')
+      root = File.join(cwd(fixture), 'testsift_cache')
       env = { 'BUNDLE_GEMFILE' => File.join(cwd(fixture), 'Gemfile') }
       command('bundle', 'exec', 'ruby', '-I', File.join(@work, 'lib'), File.join(__dir__, 'cache_probe.rb'),
               root, @options.fetch(:backend), @options.fetch(:serializer), field, chdir: cwd(fixture), env: env)
@@ -153,7 +153,7 @@ module PerformanceEvidence
                  cache_bytes: 0, report_bytes: 0, artifact_directory: directory }
       end
 
-      super.merge(report_bytes: %w[rspec_tracer_report rspec_tracer_coverage evidence_branch_report].sum do |relative|
+      super.merge(report_bytes: %w[testsift_report testsift_coverage evidence_branch_report].sum do |relative|
         files = Dir.glob(File.join(cwd(fixture), relative, '**/*')).select { |path| File.file?(path) }
         files.sum { |path| File.size(path) }
       end)
@@ -203,9 +203,9 @@ module PerformanceEvidence
       return if %w[plain coverage_control unwrapped_plain].include?(row.fetch(:scenario))
 
       expected = if @options.fetch(:backend) == 'sqlite'
-                   'RSpecTracer::Storage::SqliteBackend'
+                   'TestSift::Storage::SqliteBackend'
                  else
-                   'RSpecTracer::Storage::JsonBackend'
+                   'TestSift::Storage::JsonBackend'
                  end
       row.fetch(:telemetry).each do |data|
         raise 'storage backend fell back' unless data.fetch('storage_class') == expected

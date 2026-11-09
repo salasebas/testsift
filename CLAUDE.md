@@ -25,9 +25,11 @@ maintainer for a local copy.
 
 ## Project
 
-`rspec-tracer` — a Ruby gem that speeds up RSpec runs by tracking which
-source files each test depends on, so subsequent runs only re-run affected
-tests.
+TestSift (`testsift` gem, `TestSift` namespace) — a Ruby gem that speeds
+up RSpec runs by tracking which source files each test depends on, so
+subsequent runs only re-run affected tests. It started as a fork of
+rspec-tracer `v2.0.0.rc.1`; see `FORK.md`. Upstream documents preserved
+at the fork point live in `docs/upstream/` and are never edited.
 
 A 2.0 revamp is in progress. The authoritative plan lives in the local
 `docs/revamp/` tree (see the banner above). This file, the code, and
@@ -87,7 +89,7 @@ them in one place.
 ### Prefer `task <name>` over raw `bundle exec …`
 
 The Taskfile is the canonical entry point; each task bakes in the
-right env (`RSPEC_TRACER_DISABLE`, paths, flags) and guards (e.g.
+right env (`TESTSIFT_DISABLE`, paths, flags) and guards (e.g.
 mutant Ruby-version check). Reaching past it to `bundle exec rspec …`
 bypasses those guards and masks issues that CI will catch. Use direct
 `bundle exec` only for targeted debugging (one spec file, one flag) —
@@ -134,18 +136,22 @@ as a preconditioned dep, but raw `bundle exec` skips that guard.
 
 ## Branching and releases
 
-Trunk-based. PRs into `main`. Releases = tags on `main`
-(`v1.1.0`, `v2.0.0.pre.1`, ..., `v2.0.0`). A tag push triggers
-`.github/workflows/release.yml`, which validates the tag matches
-`RSpecTracer::VERSION`, builds the gem, runs `gem push` via
-`RUBYGEMS_API_KEY`, and creates the GitHub release. Shipped as part
-of M1.3 / v1.1.0.
+Trunk-based. PRs into `testsift` (the default branch), squash-merged
+with a Conventional Commit title (`feat:`, `fix:`, `perf:`, `docs:`,
+...; checked by `pr-title.yml`). Versions start at `0.0.1` and never
+use `.pre`/`.rc` suffixes. release-please (`release.yml`) keeps a
+release PR open that bumps `TestSift::VERSION` and writes
+`CHANGELOG.md`; never edit either by hand. Merging the release PR tags
+`vX.Y.Z`, runs `task release:verify`, and publishes through RubyGems
+trusted publishing. Full procedure: `RELEASING.md`.
 
 ## Fork + upstream context
 
-Two Git remotes exist for this codebase:
+Related repositories:
 
-- **avmnu-sng/rspec-tracer** (upstream; this repo) — the official gem.
+- **salasebas/testsift** (this repo) — TestSift.
+- **avmnu-sng/rspec-tracer** (upstream) — the original gem; links to
+  its issues and PRs stay pointed there.
 - **interviewstreet/rspec-tracer** — HackerRank fork with production
   bug fixes. Merged [PR #1](https://github.com/interviewstreet/rspec-tracer/pull/1)
   (2024) and open PRs [#2](https://github.com/interviewstreet/rspec-tracer/pull/2)

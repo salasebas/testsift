@@ -108,7 +108,7 @@ tasks:
       - bundle exec rspec --no-color spec/edge_cases
 
   test:dogfood:
-    desc: Dogfood — run rspec-tracer against the benchmark ruby_app fixture, cold + warm
+    desc: Dogfood — run testsift against the benchmark ruby_app fixture, cold + warm
     env:
       COVERAGE_SUITE: dogfood
     cmds:
@@ -143,7 +143,7 @@ tasks:
   test:integration:track-env-config:
     desc: >-
       Config-level track_env(*names) DSL + wildcard env matching.
-      Drives the Rails fixture with a synthesized .rspec-tracer that
+      Drives the Rails fixture with a synthesized .testsift that
       declares `track_env 'AUTH_TOKEN'` (literal) or `track_env 'M53_PROBE_*'`
       (wildcard). Asserts every previously-seen example re-runs when a
       config-level tracked env flips, and that env_snapshot.json carries

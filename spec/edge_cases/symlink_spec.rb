@@ -26,14 +26,14 @@ require 'digest'
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleMemoizedHelpers
 RSpec.describe 'Symlinks in cache content + filesystem semantics' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_symlink_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_symlink_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
@@ -64,8 +64,8 @@ RSpec.describe 'Symlinks in cache content + filesystem semantics' do
     let(:link_path) { '/spec/link.rb' }
 
     def build_symlink_snapshot(run_id)
-      RSpecTracer::Storage::Snapshot.new(
-        schema_version: RSpecTracer::Storage::Schema::CURRENT,
+      TestSift::Storage::Snapshot.new(
+        schema_version: TestSift::Storage::Schema::CURRENT,
         run_id: run_id,
         all_examples: { 'ex_a' => { id: 'ex_a', description: 'uses both target + link' } },
         duplicate_examples: {},
@@ -114,7 +114,7 @@ RSpec.describe 'Symlinks in cache content + filesystem semantics' do
     end
 
     describe 'JsonBackend :json' do
-      let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
+      let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
 
       before { backend.save_graph(build_symlink_snapshot('run-symlink-json'), schema_version: schema_version) }
 
@@ -122,7 +122,7 @@ RSpec.describe 'Symlinks in cache content + filesystem semantics' do
     end
 
     describe 'JsonBackend :msgpack' do
-      let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
+      let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
 
       before { backend.save_graph(build_symlink_snapshot('run-symlink-msgpack'), schema_version: schema_version) }
 
@@ -134,7 +134,7 @@ RSpec.describe 'Symlinks in cache content + filesystem semantics' do
         sqlite_available =
           begin
             require 'sqlite3'
-            require 'rspec_tracer/storage/sqlite_backend'
+            require 'testsift/storage/sqlite_backend'
             RUBY_ENGINE == 'ruby'
           rescue LoadError
             false
@@ -143,7 +143,7 @@ RSpec.describe 'Symlinks in cache content + filesystem semantics' do
         backend.save_graph(build_symlink_snapshot('run-symlink-sqlite'), schema_version: schema_version)
       end
 
-      let(:backend) { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path) }
+      let(:backend) { TestSift::Storage::SqliteBackend.new(cache_path: cache_path) }
 
       it_behaves_like 'preserves symlink + target as distinct all_files keys'
     end

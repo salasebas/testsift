@@ -4,16 +4,16 @@ require 'fileutils'
 require 'set'
 require 'tmpdir'
 require 'time'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/html_reporter'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/html_reporter'
 
 require_relative '../contracts/reporter'
 
 # rubocop:disable RSpec/MultipleMemoizedHelpers, RSpec/MultipleExpectations
 # rubocop:disable RSpec/ExampleLength
-RSpec.describe RSpecTracer::Reporters::HtmlReporter do
+RSpec.describe TestSift::Reporters::HtmlReporter do
   let(:tmp) { Dir.mktmpdir }
-  let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
+  let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
   let(:snapshot) { build_populated_snapshot }
   let(:run_metadata) do
     {
@@ -23,20 +23,20 @@ RSpec.describe RSpecTracer::Reporters::HtmlReporter do
       parallel_tests: false
     }
   end
-  let(:report_dir) { File.join(tmp, 'rspec_tracer_report') }
+  let(:report_dir) { File.join(tmp, 'testsift_report') }
   let(:reporter_class) { described_class }
   let(:generated_at) { Time.utc(2026, 4, 23, 12, 15, 0) }
 
   after { FileUtils.remove_entry(tmp) if File.directory?(tmp) }
 
   def minimal_template
-    marker = '<!-- RSPEC_TRACER_FALLBACK -->'
+    marker = '<!-- TESTSIFT_FALLBACK -->'
     payload = '<script id="report-data" type="application/json">{}</script>'
     "<!doctype html><html><body>#{marker}#{payload}</body></html>"
   end
 
   def build_populated_snapshot
-    RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'runhtml').tap do |s|
+    TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'runhtml').tap do |s|
       s.all_examples = {
         'ex1' => {
           full_description: 'User signs in <script>alert(1)</script>',
@@ -124,7 +124,7 @@ RSpec.describe RSpecTracer::Reporters::HtmlReporter do
     end
 
     it 'logs a debug line through the provided logger' do
-      logger = instance_double(RSpecTracer::Logger, debug: nil, warn: nil)
+      logger = instance_double(TestSift::Logger, debug: nil, warn: nil)
       described_class.new(
         snapshot: snapshot, report_dir: report_dir, run_metadata: run_metadata,
         logger: logger, generated_at: generated_at
@@ -172,7 +172,7 @@ RSpec.describe RSpecTracer::Reporters::HtmlReporter do
     let(:html) { File.read(output_path) }
 
     it 'replaces the fallback marker with actual tables' do
-      expect(html).not_to include('<!-- RSPEC_TRACER_FALLBACK -->')
+      expect(html).not_to include('<!-- TESTSIFT_FALLBACK -->')
       expect(html).to include('id="fallback"')
     end
 
@@ -285,7 +285,7 @@ RSpec.describe RSpecTracer::Reporters::HtmlReporter do
   describe 'graceful degradation' do
     it 'returns nil and logs a warning when the dist template is missing' do
       missing_dir = File.join(tmp, 'missing_dist')
-      logger = instance_double(RSpecTracer::Logger, warn: nil, debug: nil)
+      logger = instance_double(TestSift::Logger, warn: nil, debug: nil)
       reporter = described_class.new(
         snapshot: snapshot, report_dir: report_dir, run_metadata: run_metadata,
         logger: logger, dist_dir: missing_dir, generated_at: generated_at
@@ -349,7 +349,7 @@ RSpec.describe RSpecTracer::Reporters::HtmlReporter do
   describe 'visual regression golden' do
     let(:golden_path) { File.expand_path('../fixtures/golden/html_reporter/index.html', __dir__) }
     let(:golden_snapshot) do
-      RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'goldfix').tap do |s|
+      TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'goldfix').tap do |s|
         s.all_examples = {
           'gx1' => {
             full_description: 'Golden example one',

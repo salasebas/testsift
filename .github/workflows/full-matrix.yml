@@ -146,7 +146,7 @@ jobs:
     # 4.10, rspec 3.12) on the oldest supported Ruby (3.1). Catches
     # regressions in the "user with org-mandated pins to legacy stack"
     # scenario that the relaxed-pin default cells would not exercise
-    # (they pick latest-of-each-major). Per-PR + per-main cadence runs
+    # (they pick latest-of-each-major). Per-PR + per-push cadence runs
     # this single cell; the weekly combinations.yml does the full
     # cross-product.
     name: spec-floor (ruby-3.1, redis-4.8, rspec-3.12, msgpack-1.7, parallel_tests-4.10)
@@ -155,10 +155,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
-      RSPEC_TRACER_REDIS_VERSION: "~> 4.8.0"
+      TESTSIFT_REDIS_VERSION: "~> 4.8.0"
       RSPEC_VERSION: "~> 3.12.0"
-      RSPEC_TRACER_MSGPACK_VERSION: "~> 1.7.0"
-      RSPEC_TRACER_PARALLEL_TESTS_VERSION: "~> 4.10.0"
+      TESTSIFT_MSGPACK_VERSION: "~> 1.7.0"
+      TESTSIFT_PARALLEL_TESTS_VERSION: "~> 4.10.0"
       # connection_pool 3.x and parallel 2.x are gated by Ruby >= 3.2 /
       # 3.3 respectively; on Ruby 3.1 Bundler picks the only available
       # major. No explicit pin needed.

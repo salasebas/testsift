@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
-# Coexistence smoke spec for rspec-rerun + rspec-tracer.
+# Coexistence smoke spec for rspec-rerun + testsift.
 #
 # rspec-rerun (https://github.com/dblock/rspec-rerun) registers an
 # RSpec::Core::Formatters formatter (RSpec::Rerun::Formatter) that
 # writes failed-example rerun commands to `rspec.failures` after each
 # run; subsequent runs can re-execute only those examples by passing
 # the file's contents back to rspec. It's pure formatter, NOT a
-# Module#prepend - so it operates orthogonally to rspec-tracer's
+# Module#prepend - so it operates orthogonally to testsift's
 # RunnerHook / ReporterHook prepends.
 #
 # This spec verifies the smoke contract:
 #   1. Both gems load alongside each other without raising.
-#   2. A passing test run completes to a written rspec-tracer cache
+#   2. A passing test run completes to a written testsift cache
 #      AND no rspec.failures artifact (the formatter cleans up on a
 #      clean run) without path collision.
 #   3. The two on-disk artifacts coexist in the same project root
@@ -20,7 +20,7 @@
 #
 # Drives a subprocess inside `Bundler.with_unbundled_env` + a tmpdir
 # CWD so the inline test spec doesn't pollute the project's
-# rspec_tracer_cache + rerun.txt. The outer Gemfile carries
+# testsift_cache + rerun.txt. The outer Gemfile carries
 # rspec-rerun in the :development group (require: false default) so
 # the subprocess can require it on demand.
 #
@@ -40,8 +40,8 @@ RSpec.describe 'rspec-rerun coexistence (smoke)' do
 
   let(:inline_spec_body) do
     <<~RUBY
-      require "rspec_tracer"
-      RSpecTracer.start
+      require "testsift"
+      TestSift.start
 
       require "rspec-rerun/formatter"
 
@@ -49,7 +49,7 @@ RSpec.describe 'rspec-rerun coexistence (smoke)' do
         config.add_formatter RSpec::Rerun::Formatter
       end
 
-      RSpec.describe "rspec-rerun composes with rspec-tracer" do
+      RSpec.describe "rspec-rerun composes with testsift" do
         it "registers cleanly" do
           expect(true).to be(true)
         end
@@ -61,14 +61,14 @@ RSpec.describe 'rspec-rerun coexistence (smoke)' do
     RUBY
   end
 
-  it 'co-writes rspec_tracer_cache + rerun.txt without conflict' do
+  it 'co-writes testsift_cache + rerun.txt without conflict' do
     Dir.mktmpdir do |dir|
       spec_path = File.join(dir, 'rerun_smoke_spec.rb')
       File.write(spec_path, inline_spec_body)
 
       out, status = Bundler.with_unbundled_env do
         env = {
-          'RSPEC_TRACER' => '1',
+          'TESTSIFT' => '1',
           'BUNDLE_GEMFILE' => gemfile_path
         }
         # rspec-rerun's FailuresFormatter writes rerun.txt to CWD when
@@ -80,10 +80,10 @@ RSpec.describe 'rspec-rerun coexistence (smoke)' do
 
       expect(status.success?).to(be(true), "rspec-rerun coexistence subprocess failed:\n#{out}")
 
-      cache_dir = File.join(dir, 'rspec_tracer_cache')
+      cache_dir = File.join(dir, 'testsift_cache')
       manifest_path = File.join(cache_dir, 'last_run.json')
       expect(File).to(exist(manifest_path),
-                      "expected rspec-tracer cache manifest at #{manifest_path}")
+                      "expected testsift cache manifest at #{manifest_path}")
 
       manifest = JSON.parse(File.read(manifest_path))
       run_id = manifest.fetch('run_id')

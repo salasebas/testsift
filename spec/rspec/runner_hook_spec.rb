@@ -2,16 +2,16 @@
 
 require 'set'
 
-require 'rspec_tracer/rspec/runner_hook'
+require 'testsift/rspec/runner_hook'
 
-# Unit coverage for RSpecTracer::RSpec::RunnerHook. Uses an anonymous
+# Unit coverage for TestSift::RSpec::RunnerHook. Uses an anonymous
 # class for the prepend target so installation onto the real
 # RSpec::Core::Runner (which already happened at spec_helper load
 # time) doesn't leak into the assertions.
 #
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/VerifiedDoubles
 # rubocop:disable RSpec/MultipleMemoizedHelpers, Style/MultilineBlockChain
-RSpec.describe RSpecTracer::RSpec::RunnerHook do
+RSpec.describe TestSift::RSpec::RunnerHook do
   let(:runner_class) do
     Class.new do
       attr_reader :super_calls
@@ -42,13 +42,13 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
 
   before do
     allow(RSpec).to receive(:world).and_return(world)
-    allow(RSpecTracer).to receive(:running=)
-    allow(RSpecTracer).to receive(:no_examples=)
-    allow(RSpecTracer).to receive(:duplicate_examples=)
-    allow(RSpecTracer).to receive_messages(engine: engine, logger: logger, fail_on_duplicates: false,
-                                           ignore_spec_file?: false)
-    allow(RSpecTracer::Example).to receive(:from).and_return(tracer_example)
-    allow(RSpecTracer::RSpec::Metadata).to receive(:tracks_for).and_return(files: Set.new, env: Set.new)
+    allow(TestSift).to receive(:running=)
+    allow(TestSift).to receive(:no_examples=)
+    allow(TestSift).to receive(:duplicate_examples=)
+    allow(TestSift).to receive_messages(engine: engine, logger: logger, fail_on_duplicates: false,
+                                        ignore_spec_file?: false)
+    allow(TestSift::Example).to receive(:from).and_return(tracer_example)
+    allow(TestSift::RSpec::Metadata).to receive(:tracks_for).and_return(files: Set.new, env: Set.new)
     allow(engine).to receive_messages(run_example?: true, run_example_reason: 'No cache',
                                       duplicate_examples: {})
     allow(engine).to receive(:register_example)
@@ -60,7 +60,7 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
 
   describe '#run_specs' do
     context 'when the engine is absent (graceful degrade)' do
-      before { allow(RSpecTracer).to receive(:engine).and_return(nil) }
+      before { allow(TestSift).to receive(:engine).and_return(nil) }
 
       it 'calls super directly without touching RSpec.world' do
         allow(world).to receive(:example_count).and_return(42) # unused in this path
@@ -77,8 +77,8 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
 
       it 'flips the no_examples + running flags and returns the exit code from super' do
         expect(runner.run_specs([:group_a])).to eq(:super_result)
-        expect(RSpecTracer).to have_received(:running=).with(true)
-        expect(RSpecTracer).to have_received(:no_examples=).with(true)
+        expect(TestSift).to have_received(:running=).with(true)
+        expect(TestSift).to have_received(:no_examples=).with(true)
         expect(runner.super_calls).to eq([[:group_a]])
       end
     end
@@ -108,12 +108,12 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         allow(world).to receive(:filtered_examples)
           .and_return(example_group => [colliding_example, unique_example])
         allow(world).to receive(:instance_variable_set)
-        allow(RSpecTracer::Example).to receive(:from).with(colliding_example)
+        allow(TestSift::Example).to receive(:from).with(colliding_example)
           .and_return(example_id: 'dup-id')
-        allow(RSpecTracer::Example).to receive(:from).with(unique_example)
+        allow(TestSift::Example).to receive(:from).with(unique_example)
           .and_return(example_id: 'unique-id')
         allow(engine).to receive(:duplicate_examples).and_return('dup-id' => duplicate_entries)
-        allow(RSpecTracer).to receive(:fail_on_duplicates).and_return(true)
+        allow(TestSift).to receive(:fail_on_duplicates).and_return(true)
       end
 
       it 'logs the summary line, the identity hash, the colliding examples, and a remediation hint' do
@@ -128,10 +128,10 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         )
       end
 
-      it 'flips RSpecTracer.duplicate_examples to the fail_on_duplicates value' do
+      it 'flips TestSift.duplicate_examples to the fail_on_duplicates value' do
         runner.run_specs([:original])
 
-        expect(RSpecTracer).to have_received(:duplicate_examples=).with(true)
+        expect(TestSift).to have_received(:duplicate_examples=).with(true)
       end
 
       it 'drops only the colliding examples and still runs the rest of the suite' do
@@ -154,7 +154,7 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
 
       it 'labels a colliding example file:line description, preferring the rerun location' do
         label = runner.send(
-          :_rspec_tracer_example_label,
+          :_testsift_example_label,
           rerun_file_name: 'spec/a_spec.rb', rerun_line_number: 9,
           file_name: 'spec/support/shared.rb', line_number: 99,
           full_description: 'Thing behaves like shared '
@@ -173,9 +173,9 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         # missing-key lookup then NPEs in
         # `inject(0) { |a, e| a + e.filtered_examples.size }`. The
         # default block returns [] (.size == 0) matching what
-        # _rspec_tracer_build_filter_decision's to_run already does.
+        # _testsift_build_filter_decision's to_run already does.
         # Issue: avmnu-sng/rspec-tracer#218.
-        surviving_metadata = { rspec_tracer_example_id: 'unique-id', file_path: 'spec/a_spec.rb' }
+        surviving_metadata = { testsift_example_id: 'unique-id', file_path: 'spec/a_spec.rb' }
         leaf_group = double('LeafGroup')
         survivor = double('Survivor', metadata: surviving_metadata, description: 'unique',
                                       example_group: double('EG', parent_groups: [leaf_group]))
@@ -185,7 +185,7 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         examples_map = { leaf_group => [survivor] }
 
         kept_map, kept_groups = runner.send(
-          :_rspec_tracer_drop_duplicate_examples, examples_map, [leaf_group]
+          :_testsift_drop_duplicate_examples, examples_map, [leaf_group]
         )
 
         expect(kept_map[leaf_group]).to eq([survivor])
@@ -208,13 +208,13 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         # skipped: 331)").
         top_group = double('TopLevelGroup')
         leaf_group = double('LeafGroup')
-        survivor_metadata = { rspec_tracer_example_id: 'unique-id', file_path: 'spec/a_spec.rb' }
+        survivor_metadata = { testsift_example_id: 'unique-id', file_path: 'spec/a_spec.rb' }
         survivor = double('Survivor', metadata: survivor_metadata, description: 'unique',
                                       example_group: double('EG', parent_groups: [leaf_group, top_group]))
         examples_map = { leaf_group => [survivor] }
 
         kept_map, kept_groups = runner.send(
-          :_rspec_tracer_drop_duplicate_examples, examples_map, [top_group]
+          :_testsift_drop_duplicate_examples, examples_map, [top_group]
         )
 
         expect(kept_map[leaf_group]).to eq([survivor])
@@ -233,14 +233,14 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         runner.run_specs([])
 
         expect(engine).to have_received(:register_example).with(hash_including(run_reason: 'No cache'))
-        expect(example_metadata).to include(rspec_tracer_example_id: 'ex1')
+        expect(example_metadata).to include(testsift_example_id: 'ex1')
         expect(example_metadata[:description]).to include('(No cache)')
         expect(world).to have_received(:instance_variable_set)
           .with(:@filtered_examples, hash_including(example_group => [example]))
         expect(world).to have_received(:instance_variable_set)
           .with(:@example_groups, [example_group])
         expect(runner.super_calls.last).to eq([example_group])
-        expect(logger).to have_received(:info).with(/RSpec tracer is running 1 examples/)
+        expect(logger).to have_received(:info).with(/TestSift is running 1 examples/)
       end
     end
 
@@ -268,7 +268,7 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
       end
 
       it 'registers non-empty tracks metadata on the engine (Pass 1)' do
-        allow(RSpecTracer::RSpec::Metadata).to receive(:tracks_for).with(example).and_return(
+        allow(TestSift::RSpec::Metadata).to receive(:tracks_for).with(example).and_return(
           files: Set.new(['config/*.yml']), env: Set.new(['API_KEY'])
         )
 
@@ -288,7 +288,7 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
         second = double('SecondExample', metadata: { file_path: 'spec/bar_spec.rb' },
                                          description: 'another', example_group: example.example_group)
         allow(world).to receive(:filtered_examples).and_return(example_group => [example, second])
-        allow(RSpecTracer::Example).to receive(:from).with(second).and_return(example_id: 'ex2')
+        allow(TestSift::Example).to receive(:from).with(second).and_return(example_id: 'ex2')
         runner.run_specs([])
 
         expect(engine).to have_received(:register_example).with(hash_including(example_id: 'ex1')).ordered
@@ -299,24 +299,24 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
       end
 
       it 'does not read tracks for ignored spec files' do
-        allow(RSpecTracer).to receive(:ignore_spec_file?).with('spec/foo_spec.rb').and_return(true)
+        allow(TestSift).to receive(:ignore_spec_file?).with('spec/foo_spec.rb').and_return(true)
 
         runner.run_specs([])
 
-        expect(RSpecTracer::RSpec::Metadata).not_to have_received(:tracks_for)
+        expect(TestSift::RSpec::Metadata).not_to have_received(:tracks_for)
         expect(engine).not_to have_received(:register_tracks)
       end
 
       it 'computes Example.from only once per example (Pass 1 caches into Pass 2)' do
         runner.run_specs([])
 
-        expect(RSpecTracer::Example).to have_received(:from).once
+        expect(TestSift::Example).to have_received(:from).once
       end
     end
 
     context 'when an example matches ignore_spec_files' do
       before do
-        allow(RSpecTracer).to receive(:ignore_spec_file?).with('spec/foo_spec.rb').and_return(true)
+        allow(TestSift).to receive(:ignore_spec_file?).with('spec/foo_spec.rb').and_return(true)
         allow(world).to receive(:example_count).and_return(1, 1)
         allow(world).to receive(:filtered_examples).and_return(example_group => [example])
         allow(world).to receive(:instance_variable_set)
@@ -325,10 +325,10 @@ RSpec.describe RSpecTracer::RSpec::RunnerHook do
       it 'passes the example through without registering or hashing it' do
         runner.run_specs([])
 
-        expect(RSpecTracer::Example).not_to have_received(:from)
+        expect(TestSift::Example).not_to have_received(:from)
         expect(engine).not_to have_received(:register_example)
         expect(engine).not_to have_received(:on_example_skipped)
-        expect(example_metadata).not_to include(:rspec_tracer_example_id)
+        expect(example_metadata).not_to include(:testsift_example_id)
         expect(world).to have_received(:instance_variable_set)
           .with(:@filtered_examples, hash_including(example_group => [example]))
       end

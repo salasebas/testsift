@@ -22,11 +22,11 @@
 # separately).
 #
 # State reset between iterations:
-#   - rspec_tracer cache + report + coverage dirs wiped before each
+#   - testsift cache + report + coverage dirs wiped before each
 #     iter so the cache is cold (consistent with cold_rails_v2's
 #     measurement intent).
 #   - Each fork() child gets a fresh process, so RSpec.world /
-#     ::Coverage / RSpecTracer engine state are pristine on entry.
+#     ::Coverage / TestSift engine state are pristine on entry.
 #     The parent's pre-loaded Rails constants / autoload paths are
 #     inherited (no re-load cost).
 #
@@ -54,7 +54,7 @@ ENV['RAILS_ENV'] ||= 'test'
 require 'bundler/setup'
 require File.join(FIXTURE_PATH, 'config', 'environment')
 
-CLEAN_DIRS = %w[rspec_tracer_cache rspec_tracer_report rspec_tracer_coverage coverage].freeze
+CLEAN_DIRS = %w[testsift_cache testsift_report testsift_coverage coverage].freeze
 
 def cleanup_iter_state
   CLEAN_DIRS.each { |d| FileUtils.rm_rf(File.join(FIXTURE_PATH, d)) }
@@ -77,7 +77,7 @@ def percentile(values, pct)
 end
 
 # Per-iter: fork a child that runs rspec; parent waits + measures.
-# Child loads RSpecTracer + the spec_helper + RSpec::Core::Runner
+# Child loads TestSift + the spec_helper + RSpec::Core::Runner
 # inside its own process so Coverage / RSpec.world state is pristine.
 timings = []
 ITERATIONS.times do |i|
@@ -86,12 +86,12 @@ ITERATIONS.times do |i|
   elapsed = Benchmark.realtime do
     pid = Process.fork do
       # Child inherits parent's Rails/AR autoload state. RSpec +
-      # rspec-tracer load fresh in the child (so Coverage hooks
+      # testsift load fresh in the child (so Coverage hooks
       # install cleanly).
       Dir.chdir(FIXTURE_PATH) do
         $LOAD_PATH.unshift(File.join(FIXTURE_PATH, 'spec'))
-        require 'rspec_tracer'
-        RSpecTracer.start
+        require 'testsift'
+        TestSift.start
         require 'rspec/core'
         RSpec::Core::Runner.run(['spec'])
       end

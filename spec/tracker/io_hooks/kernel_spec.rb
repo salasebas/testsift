@@ -2,10 +2,10 @@
 
 require 'fileutils'
 require 'tmpdir'
-require 'rspec_tracer/tracker/io_hooks'
-require 'rspec_tracer/tracker/io_hooks/kernel'
+require 'testsift/tracker/io_hooks'
+require 'testsift/tracker/io_hooks/kernel'
 
-RSpec.describe RSpecTracer::Tracker::IOHooks::KernelReads do
+RSpec.describe TestSift::Tracker::IOHooks::KernelReads do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
   let(:bucket) { {} }
@@ -18,21 +18,21 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::KernelReads do
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   around do |example|
-    RSpecTracer::Tracker::IOHooks.install(root: root)
+    TestSift::Tracker::IOHooks.install(root: root)
     example.run
   ensure
-    RSpecTracer::Tracker::IOHooks.uninstall
+    TestSift::Tracker::IOHooks.uninstall
   end
 
   describe '#load' do
     it 'records an explicit Kernel.load call as :ruby' do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { Kernel.load(ruby_fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { Kernel.load(ruby_fixture) }
 
       expect(bucket).to have_key('ruby:loader.rb')
     end
 
     it 'records an implicit load call via method-body dispatch' do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { load(ruby_fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { load(ruby_fixture) }
 
       expect(bucket).to have_key('ruby:loader.rb')
     end
@@ -41,7 +41,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::KernelReads do
     # only asserting that the hook itself doesn't add a bucket entry.
     it 'does not record non-.rb load paths' do
       non_ruby = File.join(root, 'loader.yml').tap { |p| File.write(p, "k: v\n") }
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { safely_load(non_ruby) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { safely_load(non_ruby) }
 
       expect(bucket).not_to have_key('ruby:loader.yml')
     end

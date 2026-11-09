@@ -11,20 +11,20 @@ between these baselines are not imported by this extraction.
 
 | Area | Baseline dependency | Intended owner |
 | --- | --- | --- |
-| Installation | `rspec_tracer.rb` requires `rspec/installation`, which requires `rspec/core` and prepends runner and reporter hooks. | RSpec entry point |
+| Installation | `testsift.rb` requires `rspec/installation`, which requires `rspec/core` and prepends runner and reporter hooks. | RSpec entry point |
 | Discovery and execution | `rspec/runner_hook.rb` walks `RSpec.world.filtered_examples`, rewrites groups and descriptions, prunes duplicate identities, and calls RSpec's runner. | RSpec adapter |
 | Identity | `example.rb` reads RSpec metadata, parent groups, shared inclusion locations, and unnamed sibling ordinals. Its MD5 determines cache identity. | RSpec adapter, unchanged identity algorithm |
 | Lifecycle | `rspec/reporter_hook.rb` receives framework events and sends RSpec execution-result objects into Engine. | RSpec adapter converts results to ordinary hashes |
 | Rails suite callbacks | `engine.rb` calls `RSpec.configure` and reads `RSpec.configuration.use_transactional_fixtures`. | RSpec adapter |
 | Collection | Engine combines Ruby Coverage deltas, loaded files, I/O buckets, Rails notifications, and declared inputs. | Engine and existing observers |
 | Selection | Engine fingerprints files and ENV, restores history, and calls the identifier-based graph and filter. | Engine |
-| Configuration | `configuration.rb` includes RSpec-only ignored-spec policy and parallel worker directory scoping. Engine defaults to the global `RSpecTracer` configuration. | Existing DSL stays at the RSpec entry point; Engine accepts an explicit configuration |
-| Worker cache | Engine calls global `RSpecTracer.parallel_tests?` to choose a parent read directory. | Adapter supplies the read directory |
+| Configuration | `configuration.rb` includes RSpec-only ignored-spec policy and parallel worker directory scoping. Engine defaults to the global `TestSift` configuration. | Existing DSL stays at the RSpec entry point; Engine accepts an explicit configuration |
+| Worker cache | Engine calls global `TestSift.parallel_tests?` to choose a parent read directory. | Adapter supplies the read directory |
 | Persistence | Engine builds storage snapshots, keeps skipped coverage, and applies retention through the backend factory. | Engine, unchanged schema |
 | Reports | Snapshot reporters use stored RSpec presentation fields. `CoverageJsonReporter` reads the global engine, configuration, and SimpleCov state; parallel merging lives in `rspec/parallel_tests.rb`. | Existing RSpec product orchestration; no report format migration |
-| Exit | `rspec_tracer.rb` preserves RSpec's exit and fails duplicates when configured. | RSpec entry point |
+| Exit | `testsift.rb` preserves RSpec's exit and fails duplicates when configured. | RSpec entry point |
 
-The existing `require 'rspec_tracer/engine'` does not itself load RSpec,
+The existing `require 'testsift/engine'` does not itself load RSpec,
 but `setup` registers RSpec callbacks if RSpec is present and reads global
 parallel state. That is load isolation without a usable isolated lifecycle.
 
@@ -76,9 +76,9 @@ below as they are reproduced.
 - Mutation smoke reports a passing percentage despite neutral failures in
   `LoadedFilesTracker::DEFAULT_PEEK`: the test calls real Coverage while
   mutation mode disables coverage startup. Reproduced on the original source
-  with `RSPEC_TRACER_DISABLE=1 bundle exec mutant run --use rspec --usage
-  opensource --include lib --require rspec_tracer/tracker/loaded_files_tracker
-  'RSpecTracer::Tracker::LoadedFilesTracker#build_inputs'`. Follow-up: make
+  with `TESTSIFT_DISABLE=1 bundle exec mutant run --use rspec --usage
+  opensource --include lib --require testsift/tracker/loaded_files_tracker
+  'TestSift::Tracker::LoadedFilesTracker#build_inputs'`. Follow-up: make
   the test independent of global Coverage state and reject neutral failures
   in the mutation gate. Its percentage is not proof for affected methods.
 - Seven moderate npm audit entries remain in the ESLint development dependency
@@ -107,7 +107,7 @@ below as they are reproduced.
 
 ## Core lifecycle contract
 
-Load `rspec_tracer/engine`, then construct
+Load `testsift/engine`, then construct
 `Engine.new(configuration:, read_cache_path: nil)`. The configuration is an
 ordinary Ruby object with the existing engine settings. It does not need the
 top-level configuration loader. `read_cache_path` lets a worker restore the
@@ -155,7 +155,7 @@ Coverage peeks follow
 
 `ruby -Ilib spec/core/engine_lifecycle.rb` exercises the isolated contract.
 Before extraction it fails in `Engine#build_read_backend` because the global
-`RSpecTracer.parallel_tests?` method is unavailable. After extraction it
+`TestSift.parallel_tests?` method is unavailable. After extraction it
 exercises JSON persistence, cold/warm selection, explicit worker read paths,
 changed inputs, normalized results, and interruption without defining RSpec.
 
@@ -236,7 +236,7 @@ Local verification after these changes:
 | `task security:bundle-audit` | No vulnerabilities found. |
 | `task security:trivy` | Zero configured high or critical findings across the root, Ruby fixture, Rails fixture, and npm lockfiles. |
 | `task check` | 244 Ruby files without lint offenses; 2,177 examples, zero failures, two expected skips without LocalStack; smoke limits pass. |
-| `RAILS_VERSION='~> 7.1.0' RSPEC_RAILS_VERSION='~> 6.1.0' SQLITE3_VERSION='~> 1.4' RSPEC_TRACER=1 task fixtures:rails:rspec` | 308 examples, zero failures. |
+| `RAILS_VERSION='~> 7.1.0' RSPEC_RAILS_VERSION='~> 6.1.0' SQLITE3_VERSION='~> 1.4' TESTSIFT=1 task fixtures:rails:rspec` | 308 examples, zero failures. |
 | `task test:features:rails` | 13 examples, zero failures, including golden coverage equality. |
 
 Security thresholds, vulnerability suppressions, engine behavior, and benchmark

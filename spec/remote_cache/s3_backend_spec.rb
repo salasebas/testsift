@@ -6,13 +6,13 @@ require 'fileutils'
 require 'json'
 require 'open3'
 
-require 'rspec_tracer/remote_cache/s3_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/remote_cache/s3_backend'
+require 'testsift/storage/schema'
 require_relative '../contracts/remote_cache_backend'
 
 # rubocop:disable RSpec/InstanceVariable, RSpec/ExampleLength, RSpec/MultipleExpectations
 # rubocop:disable RSpec/ContextWording
-RSpec.describe RSpecTracer::RemoteCache::S3Backend do
+RSpec.describe TestSift::RemoteCache::S3Backend do
   around do |example|
     Dir.mktmpdir do |dir|
       @cache_path = dir
@@ -20,11 +20,11 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     end
   end
 
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
   let(:status_ok) { instance_double(Process::Status, success?: true) }
   let(:status_fail) { instance_double(Process::Status, success?: false) }
 
-  def new_backend(branch: 'main', default_branch: 'main', test_suite_id: nil, local: false, prefix: 'rspec-tracer')
+  def new_backend(branch: 'main', default_branch: 'main', test_suite_id: nil, local: false, prefix: 'testsift')
     described_class.new(
       bucket: 'my-bucket',
       prefix: prefix,
@@ -50,7 +50,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       File.write(File.join(src, 'last_run.json'), JSON.pretty_generate('schema_version' => schema, 'run_id' => run_id))
       FileUtils.mkdir_p(File.join(src, run_id))
       File.write(File.join(src, run_id, 'all_examples.json'), '{"ex1":"passed"}')
-      RSpecTracer::RemoteCache::Archive.pack(cache_path: src, run_id: run_id, dest_path: archive_dest)
+      TestSift::RemoteCache::Archive.pack(cache_path: src, run_id: run_id, dest_path: archive_dest)
     end
   end
 
@@ -104,8 +104,8 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     end
 
     it 'strips trailing slashes from prefix' do
-      backend = new_backend(prefix: 'rspec-tracer///')
-      expect(backend.instance_variable_get(:@prefix)).to eq('rspec-tracer')
+      backend = new_backend(prefix: 'testsift///')
+      expect(backend.instance_variable_get(:@prefix)).to eq('testsift')
     end
 
     it 'selects awslocal when local: true' do
@@ -129,7 +129,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       it 'downloads from main tier when the archive validates' do
         backend = new_backend(branch: 'main', default_branch: 'main')
         allow(Open3).to receive(:capture3) do |_cli, *args|
-          if args[0..1] == %w[s3 cp] && args[2] == 's3://my-bucket/rspec-tracer/main/abc/cache.tar.gz'
+          if args[0..1] == %w[s3 cp] && args[2] == 's3://my-bucket/testsift/main/abc/cache.tar.gz'
             build_valid_archive(args[3])
             ['', '', status_ok]
           else
@@ -204,7 +204,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       end
 
       backend.download('abc')
-      expect(observed).to eq('s3://my-bucket/rspec-tracer/main/abc/1/cache.tar.gz')
+      expect(observed).to eq('s3://my-bucket/testsift/main/abc/1/cache.tar.gz')
     end
   end
 
@@ -228,7 +228,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       expect(uploads.size).to eq(1)
       src, dst = uploads.first[2..]
       expect(src).to end_with('.tar.gz')
-      expect(dst).to eq('s3://my-bucket/rspec-tracer/main/mysha/cache.tar.gz')
+      expect(dst).to eq('s3://my-bucket/testsift/main/mysha/cache.tar.gz')
     end
 
     it 'raises when ref is nil' do
@@ -265,7 +265,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
 
       pr_backend.upload('mysha')
 
-      expect(uploads.first[3]).to eq('s3://my-bucket/rspec-tracer/pr/feat/mysha/cache.tar.gz')
+      expect(uploads.first[3]).to eq('s3://my-bucket/testsift/pr/feat/mysha/cache.tar.gz')
     end
   end
 
@@ -355,7 +355,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
 
     it 'prunes excess refs beyond count' do
       now = Time.now.to_i
-      keys = (1..5).map { |i| ["rspec-tracer/main/sha#{i}/cache.tar.gz", now - (i * 3600)] }
+      keys = (1..5).map { |i| ["testsift/main/sha#{i}/cache.tar.gz", now - (i * 3600)] }
       allow(Open3).to receive(:capture3) do |_cli, *args|
         if args.first == 's3api'
           [list_json(keys), '', status_ok]
@@ -372,9 +372,9 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     it 'prunes refs older than duration_seconds' do
       now = Time.now.to_i
       keys = [
-        ['rspec-tracer/main/recent/cache.tar.gz', now - 60],
-        ['rspec-tracer/main/old/cache.tar.gz', now - (30 * 86_400)],
-        ['rspec-tracer/main/ancient/cache.tar.gz', now - (365 * 86_400)]
+        ['testsift/main/recent/cache.tar.gz', now - 60],
+        ['testsift/main/old/cache.tar.gz', now - (30 * 86_400)],
+        ['testsift/main/ancient/cache.tar.gz', now - (365 * 86_400)]
       ]
       allow(Open3).to receive(:capture3) do |_cli, *args|
         if args.first == 's3api'
@@ -392,7 +392,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     it 'prunes entire dead PR branch when pr_branch_ttl_seconds exceeded' do
       pr_backend = new_backend(branch: 'feat', default_branch: 'main')
       now = Time.now.to_i
-      keys = [['rspec-tracer/pr/feat/old_sha/cache.tar.gz', now - (30 * 86_400)]]
+      keys = [['testsift/pr/feat/old_sha/cache.tar.gz', now - (30 * 86_400)]]
       allow(Open3).to receive(:capture3) do |_cli, *args|
         if args.first == 's3api'
           [list_json(keys), '', status_ok]
@@ -409,7 +409,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     it 'does not prune live PR branches whose newest ref is within the TTL' do
       pr_backend = new_backend(branch: 'feat', default_branch: 'main')
       now = Time.now.to_i
-      keys = [['rspec-tracer/pr/feat/recent/cache.tar.gz', now - 60]]
+      keys = [['testsift/pr/feat/recent/cache.tar.gz', now - 60]]
       allow(Open3).to receive(:capture3) do |_cli, *args|
         if args.first == 's3api'
           [list_json(keys), '', status_ok]
@@ -429,7 +429,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
 
     it 'continues on per-ref delete failures' do
       now = Time.now.to_i
-      keys = (1..3).map { |i| ["rspec-tracer/main/sha#{i}/cache.tar.gz", now - (i * 3600)] }
+      keys = (1..3).map { |i| ["testsift/main/sha#{i}/cache.tar.gz", now - (i * 3600)] }
       call = 0
       allow(Open3).to receive(:capture3) do |_cli, *args|
         if args.first == 's3api'
@@ -461,7 +461,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     it 'returns 0 when pr_branch_ttl delete fails' do
       pr_backend = new_backend(branch: 'feat', default_branch: 'main')
       now = Time.now.to_i
-      keys = [['rspec-tracer/pr/feat/old/cache.tar.gz', now - (60 * 86_400)]]
+      keys = [['testsift/pr/feat/old/cache.tar.gz', now - (60 * 86_400)]]
       allow(Open3).to receive(:capture3) do |_cli, *args|
         if args.first == 's3api'
           [list_json(keys), '', status_ok]
@@ -476,8 +476,8 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     it 'treats malformed LastModified timestamps as epoch 0' do
       backend = new_backend(branch: 'main', default_branch: 'main')
       keys = [
-        ['rspec-tracer/main/bad/cache.tar.gz', 'not-a-timestamp'],
-        ['rspec-tracer/main/good/cache.tar.gz', Time.now.utc.iso8601]
+        ['testsift/main/bad/cache.tar.gz', 'not-a-timestamp'],
+        ['testsift/main/good/cache.tar.gz', Time.now.utc.iso8601]
       ]
       contents = keys.map { |key, ts| { 'Key' => key, 'LastModified' => ts } }
       allow(Open3).to receive(:capture3) do |_cli, *args|
@@ -513,7 +513,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     let(:backend) { new_backend(branch: 'main', default_branch: 'main') }
 
     def common_prefixes_json(branches)
-      contents = branches.map { |b| { 'Prefix' => "rspec-tracer/pr/#{b}/" } }
+      contents = branches.map { |b| { 'Prefix' => "testsift/pr/#{b}/" } }
       JSON.generate('CommonPrefixes' => contents)
     end
 
@@ -540,9 +540,9 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
         if args.include?('--delimiter')
           [common_prefixes_json(%w[live dead]), '', status_ok]
         elsif args.include?('list-objects-v2') && args.any? { |a| a.to_s.include?('pr/live') }
-          [list_json([['rspec-tracer/pr/live/sha1/cache.tar.gz', now - 60]]), '', status_ok]
+          [list_json([['testsift/pr/live/sha1/cache.tar.gz', now - 60]]), '', status_ok]
         elsif args.include?('list-objects-v2') && args.any? { |a| a.to_s.include?('pr/dead') }
-          [list_json([['rspec-tracer/pr/dead/sha2/cache.tar.gz', now - (30 * 86_400)]]), '', status_ok]
+          [list_json([['testsift/pr/dead/sha2/cache.tar.gz', now - (30 * 86_400)]]), '', status_ok]
         else
           ['', '', status_ok]
         end
@@ -638,10 +638,10 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
         pointer_uploads = uploads.select { |_op, _src, dst| dst.include?('/by_tree/') }
 
         expect(archive_uploads.size).to eq(1)
-        expect(archive_uploads.first[2]).to eq('s3://my-bucket/rspec-tracer/main/commit-A/cache.tar.gz')
+        expect(archive_uploads.first[2]).to eq('s3://my-bucket/testsift/main/commit-A/cache.tar.gz')
 
         expect(pointer_uploads.size).to eq(1)
-        expect(pointer_uploads.first[2]).to eq('s3://my-bucket/rspec-tracer/main/by_tree/tree-T')
+        expect(pointer_uploads.first[2]).to eq('s3://my-bucket/testsift/main/by_tree/tree-T')
       end
 
       it 'pointer file content is the commit-SHA (plain text)' do
@@ -837,7 +837,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     it 'returns nil when ref count is at or below the threshold' do
       backend = new_backend
       now = Time.now.to_i
-      keys = [['rspec-tracer/main/sha1/cache.tar.gz', now]]
+      keys = [['testsift/main/sha1/cache.tar.gz', now]]
       allow(Open3).to receive(:capture3).and_return([JSON.generate('Contents' => keys.map do |k, t|
         { 'Key' => k, 'LastModified' => Time.at(t).utc.iso8601 }
       end), '', status_ok])
@@ -848,7 +848,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
     it 'returns a warning message when ref count exceeds the threshold' do
       backend = new_backend
       now = Time.now.to_i
-      keys = (1..5).map { |i| ["rspec-tracer/main/sha#{i}/cache.tar.gz", now + i] }
+      keys = (1..5).map { |i| ["testsift/main/sha#{i}/cache.tar.gz", now + i] }
       allow(Open3).to receive(:capture3).and_return([JSON.generate('Contents' => keys.map do |k, t|
         { 'Key' => k, 'LastModified' => Time.at(t).utc.iso8601 }
       end), '', status_ok])
@@ -859,7 +859,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
 
   describe 'private branch coverage' do
     let(:logger) do
-      logger = instance_double(RSpecTracer::Logger)
+      logger = instance_double(TestSift::Logger)
       allow(logger).to receive(:debug)
       allow(logger).to receive(:warn)
       logger
@@ -867,7 +867,7 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
 
     def new_backend_with_logger(**opts)
       described_class.new(
-        bucket: 'my-bucket', prefix: 'rspec-tracer',
+        bucket: 'my-bucket', prefix: 'testsift',
         branch: 'main', default_branch: 'main',
         cache_path: @cache_path, logger: logger, **opts
       )
@@ -915,8 +915,8 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       backend = new_backend
       now = Time.now.to_i
       contents = [
-        { 'Key' => 'rspec-tracer/main/sha1/cache.tar.gz', 'LastModified' => Time.at(now).utc.iso8601 },
-        { 'Key' => 'rspec-tracer/main/by_tree/tree-sha-1', 'LastModified' => Time.at(now).utc.iso8601 }
+        { 'Key' => 'testsift/main/sha1/cache.tar.gz', 'LastModified' => Time.at(now).utc.iso8601 },
+        { 'Key' => 'testsift/main/by_tree/tree-sha-1', 'LastModified' => Time.at(now).utc.iso8601 }
       ]
       allow(Open3).to receive(:capture3).and_return([JSON.generate('Contents' => contents), '', status_ok])
 
@@ -929,8 +929,8 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       now = Time.now.to_i
       contents = [
         # Less than 2 segments after tier_head (no ref dir): "main/cache.tar.gz" with no ref segment.
-        { 'Key' => 'rspec-tracer/main/cache.tar.gz', 'LastModified' => Time.at(now).utc.iso8601 },
-        { 'Key' => 'rspec-tracer/main/sha1/cache.tar.gz', 'LastModified' => Time.at(now).utc.iso8601 }
+        { 'Key' => 'testsift/main/cache.tar.gz', 'LastModified' => Time.at(now).utc.iso8601 },
+        { 'Key' => 'testsift/main/sha1/cache.tar.gz', 'LastModified' => Time.at(now).utc.iso8601 }
       ]
       allow(Open3).to receive(:capture3).and_return([JSON.generate('Contents' => contents), '', status_ok])
 
@@ -943,8 +943,8 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       newer = Time.now.to_i
       older = newer - 3600
       contents = [
-        { 'Key' => 'rspec-tracer/main/sha1/cache.tar.gz', 'LastModified' => Time.at(newer).utc.iso8601 },
-        { 'Key' => 'rspec-tracer/main/sha1/suite-2/cache.tar.gz', 'LastModified' => Time.at(older).utc.iso8601 }
+        { 'Key' => 'testsift/main/sha1/cache.tar.gz', 'LastModified' => Time.at(newer).utc.iso8601 },
+        { 'Key' => 'testsift/main/sha1/suite-2/cache.tar.gz', 'LastModified' => Time.at(older).utc.iso8601 }
       ]
       allow(Open3).to receive(:capture3).and_return([JSON.generate('Contents' => contents), '', status_ok])
 
@@ -961,16 +961,16 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
 
     it 'extract_ref_from_archive_key returns nil for a key with fewer than 2 segments after the tier head' do
       backend = new_backend
-      result = backend.send(:extract_ref_from_archive_key, 'rspec-tracer/main/cache.tar.gz', 'main')
+      result = backend.send(:extract_ref_from_archive_key, 'testsift/main/cache.tar.gz', 'main')
 
       expect(result).to be_nil
     end
 
     it 'discover_pr_branches skips an empty-name branch from CommonPrefixes' do
       backend = new_backend
-      # An entry like `rspec-tracer/pr/` (no branch suffix) decodes to
+      # An entry like `testsift/pr/` (no branch suffix) decodes to
       # an empty branch name and gets dropped.
-      common = [{ 'Prefix' => 'rspec-tracer/pr/' }, { 'Prefix' => 'rspec-tracer/pr/feat/' }]
+      common = [{ 'Prefix' => 'testsift/pr/' }, { 'Prefix' => 'testsift/pr/feat/' }]
       allow(Open3).to receive(:capture3).and_return([JSON.generate('CommonPrefixes' => common), '', status_ok])
 
       expect(backend.send(:discover_pr_branches)).to eq(['feat'])
@@ -980,14 +980,14 @@ RSpec.describe RSpecTracer::RemoteCache::S3Backend do
       backend = new_backend
       allow(Open3).to receive(:capture3).and_return(['  ', '', status_ok])
 
-      expect(backend.send(:list_common_prefixes, 'rspec-tracer/pr/')).to eq([])
+      expect(backend.send(:list_common_prefixes, 'testsift/pr/')).to eq([])
     end
 
     it 'list_objects returns [] on an empty stdout' do
       backend = new_backend
       allow(Open3).to receive(:capture3).and_return(['  ', '', status_ok])
 
-      expect(backend.send(:list_objects, 'rspec-tracer/main')).to eq([])
+      expect(backend.send(:list_objects, 'testsift/main')).to eq([])
     end
 
     it 'maybe_prune_branch returns 0 when the branch has no refs in S3' do

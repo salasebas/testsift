@@ -34,7 +34,7 @@ class FeatureFlags
     flags.dig("rate_limits", key.to_s)
   end
 
-  # ENV-branch — the "truly unobservable input" bucket. rspec-tracer can't
+  # ENV-branch — the "truly unobservable input" bucket. testsift can't
   # know this example depends on RAILS_APP_FORCE_REVIEW without an
   # explicit `tracks: { env: ['RAILS_APP_FORCE_REVIEW'] }` declaration.
   def self.require_review?

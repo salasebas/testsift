@@ -12,14 +12,14 @@ require 'set'
 require 'tmpdir'
 require 'rantly/rspec_extensions'
 
-require 'rspec_tracer/storage/json_backend'
+require 'testsift/storage/json_backend'
 
 # Rantly's property_of block evaluates in Rantly's instance context,
 # so closure-captured locals / lets aren't visible. Pull generators
 # into a module and reference them from the block - the pattern
 # matches spec/properties/input_identity_spec.rb.
-TARGET_FUZZ_FILES = [RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME] +
-  RSpecTracer::Storage::JsonBackend::FILENAMES.map { |f| "run-fuzz/#{f}" }
+TARGET_FUZZ_FILES = [TestSift::Storage::JsonBackend::LAST_RUN_FILENAME] +
+  TestSift::Storage::JsonBackend::FILENAMES.map { |f| "run-fuzz/#{f}" }
 
 module JsonBackendFuzzGen
   module_function
@@ -33,17 +33,17 @@ module JsonBackendFuzzGen
   end
 end
 
-RSpec.describe RSpecTracer::Storage::JsonBackend, 'fuzz corruption' do
+RSpec.describe TestSift::Storage::JsonBackend, 'fuzz corruption' do
   let(:tmp_base) { Dir.mktmpdir }
   let(:cache_path) { File.join(tmp_base, 'cache') }
   let(:backend) { described_class.new(cache_path: cache_path) }
 
   before do
     # Prime the cache so corruption has something to overwrite.
-    snap = RSpecTracer::Storage::Snapshot.empty(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: 'run-fuzz'
+    snap = TestSift::Storage::Snapshot.empty(
+      schema_version: TestSift::Storage::Schema::CURRENT, run_id: 'run-fuzz'
     )
-    backend.save_graph(snap, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+    backend.save_graph(snap, schema_version: TestSift::Storage::Schema::CURRENT)
   end
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
@@ -54,7 +54,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend, 'fuzz corruption' do
         path = File.join(cache_path, target)
         File.binwrite(path, bytes.b) if File.file?(path)
 
-        expect { backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT) }.not_to raise_error
+        expect { backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT) }.not_to raise_error
       end
     end
   end

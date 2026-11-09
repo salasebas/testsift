@@ -4,11 +4,11 @@ require 'fileutils'
 require 'json'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/json_backend'
+require 'testsift/storage/json_backend'
 
 require_relative '../contracts/storage_backend'
 
-RSpec.describe RSpecTracer::Storage::JsonBackend do
+RSpec.describe TestSift::Storage::JsonBackend do
   let(:tmp_base) { Dir.mktmpdir }
   let(:cache_path) { File.join(tmp_base, 'cache') }
 
@@ -19,8 +19,8 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   def build_sample_snapshot(run_id)
-    RSpecTracer::Storage::Snapshot.new(
-      schema_version: RSpecTracer::Storage::Schema::CURRENT,
+    TestSift::Storage::Snapshot.new(
+      schema_version: TestSift::Storage::Schema::CURRENT,
       run_id: run_id,
       all_examples: { 'ex1' => { id: 'ex1', description: 'desc' } },
       duplicate_examples: { 'ex1' => [{ id: 'ex1', file: 'a.rb' }] },
@@ -46,7 +46,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
   # bytes" shared example has something to corrupt. See the JSON-
   # specific corruption tests below for the content-level assertions.
   def corrupt_backend_storage!
-    backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+    backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
     last_run = File.join(cache_path, described_class::LAST_RUN_FILENAME)
     File.binwrite(last_run, "\x00\xFF not json \xC2\x00")
   end
@@ -76,32 +76,32 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe 'cache_hit_reason round-trip' do
     it 'persists and reloads the suite-level reason aggregate' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.cache_hit_reason).to eq('Files changed' => 3, 'No cache' => 1)
     end
 
     it 'writes cache_hit_reason.json with a plain Hash[reason_string => count] body' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'cache_hit_reason.json')
 
       expect(JSON.parse(File.read(path))).to eq('Files changed' => 3, 'No cache' => 1)
     end
 
     it 'coerces a missing cache_hit_reason.json to {} (load tolerant of caches predating the field)' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       File.delete(File.join(cache_path, sample_snapshot.run_id, 'cache_hit_reason.json'))
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.cache_hit_reason).to eq({})
     end
 
     it 'tolerates a malformed cache_hit_reason.json (returns {})' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'cache_hit_reason.json')
       File.binwrite(path, "\x00 garbage".b)
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.cache_hit_reason).to eq({})
     end
@@ -109,32 +109,32 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe 'filtered_examples round-trip' do
     it 'persists and reloads the per-example reason hash' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.filtered_examples).to eq('ex1' => 'Files changed', 'ex2' => 'No cache')
     end
 
     it 'writes filtered_examples.json with a plain Hash[example_id => reason_string] body' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'filtered_examples.json')
 
       expect(JSON.parse(File.read(path))).to eq('ex1' => 'Files changed', 'ex2' => 'No cache')
     end
 
     it 'coerces a missing filtered_examples.json to {} (load tolerant of pre-#193 caches)' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       File.delete(File.join(cache_path, sample_snapshot.run_id, 'filtered_examples.json'))
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.filtered_examples).to eq({})
     end
 
     it 'tolerates a malformed filtered_examples.json (returns {})' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'filtered_examples.json')
       File.binwrite(path, "\x00 garbage".b)
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.filtered_examples).to eq({})
     end
@@ -142,14 +142,14 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe 'boot_set round-trip' do
     it 'persists and reloads a non-empty boot_set' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.boot_set).to eq(sample_snapshot.boot_set)
     end
 
     it 'writes boot_set.json with a plain Hash[relative_path => digest] body' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'boot_set.json')
 
       expect(JSON.parse(File.read(path)))
@@ -157,19 +157,19 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     it 'tolerates a malformed boot_set.json (returns {})' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'boot_set.json')
       File.binwrite(path, "\x00 garbage".b)
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.boot_set).to eq({})
     end
 
     it 'coerces a non-Hash JSON body (e.g. array) to {}' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'boot_set.json')
       File.write(path, JSON.dump(%w[not a hash]))
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.boot_set).to eq({})
     end
@@ -177,14 +177,14 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe 'env_snapshot round-trip' do
     it 'persists and reloads a non-empty env_snapshot' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.env_snapshot).to eq(sample_snapshot.env_snapshot)
     end
 
     it 'writes env_snapshot.json with a plain Hash[env_name => digest] body' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'env_snapshot.json')
 
       expect(JSON.parse(File.read(path)))
@@ -192,19 +192,19 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     it 'tolerates a malformed env_snapshot.json (returns {})' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'env_snapshot.json')
       File.binwrite(path, "\x00 garbage".b)
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.env_snapshot).to eq({})
     end
 
     it 'coerces a non-Hash JSON body (e.g. array) to {}' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'env_snapshot.json')
       File.write(path, JSON.dump(%w[not a hash]))
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.env_snapshot).to eq({})
     end
@@ -212,14 +212,14 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe 'env_dependency round-trip' do
     it 'persists and reloads a non-empty env_dependency' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.env_dependency).to eq(sample_snapshot.env_dependency)
     end
 
     it 'writes env_dependency.json with Hash[example_id => Array<env_name>] body' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'env_dependency.json')
 
       expect(JSON.parse(File.read(path)))
@@ -227,34 +227,34 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     it 'tolerates a malformed env_dependency.json (returns {})' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'env_dependency.json')
       File.binwrite(path, "\x00 garbage".b)
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.env_dependency).to eq({})
     end
 
     it 'coerces a non-Hash JSON body to {}' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'env_dependency.json')
       File.write(path, JSON.dump(%w[not a hash]))
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.env_dependency).to eq({})
     end
 
     it 'survives a cache predating env_dependency.json without a cold re-run signal' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       File.delete(File.join(cache_path, sample_snapshot.run_id, 'env_dependency.json'))
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.env_dependency).to eq({})
     end
   end
 
   describe '#save_graph on-disk layout' do
-    before { backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT) }
+    before { backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT) }
 
     it 'writes every FILENAMES entry under the run-id directory' do
       run_dir = File.join(cache_path, sample_snapshot.run_id)
@@ -268,7 +268,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     it 'stamps last_run.json with schema_version' do
       manifest = JSON.parse(File.read(File.join(cache_path, described_class::LAST_RUN_FILENAME)))
 
-      expect(manifest['schema_version']).to eq(RSpecTracer::Storage::Schema::CURRENT)
+      expect(manifest['schema_version']).to eq(TestSift::Storage::Schema::CURRENT)
     end
 
     it 'stamps last_run.json with run_id' do
@@ -300,8 +300,8 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     it 'round-trips example titles containing non-ASCII bytes' do
       snap = build_sample_snapshot('run-utf8')
       snap.all_examples = { 'ex-utf8' => { id: 'ex-utf8', description: "naïve café – \u{1F600}" } }
-      backend.save_graph(snap, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(snap, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.all_examples['ex-utf8'][:description]).to eq("naïve café – \u{1F600}")
     end
@@ -309,7 +309,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe 'schema-mismatch logging' do
     def prime_with_bad_schema_version(backend_for_save)
-      backend_for_save.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend_for_save.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, described_class::LAST_RUN_FILENAME)
       manifest = JSON.parse(File.read(path))
       manifest['schema_version'] = 1
@@ -317,18 +317,18 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     it 'returns nil when stored schema is unsupported' do
-      logger = instance_double(RSpecTracer::Logger, info: nil)
+      logger = instance_double(TestSift::Logger, info: nil)
       logging_backend = described_class.new(cache_path: cache_path, logger: logger)
       prime_with_bad_schema_version(logging_backend)
 
-      expect(logging_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)).to be_nil
+      expect(logging_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)).to be_nil
     end
 
     it 'emits an info log line on mismatch' do
-      logger = instance_double(RSpecTracer::Logger, info: nil)
+      logger = instance_double(TestSift::Logger, info: nil)
       logging_backend = described_class.new(cache_path: cache_path, logger: logger)
       prime_with_bad_schema_version(logging_backend)
-      logging_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      logging_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(logger).to have_received(:info).with(/schema_version mismatch/)
     end
@@ -339,36 +339,36 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
       FileUtils.mkdir_p(cache_path)
       File.binwrite(File.join(cache_path, described_class::LAST_RUN_FILENAME), "\x00\xFF not json".b)
 
-      expect(backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)).to be_nil
+      expect(backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)).to be_nil
     end
 
     it 'returns nil when last_run.json parses but is not a Hash' do
       FileUtils.mkdir_p(cache_path)
       File.write(File.join(cache_path, described_class::LAST_RUN_FILENAME), JSON.dump([1, 2, 3]))
 
-      expect(backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)).to be_nil
+      expect(backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)).to be_nil
     end
 
     it 'returns nil when the run-id directory vanished after last_run.json was written' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       FileUtils.rm_rf(File.join(cache_path, sample_snapshot.run_id))
 
-      expect(backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)).to be_nil
+      expect(backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)).to be_nil
     end
 
     it 'returns nil when the run_id field in last_run.json is missing' do
       FileUtils.mkdir_p(cache_path)
       File.write(File.join(cache_path, described_class::LAST_RUN_FILENAME),
-                 JSON.dump('schema_version' => RSpecTracer::Storage::Schema::CURRENT))
+                 JSON.dump('schema_version' => TestSift::Storage::Schema::CURRENT))
 
-      expect(backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)).to be_nil
+      expect(backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)).to be_nil
     end
 
     it 'tolerates a per-run file being malformed (returns Snapshot with default for that field)' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       path = File.join(cache_path, sample_snapshot.run_id, 'dependency.json')
       File.binwrite(path, "\x00 garbage".b)
-      loaded = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(loaded.dependency).to eq({})
     end
@@ -376,7 +376,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe 'atomic last_run.json write' do
     it 'does not leave a .tmp file behind after a successful save' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(Dir.glob(File.join(cache_path, 'last_run.json.tmp.*'))).to be_empty
     end
@@ -384,7 +384,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     it 'cleans up .tmp files when a rename fails mid-save' do
       FileUtils.mkdir_p(cache_path)
       allow(File).to receive(:rename).and_raise(Errno::EACCES)
-      ignore_raise { backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT) }
+      ignore_raise { backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT) }
 
       expect(Dir.glob(File.join(cache_path, sample_snapshot.run_id, '*.tmp.*'))).to be_empty
     end
@@ -394,13 +394,13 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     def save_with_late_failure
       v1 = build_sample_snapshot('run-v1')
       v2 = build_sample_snapshot('run-v2')
-      backend.save_graph(v1, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(v1, schema_version: TestSift::Storage::Schema::CURRENT)
       allow(File).to receive(:rename).and_wrap_original do |meth, src, dst|
         raise Errno::EACCES if dst.end_with?('examples_coverage.json')
 
         meth.call(src, dst)
       end
-      ignore_raise { backend.save_graph(v2, schema_version: RSpecTracer::Storage::Schema::CURRENT) }
+      ignore_raise { backend.save_graph(v2, schema_version: TestSift::Storage::Schema::CURRENT) }
     end
 
     it 'leaves the previous last_run_id intact when a per-run write fails mid-transaction' do
@@ -412,7 +412,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
   describe '#clear!' do
     it 'removes the cache_path directory entirely' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
       backend.clear!
 
       expect(File.directory?(cache_path)).to be(false)
@@ -436,16 +436,16 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
   # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/MultipleMemoizedHelpers
   describe 'lazy loading' do
     it 'returns a LazySnapshot from load_graph' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
 
-      expect(loaded).to be_a(RSpecTracer::Storage::LazySnapshot)
+      expect(loaded).to be_a(TestSift::Storage::LazySnapshot)
     end
 
     it 'does not read a field until it is accessed' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       allow(other_backend).to receive(:read_field).and_call_original
 
       loaded.schema_version
@@ -455,8 +455,8 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     it 'reads only the touched field' do
-      backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       allow(other_backend).to receive(:read_field).and_call_original
 
       loaded.dependency
@@ -466,7 +466,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
   end
 
   describe '#read_field' do
-    before { backend.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT) }
+    before { backend.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT) }
 
     let(:run_dir) { File.join(cache_path, sample_snapshot.run_id) }
 
@@ -495,9 +495,9 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
       snapshot = build_sample_snapshot('run-intern')
       repeated = '/very/long/path/that/repeats.rb'
       snapshot.dependency = (1..50).to_h { |i| ["ex#{i}", Set.new([repeated])] }
-      backend.save_graph(snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       paths = loaded.dependency.values.flat_map(&:to_a)
       expect(paths.size).to eq(50)
       expect(paths.map(&:object_id).uniq.size).to eq(1)
@@ -506,9 +506,9 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     it 'returns non-String scalars unchanged' do
       snapshot = build_sample_snapshot('run-intern-num')
       snapshot.examples_coverage = { 'ex1' => { '/a.rb' => { '1' => 42 } } }
-      backend.save_graph(snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
-      loaded = other_backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      loaded = other_backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       expect(loaded.examples_coverage['ex1']['/a.rb']['1']).to eq(42)
     end
   end
@@ -516,7 +516,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
   describe '#prune_run_dirs!' do
     def write_run(run_id, mtime: nil)
       snap = build_sample_snapshot(run_id)
-      backend.save_graph(snap, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      backend.save_graph(snap, schema_version: TestSift::Storage::Schema::CURRENT)
       File.utime(mtime, mtime, File.join(cache_path, run_id)) if mtime
     end
 
@@ -570,7 +570,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     it 'swallows and logs unexpected errors' do
-      logger = instance_double(RSpecTracer::Logger, warn: nil)
+      logger = instance_double(TestSift::Logger, warn: nil)
       logged_backend = described_class.new(cache_path: cache_path, logger: logger)
       FileUtils.mkdir_p(cache_path)
       allow(logged_backend).to receive(:collect_run_dirs).and_raise(StandardError, 'boom')
@@ -587,8 +587,8 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
       retaining = described_class.new(
         cache_path: cache_path, retention_local_count: 1
       )
-      retaining.save_graph(build_sample_snapshot('run-a'), schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      retaining.save_graph(build_sample_snapshot('run-b'), schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      retaining.save_graph(build_sample_snapshot('run-a'), schema_version: TestSift::Storage::Schema::CURRENT)
+      retaining.save_graph(build_sample_snapshot('run-b'), schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(Dir.exist?(File.join(cache_path, 'run-a'))).to be(false)
       expect(Dir.exist?(File.join(cache_path, 'run-b'))).to be(true)
@@ -596,8 +596,8 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
     it 'does not prune when retention_local_count is nil' do
       unretained = described_class.new(cache_path: cache_path)
-      unretained.save_graph(build_sample_snapshot('run-a'), schema_version: RSpecTracer::Storage::Schema::CURRENT)
-      unretained.save_graph(build_sample_snapshot('run-b'), schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      unretained.save_graph(build_sample_snapshot('run-a'), schema_version: TestSift::Storage::Schema::CURRENT)
+      unretained.save_graph(build_sample_snapshot('run-b'), schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(Dir.exist?(File.join(cache_path, 'run-a'))).to be(true)
       expect(Dir.exist?(File.join(cache_path, 'run-b'))).to be(true)
@@ -605,7 +605,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
   end
 
   describe 'size budget warnings' do
-    let(:logger) { instance_double(RSpecTracer::Logger, warn: nil) }
+    let(:logger) { instance_double(TestSift::Logger, warn: nil) }
 
     it 'emits a per-file warning when a file exceeds the per-file threshold' do
       budgeted = described_class.new(cache_path: cache_path, logger: logger, warn_per_file_mb: 1)
@@ -614,7 +614,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
         ["/app/file_#{i}.rb", { file_name: "/app/file_#{i}.rb", digest: 'd' * 64 }]
       end
 
-      budgeted.save_graph(snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      budgeted.save_graph(snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(logger).to have_received(:warn).with(/per-file threshold/).at_least(:once)
     end
@@ -626,7 +626,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
         ["/app/file_#{i}.rb", { file_name: "/app/file_#{i}.rb", digest: 'd' * 64 }]
       end
 
-      budgeted.save_graph(snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      budgeted.save_graph(snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(logger).to have_received(:warn).with(/total threshold/).at_least(:once)
     end
@@ -634,7 +634,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     it 'does not warn when thresholds are nil' do
       unbudgeted = described_class.new(cache_path: cache_path, logger: logger)
 
-      unbudgeted.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      unbudgeted.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(logger).not_to have_received(:warn)
     end
@@ -645,7 +645,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
         warn_per_file_mb: 0, warn_total_mb: 0
       )
 
-      unbudgeted.save_graph(sample_snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      unbudgeted.save_graph(sample_snapshot, schema_version: TestSift::Storage::Schema::CURRENT)
 
       expect(logger).not_to have_received(:warn)
     end
@@ -668,13 +668,13 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     def write_peer(path, snapshot)
       FileUtils.mkdir_p(path)
       described_class.new(cache_path: path).save_graph(
-        snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        snapshot, schema_version: TestSift::Storage::Schema::CURRENT
       )
     end
 
     def peer_snapshot(run_id, example_id, file_name, digest)
-      RSpecTracer::Storage::Snapshot.new(
-        schema_version: RSpecTracer::Storage::Schema::CURRENT,
+      TestSift::Storage::Snapshot.new(
+        schema_version: TestSift::Storage::Schema::CURRENT,
         run_id: run_id,
         all_examples: { example_id => { id: example_id, description: "ex #{example_id}" } },
         duplicate_examples: {},
@@ -695,13 +695,13 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
     end
 
     it 'returns nil when no peer directories exist' do
-      expect(top_backend.merge_from_peers([], schema_version: RSpecTracer::Storage::Schema::CURRENT)).to be_nil
+      expect(top_backend.merge_from_peers([], schema_version: TestSift::Storage::Schema::CURRENT)).to be_nil
     end
 
     it 'returns nil when every peer path is missing / empty' do
       result = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
       expect(result).to be_nil
     end
@@ -712,7 +712,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       merged = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       expect(merged.all_examples.keys).to contain_exactly('ex1', 'ex2')
@@ -730,7 +730,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       merged = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       expect(merged.env_dependency).to include(
@@ -749,7 +749,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       merged = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       expect(merged.env_dependency['ex1']).to match_array(%w[ENV_EX1 ENV_EXTRA])
@@ -761,7 +761,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       merged = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       expect(merged.failed_examples).to eq(Set.new(%w[ex1 ex2]))
@@ -773,7 +773,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       merged = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       expect(merged.reverse_dependency['/a.rb']).to include('ex1')
@@ -789,7 +789,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       merged = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       expect(merged.examples_coverage['ex1']['/lib/shared.rb']).to eq('0' => 2, '2' => 6)
@@ -801,11 +801,11 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       reloaded = described_class.new(cache_path: top_cache)
-        .load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+        .load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       expect(reloaded.all_examples.keys).to contain_exactly('ex1', 'ex2')
     end
 
@@ -815,7 +815,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
 
       merged = top_backend.merge_from_peers(
         [peer_one_path, peer_two_path],
-        schema_version: RSpecTracer::Storage::Schema::CURRENT
+        schema_version: TestSift::Storage::Schema::CURRENT
       )
 
       expect(merged.run_id).to match(/\A[0-9a-f]{32}\z/)
@@ -824,8 +824,8 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
   # rubocop:enable RSpec/MultipleMemoizedHelpers, RSpec/MultipleExpectations, RSpec/ExampleLength
 
   # rubocop:disable RSpec/MultipleMemoizedHelpers, RSpec/MultipleExpectations, RSpec/ExampleLength
-  describe RSpecTracer::Storage::JsonBackend::Merger do
-    let(:schema) { RSpecTracer::Storage::Schema::CURRENT }
+  describe TestSift::Storage::JsonBackend::Merger do
+    let(:schema) { TestSift::Storage::Schema::CURRENT }
 
     def make_snapshot(overrides = {})
       base = {
@@ -838,7 +838,7 @@ RSpec.describe RSpecTracer::Storage::JsonBackend do
         examples_coverage: {},
         boot_set: {}, wsi_snapshot: {}
       }
-      RSpecTracer::Storage::Snapshot.new(**base, **overrides)
+      TestSift::Storage::Snapshot.new(**base, **overrides)
     end
 
     it 'treats nil fields as empty collections (graceful under partial peers)' do

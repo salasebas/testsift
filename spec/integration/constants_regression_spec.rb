@@ -29,10 +29,10 @@
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/tracker/dependency_graph'
-require 'rspec_tracer/tracker/example_registry'
-require 'rspec_tracer/tracker/filter'
-require 'rspec_tracer/tracker/loaded_files_tracker'
+require 'testsift/tracker/dependency_graph'
+require 'testsift/tracker/example_registry'
+require 'testsift/tracker/filter'
+require 'testsift/tracker/loaded_files_tracker'
 
 # Composition scenarios operate on whole pipelines; splitting to
 # satisfy metric cops scatters the narrative.
@@ -57,7 +57,7 @@ RSpec.describe 'constants-lookup blind-spot regression' do
     # loads both files; the reader example's finish snapshot lists the
     # same two keys (already loaded, no new diffs). Coverage keys are
     # monotonic across a process.
-    RSpecTracer::Tracker::LoadedFilesTracker.new(root: root, peek: -> { [] }, enabled: enabled)
+    TestSift::Tracker::LoadedFilesTracker.new(root: root, peek: -> { [] }, enabled: enabled)
   end
 
   # Simulates what the engine wires in production: at start_example time, the caller
@@ -65,8 +65,8 @@ RSpec.describe 'constants-lookup blind-spot regression' do
   # return value is the delta; union is the example's Input set.
   def simulate_run(tracker)
     tracker.capture_boot_set!
-    graph = RSpecTracer::Tracker::DependencyGraph.new
-    registry = RSpecTracer::Tracker::ExampleRegistry.new
+    graph = TestSift::Tracker::DependencyGraph.new
+    registry = TestSift::Tracker::ExampleRegistry.new
     registry.register('ex_trigger').update_status('ex_trigger', :passed)
     registry.register('ex_reader').update_status('ex_reader', :passed)
 
@@ -88,7 +88,7 @@ RSpec.describe 'constants-lookup blind-spot regression' do
   end
 
   def filter_result(graph, registry, change_set:)
-    RSpecTracer::Tracker::Filter.select(
+    TestSift::Tracker::Filter.select(
       graph: graph, change_set: change_set, registry: registry,
       whole_suite_invalidated: false,
       all_example_ids: Set['ex_trigger', 'ex_reader']
@@ -151,7 +151,7 @@ RSpec.describe 'constants-lookup blind-spot regression' do
       FileUtils.mkdir_p(File.dirname(helper_path))
       File.write(helper_path, "require 'rspec'\n")
       peek_script = [[helper_path]]
-      tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+      tracker = TestSift::Tracker::LoadedFilesTracker.new(
         root: root, peek: -> { peek_script.shift || [] }
       )
       tracker.capture_boot_set!
@@ -159,7 +159,7 @@ RSpec.describe 'constants-lookup blind-spot regression' do
 
       # Simulate spec_helper.rb edit on next run.
       File.write(helper_path, "require 'rspec'\nrequire 'simplecov'\n")
-      next_tracker = RSpecTracer::Tracker::LoadedFilesTracker.new(
+      next_tracker = TestSift::Tracker::LoadedFilesTracker.new(
         root: root, peek: -> { [helper_path] }
       )
       next_tracker.capture_boot_set!

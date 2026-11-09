@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/rspec/installation'
+require 'testsift/rspec/installation'
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength, RSpec/VerifiedDoubles
 # rubocop:disable RSpec/InstanceVariable, Naming/PredicateMethod, Naming/MethodParameterName
-RSpec.describe RSpecTracer::RSpec::Installation do
+RSpec.describe TestSift::RSpec::Installation do
   describe '.install!' do
     let(:fake_runner)   { Class.new }
     let(:fake_reporter) { Class.new }
@@ -14,13 +14,13 @@ RSpec.describe RSpecTracer::RSpec::Installation do
     it 'prepends RunnerHook onto the runner class' do
       described_class.install!(runner_class: fake_runner, reporter_class: fake_reporter)
 
-      expect(fake_runner.ancestors).to include(RSpecTracer::RSpec::RunnerHook)
+      expect(fake_runner.ancestors).to include(TestSift::RSpec::RunnerHook)
     end
 
     it 'prepends ReporterHook onto the reporter class' do
       described_class.install!(runner_class: fake_runner, reporter_class: fake_reporter)
 
-      expect(fake_reporter.ancestors).to include(RSpecTracer::RSpec::ReporterHook)
+      expect(fake_reporter.ancestors).to include(TestSift::RSpec::ReporterHook)
     end
 
     it 'returns true' do
@@ -29,10 +29,10 @@ RSpec.describe RSpecTracer::RSpec::Installation do
 
     it 'is idempotent — prepending twice leaves one copy in the ancestors chain' do
       described_class.install!(runner_class: fake_runner, reporter_class: fake_reporter)
-      first_count = fake_runner.ancestors.count(RSpecTracer::RSpec::RunnerHook)
+      first_count = fake_runner.ancestors.count(TestSift::RSpec::RunnerHook)
       described_class.install!(runner_class: fake_runner, reporter_class: fake_reporter)
 
-      expect(fake_runner.ancestors.count(RSpecTracer::RSpec::RunnerHook)).to eq(first_count)
+      expect(fake_runner.ancestors.count(TestSift::RSpec::RunnerHook)).to eq(first_count)
     end
 
     it 'delegates the load-order warning to warn_if_coverage_already_accumulated' do
@@ -73,7 +73,7 @@ RSpec.describe RSpecTracer::RSpec::Installation do
     end
 
     before do
-      allow(RSpecTracer).to receive(:logger).and_return(logger)
+      allow(TestSift).to receive(:logger).and_return(logger)
       stub_const('Coverage', coverage_mod)
       coverage_mod.running = true
       coverage_mod.peek_result = {}

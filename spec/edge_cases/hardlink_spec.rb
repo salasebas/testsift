@@ -29,14 +29,14 @@ require 'digest'
 require 'fileutils'
 require 'set'
 require 'tmpdir'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleMemoizedHelpers
 RSpec.describe 'Hardlinks in cache content + filesystem semantics' do
-  let(:tmp_base) { Dir.mktmpdir('rspec_tracer_hardlink_') }
+  let(:tmp_base) { Dir.mktmpdir('testsift_hardlink_') }
   let(:cache_path) { File.join(tmp_base, 'cache') }
-  let(:schema_version) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:schema_version) { TestSift::Storage::Schema::CURRENT }
 
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
@@ -89,8 +89,8 @@ RSpec.describe 'Hardlinks in cache content + filesystem semantics' do
 
     def build_hardlink_snapshot(run_id)
       digest = 'shared-content-digest-abc'
-      RSpecTracer::Storage::Snapshot.new(
-        schema_version: RSpecTracer::Storage::Schema::CURRENT,
+      TestSift::Storage::Snapshot.new(
+        schema_version: TestSift::Storage::Schema::CURRENT,
         run_id: run_id,
         all_examples: { 'ex_a' => { id: 'ex_a', description: 'depends on the hardlinked pair' } },
         duplicate_examples: {},
@@ -139,7 +139,7 @@ RSpec.describe 'Hardlinks in cache content + filesystem semantics' do
     end
 
     describe 'JsonBackend :json' do
-      let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
+      let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json) }
 
       before { backend.save_graph(build_hardlink_snapshot('run-hardlink-json'), schema_version: schema_version) }
 
@@ -147,7 +147,7 @@ RSpec.describe 'Hardlinks in cache content + filesystem semantics' do
     end
 
     describe 'JsonBackend :msgpack' do
-      let(:backend) { RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
+      let(:backend) { TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack) }
 
       before { backend.save_graph(build_hardlink_snapshot('run-hardlink-msgpack'), schema_version: schema_version) }
 
@@ -159,7 +159,7 @@ RSpec.describe 'Hardlinks in cache content + filesystem semantics' do
         sqlite_available =
           begin
             require 'sqlite3'
-            require 'rspec_tracer/storage/sqlite_backend'
+            require 'testsift/storage/sqlite_backend'
             RUBY_ENGINE == 'ruby'
           rescue LoadError
             false
@@ -168,7 +168,7 @@ RSpec.describe 'Hardlinks in cache content + filesystem semantics' do
         backend.save_graph(build_hardlink_snapshot('run-hardlink-sqlite'), schema_version: schema_version)
       end
 
-      let(:backend) { RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path) }
+      let(:backend) { TestSift::Storage::SqliteBackend.new(cache_path: cache_path) }
 
       it_behaves_like 'preserves hardlink siblings as distinct all_files keys'
     end

@@ -1,18 +1,18 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'rspec_tracer/tracker/dependency_graph'
-require 'rspec_tracer/tracker/example_registry'
-require 'rspec_tracer/tracker/filter'
-require 'rspec_tracer/tracker/input'
+require 'testsift/tracker/dependency_graph'
+require 'testsift/tracker/example_registry'
+require 'testsift/tracker/filter'
+require 'testsift/tracker/input'
 
-RSpec.describe RSpecTracer::Tracker::Filter do
-  let(:graph) { RSpecTracer::Tracker::DependencyGraph.new }
-  let(:registry) { RSpecTracer::Tracker::ExampleRegistry.new }
+RSpec.describe TestSift::Tracker::Filter do
+  let(:graph) { TestSift::Tracker::DependencyGraph.new }
+  let(:registry) { TestSift::Tracker::ExampleRegistry.new }
   let(:all_example_ids) { Set['ex1', 'ex2', 'ex3'] }
 
   def input(path)
-    RSpecTracer::Tracker::Input.for_file(path: path, kind: :ruby, digest: 'd', root: '/')
+    TestSift::Tracker::Input.for_file(path: path, kind: :ruby, digest: 'd', root: '/')
   end
 
   def select(change_set: Set.new, whole_suite_invalidated: false)

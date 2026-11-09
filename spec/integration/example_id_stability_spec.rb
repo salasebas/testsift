@@ -2,7 +2,7 @@
 
 # End-to-end regression for #196: example_id stability across runs.
 #
-# `example_id` (the MD5 RSpecTracer::Example.from produces) used to
+# `example_id` (the MD5 TestSift::Example.from produces) used to
 # hash `example_group.name` — RSpec's generated class name, which
 # carries a load-order-dependent `_2` / `_3` disambiguator suffix
 # when two spec files share a describe-block name. Two files both
@@ -45,9 +45,9 @@ require 'open3'
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleExpectations, RSpec/ExampleLength
 RSpec.describe 'example_id stability across runs (issue #196)' do
   let(:fixture_root) { File.expand_path('../../benchmark/fixtures/ruby_app', __dir__) }
-  let(:cache_dir)    { File.join(fixture_root, 'rspec_tracer_cache') }
-  let(:report_dir)   { File.join(fixture_root, 'rspec_tracer_report') }
-  let(:coverage_dir) { File.join(fixture_root, 'rspec_tracer_coverage') }
+  let(:cache_dir)    { File.join(fixture_root, 'testsift_cache') }
+  let(:report_dir)   { File.join(fixture_root, 'testsift_report') }
+  let(:coverage_dir) { File.join(fixture_root, 'testsift_coverage') }
   let(:temp_glob)    { File.join(fixture_root, 'spec', 'rt_idstab_*.rb') }
 
   around do |example|
@@ -87,15 +87,15 @@ RSpec.describe 'example_id stability across runs (issue #196)' do
   # the identity hash fresh — a warm run would skip the example and
   # echo the seeded id, testing cache persistence rather than
   # identity computation. Positional spec_files also let a test pin
-  # the rspec file LOAD ORDER. RSPEC_TRACER_DISABLE is deleted from
+  # the rspec file LOAD ORDER. TESTSIFT_DISABLE is deleted from
   # the child env so a parent-runner setting can't leak in.
   def run_rspec_cold(*spec_files)
     FileUtils.rm_rf([cache_dir, report_dir, coverage_dir])
     out, status = Open3.capture2e(
-      { 'RSPEC_TRACER_DISABLE' => nil },
+      { 'TESTSIFT_DISABLE' => nil },
       'bundle', 'exec', 'rspec', '--no-color', *spec_files, chdir: fixture_root
     )
-    # rspec-tracer's run summary carries a non-ASCII '·'; force UTF-8 +
+    # testsift's run summary carries a non-ASCII '·'; force UTF-8 +
     # scrub so callers can `match` against `out` regardless of the
     # parent process's default external encoding (US-ASCII under a
     # bare LANG).

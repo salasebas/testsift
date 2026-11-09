@@ -8,7 +8,7 @@ backends compose with the optional MessagePack serializer.
 
 ## The protocol contract
 
-`RSpecTracer::Storage::Backend` is a 5-method protocol:
+`TestSift::Storage::Backend` is a 5-method protocol:
 
 ```ruby
 load_graph(schema_version:)         # -> Snapshot or nil
@@ -26,7 +26,7 @@ SqliteBackend arrived in 2.0 to open up larger-suite scaling.
 ## JsonBackend — the 10-file layout
 
 ```
-rspec_tracer_cache/
+testsift_cache/
 ├── last_run.json               ← manifest pointer
 └── <run_id>/
     ├── all_examples.json
@@ -74,8 +74,8 @@ count validators) need to special-case it.
 ## SqliteBackend — the single-file layout
 
 ```
-rspec_tracer_cache/
-└── rspec_tracer.sqlite3
+testsift_cache/
+└── testsift.sqlite3
 ```
 
 A single SQLite database file. Schema:
@@ -132,7 +132,7 @@ instances against the same file.
 - The engine catches it and falls back to JsonBackend with a
   one-time warn:
   ```
-  rspec-tracer: SQLite storage backend unavailable on JRuby; using :json
+  testsift: SQLite storage backend unavailable on JRuby; using :json
   ```
 - The warn fires at `Engine#setup` time so the user sees it before
   any example runs.
@@ -169,7 +169,7 @@ backend = configuration.storage_backend_class.new(
   **configuration.storage_backend_opts
 )
 @previous_snapshot = backend.load_graph(
-  schema_version: RSpecTracer::Storage::Schema::CURRENT
+  schema_version: TestSift::Storage::Schema::CURRENT
 )
 ```
 
@@ -178,7 +178,7 @@ backend = configuration.storage_backend_class.new(
 ```ruby
 @storage_backend.transactional_save do
   @storage_backend.save_graph(
-    @snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+    @snapshot, schema_version: TestSift::Storage::Schema::CURRENT
   )
 end
 ```
@@ -200,7 +200,7 @@ class MyBackend
   end
 
   def load_graph(schema_version:)
-    # Return RSpecTracer::Storage::Snapshot or nil.
+    # Return TestSift::Storage::Snapshot or nil.
     # Nil = no cache OR schema mismatch.
     # Never raise on corruption — log + return nil.
   end
@@ -224,7 +224,7 @@ class MyBackend
   end
 end
 
-RSpecTracer.configure do
+TestSift.configure do
   storage_backend MyBackend.new(cache_path: my_path, my_opt: 'value')
 end
 ```
@@ -234,15 +234,15 @@ shared-examples group to verify the contract.
 
 ## Where to read code
 
-- `lib/rspec_tracer/storage/backend.rb` — the protocol.
-- `lib/rspec_tracer/storage/json_backend.rb` — JSON impl + `Merger`
+- `lib/testsift/storage/backend.rb` — the protocol.
+- `lib/testsift/storage/json_backend.rb` — JSON impl + `Merger`
   class for parallel_tests merge.
-- `lib/rspec_tracer/storage/sqlite_backend.rb` — SQLite impl.
-- `lib/rspec_tracer/storage/snapshot.rb` — the data class returned
+- `lib/testsift/storage/sqlite_backend.rb` — SQLite impl.
+- `lib/testsift/storage/snapshot.rb` — the data class returned
   by `load_graph`.
-- `lib/rspec_tracer/storage/lazy_snapshot.rb` — lazy-load wrapper
+- `lib/testsift/storage/lazy_snapshot.rb` — lazy-load wrapper
   for partial reads.
-- `lib/rspec_tracer/storage/schema.rb` — `CURRENT` schema version
+- `lib/testsift/storage/schema.rb` — `CURRENT` schema version
   constant.
 - `spec/storage/json_backend_spec.rb` + `spec/storage/sqlite_backend_spec.rb`
   — unit tests.

@@ -2,10 +2,10 @@
 
 require 'securerandom'
 
-RSpec.describe RSpecTracer::Configuration do
+RSpec.describe TestSift::Configuration do
   subject(:config) { clazz.new }
 
-  let(:clazz) { Class.new { include RSpecTracer::Configuration } }
+  let(:clazz) { Class.new { include TestSift::Configuration } }
 
   describe '#configure DSL wrapper' do
     # The DSL wrapper aliases every private setter to `_name`, then
@@ -33,27 +33,27 @@ RSpec.describe RSpecTracer::Configuration do
   end
 
   describe 'unknown DSL method handling' do
-    # Typos in `.rspec-tracer` previously raised bare `NoMethodError`
+    # Typos in `.testsift` previously raised bare `NoMethodError`
     # with a Ruby backtrace. Now they raise `InvalidUsageError` with
     # a stdlib `DidYouMean` suggestion when the typo is close to a
     # real DSL method; falls through to NoMethodError when no close
     # match exists so internal `respond_to?` probes retain standard
     # Ruby semantics.
     it 'raises InvalidUsageError on a typo with a did-you-mean suggestion' do
-      expect { RSpecTracer.track_files_glob('config/**/*') }
+      expect { TestSift.track_files_glob('config/**/*') }
         .to raise_error(
-          RSpecTracer::Configuration::InvalidUsageError,
-          /unknown \.rspec-tracer DSL method :track_files_glob.*did you mean.*track_files/
+          TestSift::Configuration::InvalidUsageError,
+          /unknown \.testsift DSL method :track_files_glob.*did you mean.*track_files/
         )
     end
 
     it 'falls through to NoMethodError when no close match exists' do
-      expect { RSpecTracer.zzzbogus('x') }
+      expect { TestSift.zzzbogus('x') }
         .to raise_error(NoMethodError)
     end
 
     it 'falls through to NoMethodError on assignment-style calls' do
-      expect { RSpecTracer.send(:totally_unknown=, 'x') }
+      expect { TestSift.send(:totally_unknown=, 'x') }
         .to raise_error(NoMethodError)
     end
   end
@@ -66,7 +66,7 @@ RSpec.describe RSpecTracer::Configuration do
     end
 
     context 'when configured' do
-      let(:root) { '/tmp/rspec_tracer/root' }
+      let(:root) { '/tmp/testsift/root' }
 
       before { config.root(root) }
 
@@ -89,7 +89,7 @@ RSpec.describe RSpecTracer::Configuration do
       before { stub_const('ENV', ENV.to_hash.merge('TEST_SUITE_ID' => nil)) }
 
       it 'returns cache path without suite id' do
-        expect(config.cache_path).to eq("#{Dir.getwd}/rspec_tracer_cache")
+        expect(config.cache_path).to eq("#{Dir.getwd}/testsift_cache")
       end
     end
 
@@ -99,7 +99,7 @@ RSpec.describe RSpecTracer::Configuration do
       before { stub_const('ENV', ENV.to_hash.merge('TEST_SUITE_ID' => suite_id)) }
 
       it 'returns cache path with suite id' do
-        expect(config.cache_path).to eq("#{Dir.getwd}/rspec_tracer_cache/#{suite_id}")
+        expect(config.cache_path).to eq("#{Dir.getwd}/testsift_cache/#{suite_id}")
       end
     end
   end
@@ -109,7 +109,7 @@ RSpec.describe RSpecTracer::Configuration do
       before { stub_const('ENV', ENV.to_hash.merge('TEST_SUITE_ID' => nil)) }
 
       it 'returns coverage path without suite id' do
-        expect(config.coverage_path).to eq("#{Dir.getwd}/rspec_tracer_coverage")
+        expect(config.coverage_path).to eq("#{Dir.getwd}/testsift_coverage")
       end
     end
 
@@ -119,7 +119,7 @@ RSpec.describe RSpecTracer::Configuration do
       before { stub_const('ENV', ENV.to_hash.merge('TEST_SUITE_ID' => suite_id)) }
 
       it 'returns coverage path with suite id' do
-        expect(config.coverage_path).to eq("#{Dir.getwd}/rspec_tracer_coverage/#{suite_id}")
+        expect(config.coverage_path).to eq("#{Dir.getwd}/testsift_coverage/#{suite_id}")
       end
     end
   end
@@ -226,7 +226,7 @@ RSpec.describe RSpecTracer::Configuration do
       config.freeze_declared_globs!
 
       expect { config.track_files('b.rb') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /cannot be called/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /cannot be called/)
     end
 
     it 'keeps previously-declared globs readable after freezing' do
@@ -241,7 +241,7 @@ RSpec.describe RSpecTracer::Configuration do
       config.freeze_declared_globs!
 
       expect { config.track_env('OTHER') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /cannot be called/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /cannot be called/)
     end
 
     it 'keeps previously-declared env names readable after freezing' do
@@ -321,18 +321,18 @@ RSpec.describe RSpecTracer::Configuration do
   end
 
   describe '#track_rails_defaults' do
-    before { require 'rspec_tracer/rails/preset' }
+    before { require 'testsift/rails/preset' }
 
     it 'accumulates the full Rails preset glob set into declared_globs' do
       config.track_rails_defaults
 
-      expect(config.declared_globs).to include(*RSpecTracer::Rails::Preset.globs)
+      expect(config.declared_globs).to include(*TestSift::Rails::Preset.globs)
     end
 
     it 'honors the except: kwarg to skip a category' do
       config.track_rails_defaults(except: [:views])
 
-      RSpecTracer::Rails::Preset::DEFAULTS[:views].each do |view_glob|
+      TestSift::Rails::Preset::DEFAULTS[:views].each do |view_glob|
         expect(config.declared_globs).not_to include(view_glob)
       end
     end
@@ -340,12 +340,12 @@ RSpec.describe RSpecTracer::Configuration do
     it 'keeps non-excluded categories when except: is used' do
       config.track_rails_defaults(except: [:views])
 
-      expect(config.declared_globs).to include(*RSpecTracer::Rails::Preset::DEFAULTS[:locales])
+      expect(config.declared_globs).to include(*TestSift::Rails::Preset::DEFAULTS[:locales])
     end
 
     it 'raises for an unknown except: key' do
       expect { config.track_rails_defaults(except: [:bogus]) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown track_rails_defaults/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown track_rails_defaults/)
     end
 
     it 'is idempotent across repeat calls (de-duplicated via declared_globs)' do
@@ -361,7 +361,7 @@ RSpec.describe RSpecTracer::Configuration do
       config.track_files('custom/**/*.rb')
       config.track_rails_defaults
 
-      expect(config.declared_globs).to include('custom/**/*.rb', *RSpecTracer::Rails::Preset.globs)
+      expect(config.declared_globs).to include('custom/**/*.rb', *TestSift::Rails::Preset.globs)
     end
   end
 
@@ -378,20 +378,20 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'raises InvalidUsageError for an unknown backend name' do
       expect { config.storage_backend(:bogus) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown storage backend/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown storage backend/)
     end
 
-    it 'honors RSPEC_TRACER_STORAGE over the argument' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_STORAGE' => 'json'))
+    it 'honors TESTSIFT_STORAGE over the argument' do
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_STORAGE' => 'json'))
 
       expect(config.storage_backend(:json)).to eq(:json)
     end
 
     it 'still rejects an unknown backend when set via ENV' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_STORAGE' => 'bogus'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_STORAGE' => 'bogus'))
 
       expect { config.storage_backend }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown storage backend/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown storage backend/)
     end
 
     it 'memoizes the resolved name across no-arg calls' do
@@ -429,21 +429,21 @@ RSpec.describe RSpecTracer::Configuration do
 
       it 'rejects an unknown opt key' do
         expect { config.storage_backend(:json, foo: :bar) }
-          .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown storage_backend options/)
+          .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown storage_backend options/)
       end
 
       it 'rejects an unknown serializer' do
         expect { config.storage_backend(:json, serializer: :toml) }
-          .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown storage serializer/)
+          .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown storage serializer/)
       end
 
       it 'rejects any opts for the :sqlite backend' do
         expect { config.storage_backend(:sqlite, serializer: :msgpack) }
-          .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /sqlite does not accept options/)
+          .to raise_error(TestSift::Configuration::InvalidUsageError, /sqlite does not accept options/)
       end
 
-      it 'honors RSPEC_TRACER_STORAGE_SERIALIZER over the opt' do
-        stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_STORAGE_SERIALIZER' => 'msgpack'))
+      it 'honors TESTSIFT_STORAGE_SERIALIZER over the opt' do
+        stub_const('ENV', ENV.to_hash.merge('TESTSIFT_STORAGE_SERIALIZER' => 'msgpack'))
         config.storage_backend(:json, serializer: :json)
 
         expect(config.storage_backend_opts).to eq(serializer: :msgpack)
@@ -501,12 +501,12 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'raises InvalidUsageError for an unknown mode' do
       expect { config.coverage_modes(%i[lines bogus]) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown coverage modes/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown coverage modes/)
     end
 
     it 'raises InvalidUsageError on an empty array' do
       expect { config.coverage_modes([]) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /at least one mode/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /at least one mode/)
     end
   end
 
@@ -628,14 +628,14 @@ RSpec.describe RSpecTracer::Configuration do
       expect(config.transitive_load_tracking).to be(false)
     end
 
-    it 'honors RSPEC_TRACER_TRANSITIVE_LOAD_TRACKING=false over the DSL' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_TRANSITIVE_LOAD_TRACKING' => 'false'))
+    it 'honors TESTSIFT_TRANSITIVE_LOAD_TRACKING=false over the DSL' do
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_TRANSITIVE_LOAD_TRACKING' => 'false'))
 
       expect(config.transitive_load_tracking(true)).to be(false)
     end
 
     it 'treats any non-"false" ENV value as true (default-true semantics)' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_TRANSITIVE_LOAD_TRACKING' => 'true'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_TRANSITIVE_LOAD_TRACKING' => 'true'))
 
       expect(config.transitive_load_tracking(false)).to be(true)
     end
@@ -686,23 +686,23 @@ RSpec.describe RSpecTracer::Configuration do
       expect(config.track_ar_schema_notifications?).to be(false)
     end
 
-    it 'honors RSPEC_TRACER_AR_SCHEMA_NOTIFICATIONS=true over the DSL' do
+    it 'honors TESTSIFT_AR_SCHEMA_NOTIFICATIONS=true over the DSL' do
       config.track_ar_schema_notifications(false)
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_AR_SCHEMA_NOTIFICATIONS' => 'true'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_AR_SCHEMA_NOTIFICATIONS' => 'true'))
 
       expect(config.track_ar_schema_notifications?).to be(true)
     end
 
     it 'treats any non-"true" ENV value as false' do
       config.track_ar_schema_notifications(true)
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_AR_SCHEMA_NOTIFICATIONS' => '1'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_AR_SCHEMA_NOTIFICATIONS' => '1'))
 
       expect(config.track_ar_schema_notifications?).to be(false)
     end
   end
 
   describe '#add_reporter / #reporters' do
-    before { require 'rspec_tracer/reporters/registry' }
+    before { require 'testsift/reporters/registry' }
 
     it 'returns nil for reporters when never configured' do
       expect(config.reporters).to be_nil
@@ -729,12 +729,12 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'raises InvalidUsageError on an unknown symbol' do
       expect { config.add_reporter(:bogus) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown reporter/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown reporter/)
     end
 
     it 'raises InvalidUsageError on a non-Symbol / non-Class argument' do
       expect { config.add_reporter(42) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /expected Symbol or Class/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /expected Symbol or Class/)
     end
 
     it 'accepts a Class value (custom reporter)' do
@@ -752,16 +752,16 @@ RSpec.describe RSpecTracer::Configuration do
     end
 
     it 'tolerates reporter validation when Registry is not loaded (fallback to no allowed)' do
-      hide_const('RSpecTracer::Reporters::Registry')
+      hide_const('TestSift::Reporters::Registry')
 
       expect { config.add_reporter(:terminal) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unknown reporter/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /unknown reporter/)
     end
   end
 
   describe '#add_filter' do
     # Uses the isolated `config` instance (Class.new { include Configuration })
-    # rather than the global RSpecTracer constant so a registered filter
+    # rather than the global TestSift constant so a registered filter
     # does not leak into the production at-exit processing that fires
     # after this suite completes.
 
@@ -805,18 +805,18 @@ RSpec.describe RSpecTracer::Configuration do
     it 'raises when called a second time' do
       config.remote_cache_backend(:s3, bucket: 'b', prefix: 'p')
       expect { config.remote_cache_backend(:s3, bucket: 'other') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /already configured.*alternative DSLs/m)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /already configured.*alternative DSLs/m)
     end
 
     it 'raises with alternative-DSL guidance when remote_cache_uri was called first' do
       config.remote_cache_uri('file:///tmp/cache')
       expect { config.remote_cache_backend(:local_fs, root: '/tmp/cache') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /alternative DSLs/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /alternative DSLs/)
     end
 
     it 'rejects invalid name types' do
       expect { config.remote_cache_backend('not-symbol-or-class') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /Symbol or Class/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /Symbol or Class/)
     end
 
     it 'returns nil from the reader when never set' do
@@ -832,8 +832,8 @@ RSpec.describe RSpecTracer::Configuration do
         .to eq([:s3, { bucket: 'my-bucket', prefix: 'my/prefix' }])
     end
 
-    it 'reads RSPEC_TRACER_REMOTE_CACHE_URI when no arg is given' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_REMOTE_CACHE_URI' => 's3://env-bucket/env-prefix'))
+    it 'reads TESTSIFT_REMOTE_CACHE_URI when no arg is given' do
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_REMOTE_CACHE_URI' => 's3://env-bucket/env-prefix'))
       config.remote_cache_uri
 
       expect(config.remote_cache_backend_entry)
@@ -842,23 +842,23 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'rejects unsupported schemes' do
       expect { config.remote_cache_uri('ftp://bucket/x') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /unsupported.*scheme/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /unsupported.*scheme/)
     end
 
     it 'rejects URIs without a host' do
       expect { config.remote_cache_uri('s3://') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /invalid remote_cache_uri/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /invalid remote_cache_uri/)
     end
 
     it 'rejects malformed URIs' do
       expect { config.remote_cache_uri('this-is-not-a-uri ${whatever}') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /invalid remote_cache_uri/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /invalid remote_cache_uri/)
     end
 
     it 'raises with alternative-DSL guidance when remote_cache_backend was called first' do
       config.remote_cache_backend(:local_fs, root: '/tmp/cache')
       expect { config.remote_cache_uri('file:///tmp/cache') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /alternative DSLs/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /alternative DSLs/)
     end
   end
 
@@ -871,19 +871,19 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'rejects zero' do
       expect { config.cache_retention_count(0) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /positive integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /positive integer/)
     end
 
     it 'rejects non-integers' do
       expect { config.cache_retention_count('100') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /positive integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /positive integer/)
     end
 
     it 'raises when cache_retention_duration is already set' do
       config.cache_retention_duration('30 days')
 
       expect { config.cache_retention_count(100) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /mutually exclusive/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /mutually exclusive/)
     end
 
     it 'returns nil when not set' do
@@ -930,29 +930,29 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'rejects malformed strings' do
       expect { config.cache_retention_duration('forever') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /invalid retention duration/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /invalid retention duration/)
     end
 
     it 'rejects negative integers' do
       expect { config.cache_retention_duration(-1) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /positive/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /positive/)
     end
 
     it 'rejects zero' do
       expect { config.cache_retention_duration('0 days') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /positive/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /positive/)
     end
 
     it 'rejects unsupported input types' do
       expect { config.cache_retention_duration(3.14) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /invalid retention duration/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /invalid retention duration/)
     end
 
     it 'raises when cache_retention_count is already set' do
       config.cache_retention_count(100)
 
       expect { config.cache_retention_duration('30 days') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /mutually exclusive/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /mutually exclusive/)
     end
 
     it 'returns nil from the seconds reader when never set' do
@@ -981,7 +981,7 @@ RSpec.describe RSpecTracer::Configuration do
   describe '#cache_retention_local_count' do
     it 'defaults to DEFAULT_CACHE_RETENTION_LOCAL_COUNT when never set' do
       expect(config.cache_retention_local_count)
-        .to eq(RSpecTracer::Configuration::DEFAULT_CACHE_RETENTION_LOCAL_COUNT)
+        .to eq(TestSift::Configuration::DEFAULT_CACHE_RETENTION_LOCAL_COUNT)
     end
 
     it 'stores a non-negative integer' do
@@ -996,30 +996,30 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'rejects negative integers' do
       expect { config.cache_retention_local_count(-1) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /non-negative integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /non-negative integer/)
     end
 
     it 'rejects non-integers' do
       expect { config.cache_retention_local_count('5') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /non-negative integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /non-negative integer/)
     end
 
-    it 'honors RSPEC_TRACER_CACHE_RETENTION_LOCAL_COUNT ENV override' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_CACHE_RETENTION_LOCAL_COUNT' => '2'))
+    it 'honors TESTSIFT_CACHE_RETENTION_LOCAL_COUNT ENV override' do
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_CACHE_RETENTION_LOCAL_COUNT' => '2'))
       expect(config.cache_retention_local_count(99)).to eq(2)
     end
 
     it 'rejects a non-numeric ENV override' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_CACHE_RETENTION_LOCAL_COUNT' => 'oops'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_CACHE_RETENTION_LOCAL_COUNT' => 'oops'))
       expect { config.cache_retention_local_count }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /non-negative integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /non-negative integer/)
     end
   end
 
   describe '#cache_size_warn_per_file_mb' do
     it 'defaults to DEFAULT_CACHE_SIZE_WARN_PER_FILE_MB when never set' do
       expect(config.cache_size_warn_per_file_mb)
-        .to eq(RSpecTracer::Configuration::DEFAULT_CACHE_SIZE_WARN_PER_FILE_MB)
+        .to eq(TestSift::Configuration::DEFAULT_CACHE_SIZE_WARN_PER_FILE_MB)
     end
 
     it 'stores a non-negative integer' do
@@ -1034,16 +1034,16 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'rejects negative integers' do
       expect { config.cache_size_warn_per_file_mb(-1) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /non-negative integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /non-negative integer/)
     end
 
     it 'rejects non-integers' do
       expect { config.cache_size_warn_per_file_mb('25') }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /non-negative integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /non-negative integer/)
     end
 
     it 'honors the ENV override' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_CACHE_SIZE_WARN_PER_FILE_MB' => '10'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_CACHE_SIZE_WARN_PER_FILE_MB' => '10'))
       expect(config.cache_size_warn_per_file_mb).to eq(10)
     end
   end
@@ -1051,7 +1051,7 @@ RSpec.describe RSpecTracer::Configuration do
   describe '#cache_size_warn_total_mb' do
     it 'defaults to DEFAULT_CACHE_SIZE_WARN_TOTAL_MB when never set' do
       expect(config.cache_size_warn_total_mb)
-        .to eq(RSpecTracer::Configuration::DEFAULT_CACHE_SIZE_WARN_TOTAL_MB)
+        .to eq(TestSift::Configuration::DEFAULT_CACHE_SIZE_WARN_TOTAL_MB)
     end
 
     it 'stores a non-negative integer' do
@@ -1066,11 +1066,11 @@ RSpec.describe RSpecTracer::Configuration do
 
     it 'rejects negative integers' do
       expect { config.cache_size_warn_total_mb(-1) }
-        .to raise_error(RSpecTracer::Configuration::InvalidUsageError, /non-negative integer/)
+        .to raise_error(TestSift::Configuration::InvalidUsageError, /non-negative integer/)
     end
 
     it 'honors the ENV override' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_CACHE_SIZE_WARN_TOTAL_MB' => '750'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_CACHE_SIZE_WARN_TOTAL_MB' => '750'))
       expect(config.cache_size_warn_total_mb).to eq(750)
     end
   end
@@ -1095,7 +1095,7 @@ RSpec.describe RSpecTracer::Configuration do
 
   describe '#reports_s3_path_set? (probe-path predicate)' do
     it 'returns false when neither the DSL nor the env var is set' do
-      stub_const('ENV', ENV.to_hash.except('RSPEC_TRACER_REPORTS_S3_PATH'))
+      stub_const('ENV', ENV.to_hash.except('TESTSIFT_REPORTS_S3_PATH'))
 
       expect(config.reports_s3_path_set?).to be(false)
     end
@@ -1108,13 +1108,13 @@ RSpec.describe RSpecTracer::Configuration do
     end
 
     it 'returns true when only the env var is set (no DSL call yet)' do
-      stub_const('ENV', ENV.to_hash.merge('RSPEC_TRACER_REPORTS_S3_PATH' => 's3://env-bucket/env-prefix'))
+      stub_const('ENV', ENV.to_hash.merge('TESTSIFT_REPORTS_S3_PATH' => 's3://env-bucket/env-prefix'))
 
       expect(config.reports_s3_path_set?).to be(true)
     end
 
     it 'does not emit a deprecation warning when probed' do
-      stub_const('ENV', ENV.to_hash.except('RSPEC_TRACER_REPORTS_S3_PATH'))
+      stub_const('ENV', ENV.to_hash.except('TESTSIFT_REPORTS_S3_PATH'))
       allow(config.logger).to receive(:warn)
 
       config.reports_s3_path_set?

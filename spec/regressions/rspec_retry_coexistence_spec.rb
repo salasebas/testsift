@@ -1,10 +1,10 @@
 # frozen_string_literal: true
 
-# Coexistence smoke spec for rspec-retry + rspec-tracer.
+# Coexistence smoke spec for rspec-retry + testsift.
 #
 # rspec-retry (https://github.com/NoRedInk/rspec-retry) wraps
 # RSpec::Core::Example via Module#prepend to retry failing examples up
-# to N times. rspec-tracer's hook chain prepends
+# to N times. testsift's hook chain prepends
 # RSpec::Core::Runner (RunnerHook) and RSpec::Core::Reporter
 # (ReporterHook) - DIFFERENT MRO points than rspec-retry's prepend on
 # Example. The two extensions should compose without conflict.
@@ -12,12 +12,12 @@
 # This spec verifies the smoke contract:
 #   1. Both gems load alongside each other without raising at boot.
 #   2. A passing example with `retry: N` metadata runs to completion.
-#   3. The rspec-tracer cache writes successfully (run_id manifest +
+#   3. The testsift cache writes successfully (run_id manifest +
 #      all_examples.json present after the run).
 #
 # Drives a subprocess inside `Bundler.with_unbundled_env` + a tmpdir
 # CWD so the inline test spec doesn't pollute the project's
-# rspec_tracer_cache + the outer rspec process never loads
+# testsift_cache + the outer rspec process never loads
 # rspec-retry's Module#prepend (which would otherwise affect every
 # subsequent in-process spec). The outer Gemfile carries rspec-retry
 # in the :development group (require: false default) so the
@@ -41,8 +41,8 @@ RSpec.describe 'rspec-retry coexistence (smoke)' do
 
   let(:inline_spec_body) do
     <<~RUBY
-      require "rspec_tracer"
-      RSpecTracer.start
+      require "testsift"
+      TestSift.start
 
       require "rspec/retry"
 
@@ -51,7 +51,7 @@ RSpec.describe 'rspec-retry coexistence (smoke)' do
         config.display_try_failure_messages = false
       end
 
-      RSpec.describe "rspec-retry composes with rspec-tracer" do
+      RSpec.describe "rspec-retry composes with testsift" do
         it "passes on first try with retry metadata", retry: 2 do
           expect(true).to be(true)
         end
@@ -70,7 +70,7 @@ RSpec.describe 'rspec-retry coexistence (smoke)' do
 
       out, status = Bundler.with_unbundled_env do
         env = {
-          'RSPEC_TRACER' => '1',
+          'TESTSIFT' => '1',
           'BUNDLE_GEMFILE' => gemfile_path
         }
         Open3.capture2e(env, 'bundle', 'exec', 'rspec', '--no-color', spec_path,
@@ -79,10 +79,10 @@ RSpec.describe 'rspec-retry coexistence (smoke)' do
 
       expect(status.success?).to(be(true), "rspec-retry coexistence subprocess failed:\n#{out}")
 
-      cache_dir = File.join(dir, 'rspec_tracer_cache')
+      cache_dir = File.join(dir, 'testsift_cache')
       manifest_path = File.join(cache_dir, 'last_run.json')
       expect(File).to(exist(manifest_path),
-                      "expected rspec-tracer cache manifest at #{manifest_path}; got dir contents: " \
+                      "expected testsift cache manifest at #{manifest_path}; got dir contents: " \
                       "#{Dir.exist?(cache_dir) ? Dir.children(cache_dir).inspect : '(no cache dir)'}")
 
       manifest = JSON.parse(File.read(manifest_path))

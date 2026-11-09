@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/tracker/env_matcher'
+require 'testsift/tracker/env_matcher'
 
-RSpec.describe RSpecTracer::Tracker::EnvMatcher do
+RSpec.describe TestSift::Tracker::EnvMatcher do
   describe '.wildcard?' do
     it 'is true for a trailing-wildcard pattern' do
       expect(described_class.wildcard?('RAILS_*')).to be(true)
@@ -98,10 +98,10 @@ RSpec.describe RSpecTracer::Tracker::EnvMatcher do
     end
 
     it 'defaults env: to ::ENV when no kwarg is given' do
-      stub_const('ENV', { 'RSPEC_TRACER_ENV_MATCHER_PROBE' => 'on' })
+      stub_const('ENV', { 'TESTSIFT_ENV_MATCHER_PROBE' => 'on' })
 
-      expect(described_class.expand(['RSPEC_TRACER_ENV_*']))
-        .to eq(['RSPEC_TRACER_ENV_MATCHER_PROBE'])
+      expect(described_class.expand(['TESTSIFT_ENV_*']))
+        .to eq(['TESTSIFT_ENV_MATCHER_PROBE'])
     end
 
     it 'raises ArgumentError on a multi-wildcard pattern' do

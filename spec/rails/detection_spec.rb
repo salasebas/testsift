@@ -1,21 +1,21 @@
 # frozen_string_literal: true
 
-# Loading the preset defines `RSpecTracer::Rails`, which is the module
+# Loading the preset defines `TestSift::Rails`, which is the module
 # under test. The `rails.rb` entry-point require exercises the same load
 # path but via the `load` helper inside individual examples.
-require 'rspec_tracer/rails/preset'
+require 'testsift/rails/preset'
 
-RSpec.describe RSpecTracer::Rails do
-  let(:entry_path) { File.expand_path('../../lib/rspec_tracer/rails.rb', __dir__) }
+RSpec.describe TestSift::Rails do
+  let(:entry_path) { File.expand_path('../../lib/testsift/rails.rb', __dir__) }
 
-  describe 'requiring rspec_tracer/rails' do
+  describe 'requiring testsift/rails' do
     it 'loads without raising when Rails is absent' do
       hide_const('Rails') if defined?(Rails)
 
       expect { load entry_path }.not_to raise_error
     end
 
-    it 'defines RSpecTracer::Rails::Preset regardless of Rails presence' do
+    it 'defines TestSift::Rails::Preset regardless of Rails presence' do
       load entry_path
 
       expect(described_class.const_defined?(:Preset)).to be(true)
@@ -33,17 +33,17 @@ RSpec.describe RSpecTracer::Rails do
     end
   end
 
-  describe 'RSpecTracer.rails?' do
+  describe 'TestSift.rails?' do
     around do |example|
-      had_var = RSpecTracer.instance_variable_defined?(:@rails)
-      original = RSpecTracer.instance_variable_get(:@rails) if had_var
+      had_var = TestSift.instance_variable_defined?(:@rails)
+      original = TestSift.instance_variable_get(:@rails) if had_var
 
       example.run
     ensure
       if had_var
-        RSpecTracer.instance_variable_set(:@rails, original)
-      elsif RSpecTracer.instance_variable_defined?(:@rails)
-        RSpecTracer.remove_instance_variable(:@rails)
+        TestSift.instance_variable_set(:@rails, original)
+      elsif TestSift.instance_variable_defined?(:@rails)
+        TestSift.remove_instance_variable(:@rails)
       end
     end
 
@@ -51,43 +51,43 @@ RSpec.describe RSpecTracer::Rails do
     # short-circuits on `defined?(@rails)` and returns nil before the
     # flag has been computed. Callers branch on truthiness.
     it 'is falsy when @rails has never been set' do
-      RSpecTracer.remove_instance_variable(:@rails) if RSpecTracer.instance_variable_defined?(:@rails)
+      TestSift.remove_instance_variable(:@rails) if TestSift.instance_variable_defined?(:@rails)
 
-      expect(RSpecTracer).not_to be_rails
+      expect(TestSift).not_to be_rails
     end
 
     it 'is false when Rails is not defined at detection time' do
       hide_const('Rails') if defined?(Rails)
 
-      RSpecTracer.send(:setup_rails)
+      TestSift.send(:setup_rails)
 
-      expect(RSpecTracer.rails?).to be(false)
+      expect(TestSift.rails?).to be(false)
     end
 
     it 'is true when Rails::VERSION is defined at detection time' do
       stub_const('Rails', Module.new)
       stub_const('Rails::VERSION', '7.1.0')
 
-      RSpecTracer.send(:setup_rails)
+      TestSift.send(:setup_rails)
 
-      expect(RSpecTracer).to be_rails
+      expect(TestSift).to be_rails
     end
 
     it 'is false when Rails is present but Rails::VERSION is nil' do
       stub_const('Rails', Module.new)
       stub_const('Rails::VERSION', nil)
 
-      RSpecTracer.send(:setup_rails)
+      TestSift.send(:setup_rails)
 
-      expect(RSpecTracer.rails?).to be(false)
+      expect(TestSift.rails?).to be(false)
     end
 
     it 'memoizes the flag across multiple reads (no re-detection)' do
       stub_const('Rails', Module.new)
       stub_const('Rails::VERSION', '7.1.0')
-      RSpecTracer.send(:setup_rails)
+      TestSift.send(:setup_rails)
       hide_const('Rails')
-      expect(RSpecTracer.rails?).to be(true)
+      expect(TestSift.rails?).to be(true)
     end
   end
 end

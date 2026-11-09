@@ -12,7 +12,7 @@
 # is a failure mode worth investigating.
 #
 # Replaces an earlier `cache_loader_fuzz.rb` which targeted
-# `RSpecTracer::Cache#load_all_examples_cache` (retired with the
+# `TestSift::Cache#load_all_examples_cache` (retired with the
 # legacy reporter stack).
 #
 # Usage:
@@ -28,8 +28,8 @@ require 'json'
 require 'tmpdir'
 
 $LOAD_PATH.unshift File.expand_path('../../lib', __dir__)
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/schema'
 
 iterations = Integer(ENV.fetch('ITERATIONS', '100'))
 seed       = Integer(ENV.fetch('SEED', Random.new_seed.to_s))
@@ -44,11 +44,11 @@ puts "json_backend_fuzz iterations=#{iterations} seed=#{seed} max_bytes=#{max_by
 # Universe of target files - the manifest plus every per-run file the
 # backend attempts to read. Each iteration picks one at random, writes
 # garbage, and calls load_graph.
-FILENAMES = RSpecTracer::Storage::JsonBackend::FILENAMES
-MANIFEST  = RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME
+FILENAMES = TestSift::Storage::JsonBackend::FILENAMES
+MANIFEST  = TestSift::Storage::JsonBackend::LAST_RUN_FILENAME
 
-Dir.mktmpdir('rspec_tracer_fuzz_') do |cache_path|
-  backend = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path)
+Dir.mktmpdir('testsift_fuzz_') do |cache_path|
+  backend = TestSift::Storage::JsonBackend.new(cache_path: cache_path)
   run_id = 'fuzzrun'
   run_dir = File.join(cache_path, run_id)
   FileUtils.mkdir_p(run_dir)
@@ -56,7 +56,7 @@ Dir.mktmpdir('rspec_tracer_fuzz_') do |cache_path|
   # Reasonable-manifest baseline; iterations either corrupt it or
   # corrupt one of the per-run JSON files under run_dir.
   manifest = {
-    'schema_version' => RSpecTracer::Storage::Schema::CURRENT,
+    'schema_version' => TestSift::Storage::Schema::CURRENT,
     'run_id' => run_id, 'timestamp' => Time.now.utc.iso8601
   }
   File.write(File.join(cache_path, MANIFEST), JSON.pretty_generate(manifest))
@@ -79,7 +79,7 @@ Dir.mktmpdir('rspec_tracer_fuzz_') do |cache_path|
     File.binwrite(target, rng.bytes(length))
 
     begin
-      result = backend.load_graph(schema_version: RSpecTracer::Storage::Schema::CURRENT)
+      result = backend.load_graph(schema_version: TestSift::Storage::Schema::CURRENT)
       outcomes[result.nil? ? :nil : :snapshot] += 1
     rescue SystemExit, Interrupt
       raise

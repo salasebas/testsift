@@ -2,7 +2,7 @@
 
 require 'fileutils'
 require 'tmpdir'
-require 'rspec_tracer/tracker/io_hooks'
+require 'testsift/tracker/io_hooks'
 require 'rantly/rspec_extensions'
 
 # Generator lives at module scope so `property_of` (which evaluates
@@ -21,7 +21,7 @@ end
 # only its own reads, even though the hook ancestry chain is shared.
 #
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Tracker::IOHooks do
+RSpec.describe TestSift::Tracker::IOHooks do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
 

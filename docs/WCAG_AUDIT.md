@@ -1,7 +1,7 @@
 # Accessibility audit — HTML reporter
 
-This doc records the accessibility-audit baseline for rspec-tracer's
-HTML reporter (`rspec_tracer_report/index.html`). Re-run the audit
+This doc records the accessibility-audit baseline for TestSift's
+HTML reporter (`testsift_report/index.html`). Re-run the audit
 on any PR that materially changes the HTML reporter's markup or
 styling.
 
@@ -20,9 +20,9 @@ checking.
 **Result:** **0 violations**.
 
 Pages audited:
-- `rspec_tracer_report/index.html` (single-page HTML report; the
+- `testsift_report/index.html` (single-page HTML report; the
   reporter ships as one self-contained page with assets bundled
-  under `rspec_tracer_report/assets/`).
+  under `testsift_report/assets/`).
 
 ## How to re-run
 
@@ -33,7 +33,7 @@ task docs:wcag
 (or directly:)
 
 ```sh
-npx --yes @axe-core/cli "file://$(pwd)/rspec_tracer_report/index.html" \
+npx --yes @axe-core/cli "file://$(pwd)/testsift_report/index.html" \
   --tags wcag2aa,wcag21aa \
   --timeout 240
 ```
@@ -43,7 +43,7 @@ fixture-driving integration specs first:
 
 ```sh
 task test:features:rails              # generates fixture report
-ls spec/fixtures/rails_app/rspec_tracer_report/index.html
+ls spec/fixtures/rails_app/testsift_report/index.html
 ```
 
 Then point axe at the path above instead.

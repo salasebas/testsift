@@ -10,11 +10,11 @@ require 'tmpdir'
 # Real-user-shape integration coverage for the duplicate-example
 # detection contract. Two surfaces drive the same engine path:
 #
-#   1. DSL path - `.rspec-tracer` calls `fail_on_duplicates true`.
-#   2. ENV path - `RSPEC_TRACER_FAIL_ON_DUPLICATES=true` overrides
+#   1. DSL path - `.testsift` calls `fail_on_duplicates true`.
+#   2. ENV path - `TESTSIFT_FAIL_ON_DUPLICATES=true` overrides
 #      the DSL value at config-load time.
 #
-# Behavioral contract (rspec-tracer drops the colliding examples but
+# Behavioral contract (testsift drops the colliding examples but
 # still runs the rest of the suite - issue #210):
 #   - duplicates detected, fail_on_duplicates=true:
 #       the colliding examples are dropped, the non-duplicate
@@ -26,7 +26,7 @@ require 'tmpdir'
 #       same prune, but the run exits 0 and the cache (including
 #       duplicate_examples.json + the non-duplicate examples) IS
 #       written.
-#   In both cases the rspec-tracer banner reports the surviving
+#   In both cases the testsift banner reports the surviving
 #   example count - the suite is NOT aborted to zero examples.
 #
 # Assertion shape: the load-bearing checks are the exit code, the
@@ -36,8 +36,8 @@ require 'tmpdir'
 # Fixture: a parameterized `.each` loop wrapping a single `it` block
 # produces N examples that share example_group + description +
 # full_description + shared_group + file_name - which is exactly the
-# tuple `RSpecTracer::Example.from` MD5-hashes into example_id. So
-# the two iterations collide on rspec-tracer's identity hash even
+# tuple `TestSift::Example.from` MD5-hashes into example_id. So
+# the two iterations collide on testsift's identity hash even
 # though RSpec itself treats them as distinct examples.
 #
 # The two baselines cover both suite shapes the drop path must
@@ -83,15 +83,15 @@ RSpec.describe 'fail_on_duplicates real-user-shape integration' do
   end
 
   def write_fixture(dir, dsl_body:)
-    File.write(File.join(dir, '.rspec-tracer'), <<~RUBY)
+    File.write(File.join(dir, '.testsift'), <<~RUBY)
       # frozen_string_literal: true
-      RSpecTracer.configure do
+      TestSift.configure do
         #{dsl_body}
       end
     RUBY
     File.write(File.join(dir, 'spec_helper.rb'), <<~RUBY)
-      require 'rspec_tracer'
-      RSpecTracer.start
+      require 'testsift'
+      TestSift.start
     RUBY
     File.write(File.join(dir, 'duplicates_spec.rb'), <<~RUBY)
       require_relative 'spec_helper'
@@ -108,7 +108,7 @@ RSpec.describe 'fail_on_duplicates real-user-shape integration' do
       }.merge(env_overrides)
       out, status = Open3.capture2e(env, 'bundle', 'exec', 'rspec', '--no-color',
                                     'duplicates_spec.rb', chdir: dir)
-      # rspec-tracer's run summary carries a non-ASCII '·'; force UTF-8
+      # testsift's run summary carries a non-ASCII '·'; force UTF-8
       # + scrub so callers can match against `out` regardless of the
       # parent process's default external encoding.
       [out.dup.force_encoding('UTF-8').scrub, status]
@@ -116,14 +116,14 @@ RSpec.describe 'fail_on_duplicates real-user-shape integration' do
   end
 
   def read_duplicate_examples(dir)
-    cache_dir = File.join(dir, 'rspec_tracer_cache')
+    cache_dir = File.join(dir, 'testsift_cache')
     manifest = JSON.parse(File.read(File.join(cache_dir, 'last_run.json'), encoding: 'UTF-8'))
     run_id = manifest.fetch('run_id')
     JSON.parse(File.read(File.join(cache_dir, run_id, 'duplicate_examples.json'), encoding: 'UTF-8'))
   end
 
   def read_all_examples(dir)
-    cache_dir = File.join(dir, 'rspec_tracer_cache')
+    cache_dir = File.join(dir, 'testsift_cache')
     manifest = JSON.parse(File.read(File.join(cache_dir, 'last_run.json'), encoding: 'UTF-8'))
     run_id = manifest.fetch('run_id')
     JSON.parse(File.read(File.join(cache_dir, run_id, 'all_examples.json'), encoding: 'UTF-8'))
@@ -170,12 +170,12 @@ RSpec.describe 'fail_on_duplicates real-user-shape integration' do
     end
   end
 
-  context 'when RSPEC_TRACER_FAIL_ON_DUPLICATES=true overrides a DSL false' do
+  context 'when TESTSIFT_FAIL_ON_DUPLICATES=true overrides a DSL false' do
     it 'env wins over DSL at config-load - exits non-zero despite fail_on_duplicates false' do
       Dir.mktmpdir do |dir|
         write_fixture(dir, dsl_body: "fail_on_duplicates false\n")
 
-        out, status = run_rspec(dir, env_overrides: { 'RSPEC_TRACER_FAIL_ON_DUPLICATES' => 'true' })
+        out, status = run_rspec(dir, env_overrides: { 'TESTSIFT_FAIL_ON_DUPLICATES' => 'true' })
 
         expect(status.success?).to(
           be(false),
@@ -187,12 +187,12 @@ RSpec.describe 'fail_on_duplicates real-user-shape integration' do
     end
   end
 
-  context 'when RSPEC_TRACER_FAIL_ON_DUPLICATES=false overrides a DSL true' do
+  context 'when TESTSIFT_FAIL_ON_DUPLICATES=false overrides a DSL true' do
     it 'env wins over DSL at config-load - exits zero despite fail_on_duplicates true' do
       Dir.mktmpdir do |dir|
         write_fixture(dir, dsl_body: "fail_on_duplicates true\n")
 
-        out, status = run_rspec(dir, env_overrides: { 'RSPEC_TRACER_FAIL_ON_DUPLICATES' => 'false' })
+        out, status = run_rspec(dir, env_overrides: { 'TESTSIFT_FAIL_ON_DUPLICATES' => 'false' })
 
         expect(status.success?).to(
           be(true),

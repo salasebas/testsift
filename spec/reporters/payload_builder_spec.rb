@@ -2,15 +2,15 @@
 
 require 'set'
 require 'time'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/reporters/payload_builder'
+require 'testsift/storage/snapshot'
+require 'testsift/reporters/payload_builder'
 
 # PayloadBuilder is the shared projection between JsonReporter and
 # HtmlReporter. The spec exercises every report shape + every defensive
 # branch; JsonReporter's spec now only covers its IO + delegation layer.
 # rubocop:disable Metrics/MethodLength, RSpec/ExampleLength
-RSpec.describe RSpecTracer::Reporters::PayloadBuilder do
-  let(:empty_snapshot) { RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
+RSpec.describe TestSift::Reporters::PayloadBuilder do
+  let(:empty_snapshot) { TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'empty') }
   let(:snapshot) { build_populated_snapshot }
   let(:run_metadata) do
     {
@@ -26,7 +26,7 @@ RSpec.describe RSpecTracer::Reporters::PayloadBuilder do
   def build_populated_snapshot
     started = Time.utc(2026, 4, 23, 12, 0, 0)
     finished = started + 0.012
-    RSpecTracer::Storage::Snapshot.empty(schema_version: 3, run_id: 'runabc').tap do |s|
+    TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'runabc').tap do |s|
       s.all_examples = {
         'ex1' => {
           full_description: 'User signs in',

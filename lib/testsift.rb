@@ -1,0 +1,335 @@
+# frozen_string_literal: true
+
+require 'English'
+
+require 'digest/md5'
+require 'docile'
+require 'fileutils'
+require 'forwardable'
+require 'json'
+require 'pathname'
+require 'set'
+
+require_relative 'testsift/defaults'
+require_relative 'testsift/engine'
+require_relative 'testsift/example'
+# Reporters must load before load_config so the Configuration DSL's
+# `add_reporter` can validate symbol names against
+# `Reporters::Registry::BUILT_INS` when a user `.testsift` calls
+# it at configure time.
+require_relative 'testsift/reporters/base'
+require_relative 'testsift/reporters/payload_builder'
+require_relative 'testsift/reporters/coverage_json_reporter'
+require_relative 'testsift/reporters/json_reporter'
+require_relative 'testsift/reporters/terminal_reporter'
+require_relative 'testsift/reporters/html_reporter'
+require_relative 'testsift/reporters/registry'
+require_relative 'testsift/load_config'
+# RemoteCache is loaded lazily from its Rakefile shim (user-driven),
+# not at gem-load time. The user-facing tasks `testsift:remote_cache:*`
+# pull in `lib/testsift/remote_cache.rb` when the user's Rakefile
+# loads the shim. Test-suite runs that never invoke a cache task pay
+# zero load cost for aws/git subshell code.
+require_relative 'testsift/rspec/installation'
+require_relative 'testsift/rspec/parallel_tests'
+require_relative 'testsift/rspec/rails_setup'
+require_relative 'testsift/source_file'
+require_relative 'testsift/time_formatter'
+require_relative 'testsift/version'
+
+# Top-level entry point. Drives the lifecycle:
+#
+#   TestSift.start
+#     -> RSpec::Installation.install!  (prepend RunnerHook + ReporterHook)
+#     -> setup_coverage                (::Coverage.start unless SimpleCov owns it)
+#     -> setup_rails                   (detect ::Rails::VERSION)
+#     -> Engine.new.setup              (observers + cache load + filter decisions)
+#
+#   at_exit_behavior (installed via `at_exit` elsewhere in the boot
+#   flow) runs the finalize stack: Engine#finalize writes the 13-file
+#   snapshot via Storage::JsonBackend, Reporters::CoverageJsonReporter
+#   writes coverage.json (single owner, replacing the 1.x
+#   CoverageReporter + CoverageWriter pair retired in 2.0),
+#   ParallelTests#finalize! merges per-worker caches on the last worker.
+module TestSift
+  class << self
+    # Internal attribute.
+    # @api private
+    attr_accessor :running, :pid, :no_examples, :duplicate_examples
+
+    # Boot the tracer. Idempotent — safe to call multiple times in a
+    # single process (subsequent calls return without re-installing
+    # hooks). Drives the lifecycle:
+    #
+    #   * Installs the RSpec runner / reporter prepend chain.
+    #   * Starts `::Coverage` unless SimpleCov already owns it.
+    #   * Detects Rails (memoized in `TestSift.rails?`).
+    #   * Builds the {TestSift::Engine} and installs observers.
+    #
+    # Must be called BEFORE any application code loads so the boot
+    # set captured by `Coverage.peek_result` is empty. With SimpleCov,
+    # call `SimpleCov.start` first; testsift warns at boot when
+    # SimpleCov is loaded but not started.
+    #
+    # @return [void]
+    def start
+      return if defined?(@started) && @started
+
+      TestSift.running = false
+      TestSift.pid = Process.pid
+      @run_started_at = ::Time.now.utc
+      @run_monotonic_start = ::Process.clock_gettime(::Process::CLOCK_MONOTONIC)
+      @started = true
+
+      TestSift.logger.debug "Started TestSift (pid: #{TestSift.pid})"
+
+      warn_on_simplecov_load_order_mistake
+
+      @parallel_tests = TestSift::RSpec::ParallelTests.active?
+      TestSift::RSpec::ParallelTests.setup! if parallel_tests?
+      initial_setup
+    end
+
+    # SimpleCov load-order is part of the documented contract -
+    # SimpleCov.start MUST run before TestSift.start when both are
+    # used together (see README §SimpleCov interop). When the user
+    # has SimpleCov loaded but not started, we'd silently call
+    # ::Coverage.start ourselves and SimpleCov's later setup would
+    # bolt onto a Coverage already in flight, with the user's
+    # add_filter calls applied after testsift started consuming
+    # data. Surface the load-order mistake at start time so the user
+    # gets a one-line warning instead of mysteriously-broken
+    # coverage output.
+    def warn_on_simplecov_load_order_mistake
+      return unless defined?(::SimpleCov)
+      return if ::SimpleCov.respond_to?(:running) && ::SimpleCov.running
+
+      TestSift.logger.warn(
+        'SimpleCov is loaded but not started. ' \
+        'Call SimpleCov.start before TestSift.start so the ' \
+        'tracer respects SimpleCov\'s filter chain. See README ' \
+        'section "Working with SimpleCov".'
+      )
+    end
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def at_exit_behavior
+      return unless TestSift.pid == Process.pid && TestSift.running
+
+      ::Kernel.exit(1) if duplicate_examples
+
+      run_exit_tasks
+    ensure
+      if TestSift::RSpec::ParallelTests.active? &&
+          TestSift::RSpec::ParallelTests.last_process?
+        TestSift::RSpec::ParallelTests.remove_lock_file!
+      end
+
+      TestSift.running = false
+    end
+
+    # The current {TestSift::Engine} instance, or nil if
+    # {.start} hasn't been called yet.
+    #
+    # @return [TestSift::Engine, nil]
+    def engine
+      @engine if defined?(@engine)
+    end
+
+    # True if SimpleCov was loaded AND running at the time
+    # {.start} was invoked. Determines whether testsift
+    # owns `::Coverage.start` itself (false) or defers to
+    # SimpleCov's coverage lifecycle (true).
+    #
+    # @return [Boolean]
+    def simplecov?
+      defined?(@simplecov) && @simplecov == true
+    end
+
+    # True if `parallel_tests` is in use (detected via
+    # `ParallelTests.active?` at {.start} time). Affects
+    # cache + report directory scoping (per-worker dirs)
+    # and finalize-time merging.
+    #
+    # @return [Boolean]
+    def parallel_tests?
+      defined?(@parallel_tests) && @parallel_tests == true
+    end
+
+    # True if Rails is loaded in this process (detected via
+    # `defined?(::Rails::VERSION)` at {.start} time). Memoized;
+    # subsequent Rails activations within the same run are not
+    # re-detected. Drives the auto-installation of Rails-side
+    # observers (template + AR notification subscribers).
+    #
+    # @return [Boolean]
+    def rails?
+      defined?(@rails) && @rails == true
+    end
+
+    private
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def initial_setup
+      TestSift::RSpec::Installation.install!
+
+      setup_coverage
+      setup_rails
+
+      @engine = TestSift::Engine.new(
+        configuration: TestSift,
+        read_cache_path: parallel_tests? ? File.dirname(TestSift.cache_path) : nil
+      )
+      @engine.setup
+      TestSift::RSpec::RailsSetup.install(engine: @engine, configuration: TestSift)
+    end
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def setup_coverage
+      @simplecov = defined?(SimpleCov) && SimpleCov.running
+
+      return if simplecov?
+
+      require 'coverage'
+
+      return if ::Coverage.respond_to?(:running?) && ::Coverage.running?
+
+      ::Coverage.start(**coverage_modes_for_start)
+    rescue RuntimeError
+      # ::Coverage.start raises if already started on some Rubies
+      # without a running? predicate; safe to ignore (matches
+      # Engine#ensure_coverage_started behavior).
+      nil
+    end
+
+    # Detects Rails by the presence of `::Rails::VERSION`. Users who
+    # require `testsift/rails` transitively load the Railtie (when
+    # Rails is also present); this method only sets the flag consumed
+    # by `TestSift.rails?`. Safe when Rails is absent - the
+    # `defined?` guard returns nil, flag stays false.
+    def setup_rails
+      @rails = defined?(::Rails::VERSION) && !::Rails::VERSION.nil?
+    end
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def run_exit_tasks
+      if TestSift.no_examples
+        TestSift.logger.info 'Skipped reports generation since all examples were filtered out'
+      else
+        snapshot = run_finalize
+        # Under parallel_tests, defer reporter emission until
+        # last-process finalize merges per-worker snapshots into the
+        # top-level cache. Each worker still persists its per-worker
+        # snapshot for the merge to consume. Earlier behavior had every
+        # worker emit reporters into testsift_report/parallel_tests_N/
+        # and purge_worker_dirs! removed those dirs - leaving the user
+        # with no usable terminal/JSON/HTML output. Now reporters fire
+        # ONCE at the merged top-level location.
+        emit_reporters(snapshot) if snapshot && !parallel_tests?
+      end
+
+      emit_coverage_json
+
+      TestSift::RSpec::ParallelTests.finalize! if parallel_tests?
+    end
+
+    # Engine-owned finalize path. Writes the 15-file JSON cache via
+    # Storage::JsonBackend. Per-example coverage deltas live on the
+    # Engine; 2.0 retired the CoverageReporter mid-flow piece (the
+    # legacy `coverage_reporter.generate_final_examples_coverage +
+    # merge_coverage(engine.merge_skipped_coverage(...))` is now folded
+    # into Reporters::CoverageJsonReporter#generate, which fires from
+    # `emit_coverage_json` after this method returns).
+    def run_finalize
+      starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+
+      snapshot = engine.finalize
+
+      ending = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      elapsed = TestSift::TimeFormatter.format_time(ending - starting)
+
+      TestSift.logger.debug "TestSift persisted cache (took #{elapsed})"
+      snapshot
+    rescue StandardError => e
+      # Graceful-degradation contract per ARCHITECTURE.md
+      # section Cache corruption recovery: never propagate storage errors
+      # into the user's test suite. Read-only cache_path, disk-full
+      # mid-write, permission flips between runs - log and skip
+      # report emission. The caller (run_exit_tasks) checks for nil
+      # before calling emit_reporters; coverage / parallel_tests
+      # finalize paths run independently downstream.
+      TestSift.logger.warn(
+        "testsift: cache persistence failed (#{e.class}: #{e.message}); " \
+        'skipping report generation. Verify cache_path is writable.'
+      )
+      nil
+    end
+
+    # Fire the configured reporters against the persisted
+    # Snapshot. Fires per-worker under parallel_tests (same cadence as
+    # coverage.json emission); each worker produces its own report.json
+    # under its per-worker report_dir. The Registry rescues every
+    # reporter individually, so a buggy reporter warns and continues -
+    # never propagates a non-zero exit into the user's test suite
+    # (graceful degradation contract, same as Storage backends).
+    def emit_reporters(snapshot)
+      TestSift::Reporters::Registry.emit_all(
+        configuration: TestSift,
+        snapshot: snapshot,
+        report_dir: TestSift.report_path,
+        run_metadata: build_run_metadata
+      )
+    rescue StandardError => e
+      TestSift.logger.warn(
+        "testsift: reporter pipeline failed (#{e.class}: #{e.message})"
+      )
+    end
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def build_run_metadata
+      {
+        pid: TestSift.pid,
+        run_time: run_elapsed_seconds,
+        started_at: defined?(@run_started_at) ? @run_started_at : nil,
+        cache_path: TestSift.cache_path,
+        parallel_tests: TestSift.parallel_tests?,
+        rails: TestSift.rails?
+      }
+    end
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def run_elapsed_seconds
+      return nil unless defined?(@run_monotonic_start) && @run_monotonic_start
+
+      (::Process.clock_gettime(::Process::CLOCK_MONOTONIC) - @run_monotonic_start).round(4)
+    end
+
+    # Dedicated coverage.json firing path, parallel to the
+    # report-reporters Registry pipeline. Fires unconditionally - even
+    # when no examples ran (matches 1.x where coverage.json gets
+    # written with whatever boot-time peek_result returned + filter +
+    # stub). The emitter handles SimpleCov interop internally
+    # (installs `::Coverage.singleton_class.prepend` shim instead of
+    # writing coverage.json when SimpleCov is loaded).
+    def emit_coverage_json
+      return unless engine
+
+      TestSift::Reporters::CoverageJsonReporter.new(
+        snapshot: nil,
+        report_dir: TestSift.report_path,
+        run_metadata: build_run_metadata,
+        logger: TestSift.logger
+      ).generate
+    rescue StandardError => e
+      TestSift.logger.warn(
+        "testsift: coverage.json emit failed (#{e.class}: #{e.message})"
+      )
+    end
+  end
+end

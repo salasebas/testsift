@@ -1,33 +1,34 @@
 # TestSift
 
-TestSift is a fork of [RSpec Tracer](https://github.com/avmnu-sng/rspec-tracer)
-for affected-test selection. Development starts from upstream
-`v2.0.0.rc.1`, commit `f13851f7b3393aaafa7c7df088c1605747f07ce5`.
-See [FORK.md](FORK.md) for the baseline and initial scope.
-The [TestSift roadmap](https://github.com/salasebas/testsift/issues/1) tracks
-the research, engine extraction, coverage integration, and runner adapters.
+[![CI](https://github.com/salasebas/testsift/actions/workflows/ci.yml/badge.svg?branch=testsift)](https://github.com/salasebas/testsift/actions/workflows/ci.yml?query=branch%3Atestsift)
+[![codecov](https://codecov.io/gh/salasebas/testsift/branch/testsift/graph/badge.svg)](https://codecov.io/gh/salasebas/testsift)
 
-The imported implementation and installation instructions below still use
-the `rspec-tracer` gem and `RSpecTracer` namespace. They describe the upstream
-API, not a published `testsift` gem.
+**Affected-test selection for RSpec: re-run only the examples whose
+recorded inputs changed, with flaky-test detection and a per-example
+dependency map.**
 
-[![CI](https://github.com/avmnu-sng/rspec-tracer/actions/workflows/ci.yml/badge.svg)](https://github.com/avmnu-sng/rspec-tracer/actions/workflows/ci.yml)
-[![Gem Version](https://badge.fury.io/rb/rspec-tracer.svg)](https://badge.fury.io/rb/rspec-tracer)
-[![codecov](https://codecov.io/gh/avmnu-sng/rspec-tracer/branch/main/graph/badge.svg)](https://codecov.io/gh/avmnu-sng/rspec-tracer)
-[![Docs](https://img.shields.io/badge/docs-online-blue)](https://avmnu-sng.github.io/rspec-tracer/)
+TestSift is an independent project that started as a fork of
+[RSpec Tracer](https://github.com/avmnu-sng/rspec-tracer) at upstream
+`v2.0.0.rc.1` (commit `f13851f7b3393aaafa7c7df088c1605747f07ce5`). It
+ships its own gem, `testsift`, versioned from `0.0.1`; it is not
+upstream's 2.0 release. [FORK.md](FORK.md) records the baseline and
+attribution, [UPGRADING.md](UPGRADING.md) covers moving from
+`rspec-tracer`, and the
+[TestSift roadmap](https://github.com/salasebas/testsift/issues/1)
+tracks engine extraction, coverage integration, and a Minitest adapter.
 
-**Test-dependency intelligence for RSpec: detect flaky tests, map code
-coupling, and -- when you are ready -- re-run only what changed.**
+No TestSift version has been published to RubyGems yet; until one is,
+install from this repository.
 
-rspec-tracer records the inputs it can observe for each RSpec
+TestSift records the inputs it can observe for each RSpec
 example -- Ruby files, file I/O, Rails templates and queries,
 declared globs and ENV branches -- and turns that record into a
 flaky-test detector, a per-example dependency map, and optional CI
 acceleration. The flaky report and the dependency map never skip a
 test: value before trust.
 
-**Measured, not promised.** In the maintainer's May 2026 field test
-(rspec-tracer 2.0.0.pre.1, Apple M2 Max), Mastodon's `spec/lib` --
+**Measured, not promised.** In the upstream maintainer's May 2026
+field test (rspec-tracer 2.0.0.pre.1, Apple M2 Max), Mastodon's `spec/lib` --
 1,234 examples, Rails 8.1.3, Ruby 3.4.8 -- ran in 116.4 s cold and
 17.0 s warm: **6.85x**, with the tracer's own recording overhead
 included in both runs. "Cold" here is the tracer's own first run,
@@ -47,9 +48,10 @@ it re-runs. Real blind spots exist -- runtime metaprogramming and
 monkey-patches are invisible to it; the `tracks:` DSL is the escape
 hatch -- and the [soundness model](ARCHITECTURE.md#soundness-model)
 catalogues the known blind spots. Shadow mode (run everything,
-report what would have been skipped) lands in v2.0.0.rc.2, so you
-can verify the tracer on your own data before trusting it with a
-single skip.
+report what would have been skipped) is planned in
+[#9](https://github.com/salasebas/testsift/issues/9), so you can
+verify the tracer on your own data before trusting it with a single
+skip.
 
 **Your data never leaves your infrastructure.** Everything runs inside
 your test process and your CI cache -- no SaaS backend, no telemetry,
@@ -63,34 +65,37 @@ is supported until at least six months past its upstream EOL -- see
 [Maintenance](#maintenance).
 
 ```ruby
-# Gemfile -- 2.0 is in pre-release; pin explicitly until 2.0.0 final
-gem 'rspec-tracer', '= 2.0.0.rc.1', group: :test, require: false
+# Gemfile -- 0.x releases may change the public API; pin the minor
+gem 'testsift', github: 'salasebas/testsift', branch: 'testsift',
+                group: :test, require: false
+# After the first RubyGems release:
+# gem 'testsift', '~> 0.0.1', group: :test, require: false
 ```
 
 Add the tracer's working directories to your `.gitignore` before the
 first run:
 
 ```
-rspec_tracer.lock
-rspec_tracer_cache/
-rspec_tracer_coverage/
-rspec_tracer_report/
+testsift.lock
+testsift_cache/
+testsift_coverage/
+testsift_report/
 ```
 
 ```ruby
 # Top of spec_helper.rb / rails_helper.rb, before any application
 # code. With SimpleCov, start SimpleCov first -- load order is part
 # of the contract.
-require 'rspec_tracer'
-RSpecTracer.start
+require 'testsift'
+TestSift.start
 ```
 
 Run the suite twice. The second run skips the examples whose recorded
 inputs are unchanged and prints a per-reason breakdown of what
-re-ran; open `rspec_tracer_report/index.html` to audit every
+re-ran; open `testsift_report/index.html` to audit every
 per-example decision. Not ready to let it skip anything? Set
-`RSPEC_TRACER_RUN_ALL_EXAMPLES=true` (or `run_all_examples true`
-inside the `RSpecTracer.configure` block in `.rspec-tracer`) --
+`TESTSIFT_RUN_ALL_EXAMPLES=true` (or `run_all_examples true`
+inside the `TestSift.configure` block in `.testsift`) --
 every example still runs while the flaky report and the dependency
 maps accumulate data.
 
@@ -115,12 +120,12 @@ Heroku CI, plus a link to the canonical GitHub Actions workflow.
 - [Maintenance](#maintenance)
 - [Documentation + coverage](#documentation--coverage)
 - [Help and community](#help-and-community)
-- [Section anchor map (1.x -> 2.0)](#section-anchor-map-1x--20)
 
 ## What it saves
 
-All timings are wall-clock and measured, not projected: maintainer
-field tests, May 2026, Apple M2 Max, rspec-tracer 2.0.0.pre.1. In
+All timings are wall-clock and measured, not projected: upstream
+maintainer field tests, May 2026, Apple M2 Max, rspec-tracer
+2.0.0.pre.1, before the TestSift rename. In
 every row, "cold" is the tracer's own first, recording run -- it
 costs more than plain RSpec (roughly 1.6x on this repository's Rails
 benchmark fixture; approximate), and no tracer-free baseline was
@@ -210,10 +215,10 @@ on any shared key.
 
 **Use `track_files` / `track_env` for the global case.** Files /
 env vars **every** test depends on (`Gemfile.lock`, `AUTH_TOKEN`,
-`RAILS_ENV`) belong in `.rspec-tracer`:
+`RAILS_ENV`) belong in `.testsift`:
 
 ```ruby
-RSpecTracer.configure do
+TestSift.configure do
   track_files 'config/locales/**/*.yml', 'db/schema.rb', 'Gemfile.lock'
   track_env   'AUTH_TOKEN', 'DATABASE_URL', 'RAILS_*'
 end
@@ -223,19 +228,19 @@ end
 
 ```ruby
 # spec/rails_helper.rb
-require 'simplecov'      # if used; load BEFORE rspec_tracer
+require 'simplecov'      # if used; load BEFORE testsift
 SimpleCov.start
 
-require 'rspec_tracer'
-RSpecTracer.start
+require 'testsift'
+TestSift.start
 
 require File.expand_path('../config/environment', __dir__)
 require 'rspec/rails'
 ```
 
 ```ruby
-# .rspec-tracer
-RSpecTracer.configure do
+# .testsift
+TestSift.configure do
   track_rails_defaults
 end
 ```
@@ -246,7 +251,7 @@ specific glob to hand attribution off to the per-example subscribers
 instead:
 
 ```ruby
-RSpecTracer.configure do
+TestSift.configure do
   # Templates → render_template.action_view subscriber attributes
   # them per-example. Schema → opt-in sql.active_record observer
   # attributes db/schema.rb + db/structure.sql per AR-touching
@@ -293,7 +298,7 @@ directories and merges at finalize on the elected last worker. If you
 interrupt a run mid-flight, delete the lock file:
 
 ```sh
-rm -f rspec_tracer.lock && bundle exec parallel_rspec
+rm -f testsift.lock && bundle exec parallel_rspec
 ```
 
 ## Configuring CI
@@ -305,19 +310,19 @@ canonical GitHub Actions workflow is
 The rest of this section covers the remote-cache rake flow and the
 cache-key pattern all the recipes share.
 
-The 1.x flow is preserved bit-for-bit. In your project's `Rakefile`:
+The rspec-tracer 1.x flow is preserved bit-for-bit. In your project's `Rakefile`:
 
 ```ruby
-spec = Gem::Specification.find_by_name('rspec-tracer')
-load "#{spec.gem_dir}/lib/rspec_tracer/remote_cache/Rakefile"
+spec = Gem::Specification.find_by_name('testsift')
+load "#{spec.gem_dir}/lib/testsift/remote_cache/Rakefile"
 ```
 
 Then in your CI pipeline:
 
 ```sh
-bundle exec rake rspec_tracer:remote_cache:download
+bundle exec rake testsift:remote_cache:download
 bundle exec rspec
-bundle exec rake rspec_tracer:remote_cache:upload
+bundle exec rake testsift:remote_cache:upload
 ```
 
 With these env vars:
@@ -327,35 +332,35 @@ With these env vars:
 - **`GIT_BRANCH`** — the branch the build is on.
 - **`TEST_SUITES`** — total number of suite shards (when sharding).
 - **`TEST_SUITE_ID`** — current shard identifier.
-- **`RSPEC_TRACER_REMOTE_CACHE_URI`** — the remote-cache URI
+- **`TESTSIFT_REMOTE_CACHE_URI`** — the remote-cache URI
   (`s3://bucket/prefix`, `file:///tmp/cache`, `redis://host`).
 
-### Caching rspec-tracer in CI
+### Caching TestSift in CI
 
 If you don't have S3 — or only need cache between runs of a single
 workflow — GitHub Actions' built-in cache is a drop-in storage
-substrate. Restore `rspec_tracer_cache/` before specs, run the
+substrate. Restore `testsift_cache/` before specs, run the
 suite, let the post-step save it back. A reference workflow lives at
 [`.github/workflows/example-tracer-cache.yml`](.github/workflows/example-tracer-cache.yml).
 The cache step:
 
 ```yaml
-- name: Restore rspec-tracer cache
+- name: Restore testsift cache
   uses: actions/cache@v5
   with:
-    path: rspec_tracer_cache
+    path: testsift_cache
     key: >-
       ${{ runner.os
       }}-${{ hashFiles('.ruby-version')
       }}-${{ hashFiles('Gemfile.lock')
-      }}-rspec-tracer-cache
+      }}-testsift-cache
     restore-keys: |
       ${{ runner.os }}-${{ hashFiles('.ruby-version') }}-
       ${{ runner.os }}-
 ```
 
 The 4-component cache key (`runner.os` + Ruby version + your
-project's Gemfile lock -- which also pins the rspec-tracer gem's
+project's Gemfile lock -- which also pins the TestSift gem's
 version -- + a fixed name suffix) invalidates when something would
 make the previous run's decisions incorrect: native gem binaries
 differ across runner OSes, Ruby ABI
@@ -369,22 +374,22 @@ Heroku CI**; only the YAML envelope is GHA-specific. See
 
 ## Remote cache backends
 
-Three backends ship in 2.0. Pick one in `.rspec-tracer`:
+Three backends ship. Pick one in `.testsift`:
 
 ```ruby
-RSpecTracer.configure do
-  # S3 (preserves 1.x layout; supports awslocal / LocalStack).
+TestSift.configure do
+  # S3 (preserves the rspec-tracer 1.x layout; supports awslocal / LocalStack).
   remote_cache_backend :s3, local: false
 
   # Filesystem-backed (no S3 needed).
-  # remote_cache_backend :local_fs, root: '/tmp/rspec-tracer-cache'
+  # remote_cache_backend :local_fs, root: '/tmp/testsift-cache'
 
   # Redis (with optional per-key TTL + PR-branch tracking sidecar).
   # remote_cache_backend :redis, url: ENV['REDIS_URL'], ttl: 7 * 86_400
 end
 ```
 
-The `rake rspec_tracer:remote_cache:*` task surface is unchanged —
+The `rake testsift:remote_cache:*` task surface is unchanged —
 backend selection happens in config; the rake tasks dispatch
 identically.
 
@@ -393,8 +398,8 @@ identically.
 Two on-disk storage formats:
 
 ```ruby
-RSpecTracer.configure do
-  # JSON (default) — preserves the 1.x 10-file layout per run.
+TestSift.configure do
+  # JSON (default) — preserves the rspec-tracer 1.x 10-file layout per run.
   storage_backend :json
 
   # SQLite — single-file database. Faster cold reads above ~5,000
@@ -403,47 +408,47 @@ RSpecTracer.configure do
 end
 ```
 
-Or override per-run via env: `RSPEC_TRACER_STORAGE=sqlite`.
+Or override per-run via env: `TESTSIFT_STORAGE=sqlite`.
 
 ## Command-line tools
 
-`rspec-tracer` exposes six sub-commands. Run them via Bundler so the
+`testsift` exposes six sub-commands. Run them via Bundler so the
 gem's executable resolves cleanly without needing `bundle binstubs
-rspec-tracer` first:
+testsift` first:
 
 ```sh
-bundle exec rspec-tracer doctor               # diagnose config + environment
-bundle exec rspec-tracer cache:info           # size, last run, invalidation stats
-bundle exec rspec-tracer cache:clear          # rm cache dirs
-bundle exec rspec-tracer report:open          # open the HTML report
-bundle exec rspec-tracer explain <id>         # why is <example_id> scheduled to (re-)run?
-bundle exec rspec-tracer blast-radius <file>  # which examples re-run if <file> changes?
+bundle exec testsift doctor               # diagnose config + environment
+bundle exec testsift cache:info           # size, last run, invalidation stats
+bundle exec testsift cache:clear          # rm cache dirs
+bundle exec testsift report:open          # open the HTML report
+bundle exec testsift explain <id>         # why is <example_id> scheduled to (re-)run?
+bundle exec testsift blast-radius <file>  # which examples re-run if <file> changes?
 ```
 
-Generated binstubs (`bin/rspec-tracer …`) work too once you've run
-`bundle binstubs rspec-tracer` in your project. The CLI is opt-in for
-local-dev convenience; the `rake rspec_tracer:remote_cache:*` tasks
+Generated binstubs (`bin/testsift …`) work too once you've run
+`bundle binstubs testsift` in your project. The CLI is opt-in for
+local-dev convenience; the `rake testsift:remote_cache:*` tasks
 remain first-class for CI integration — nothing in the CLI replaces
 them.
 
 ## SimpleCov interop
 
 **Load order is part of the contract.** SimpleCov first, then
-rspec-tracer:
+TestSift:
 
 ```ruby
 require 'simplecov'
 SimpleCov.start
 
-require 'rspec_tracer'
-RSpecTracer.start
+require 'testsift'
+TestSift.start
 ```
 
 If you call `require 'simplecov'` but skip `SimpleCov.start` before
-`RSpecTracer.start`, a boot-time warn fires pointing this out
+`TestSift.start`, a boot-time warn fires pointing this out
 (silent-degradation breaks coverage output).
 
-**Branch coverage works alongside rspec-tracer in 2.0.** The 1.x
+**Branch coverage works alongside TestSift.** The rspec-tracer 1.x
 caveat ("SimpleCov would not report branch coverage results even
 when enabled") is no longer applicable — the coverage emission
 decoupled from SimpleCov's branch-tracking. Re-enable
@@ -451,40 +456,40 @@ decoupled from SimpleCov's branch-tracking. Re-enable
 both.
 
 Filter chains compose: SimpleCov's `add_filter` / `coverage_filters`
-control SimpleCov's HTML output; rspec-tracer's `add_filter` /
+control SimpleCov's HTML output; TestSift's `add_filter` /
 `add_coverage_filter` control which files contribute to the
 dependency graph.
 
 ## FAQ + comparison
 
 **Why not just SimpleCov filtering?** SimpleCov tells you which
-*files* are covered. rspec-tracer tells you which *examples* depend
+*files* are covered. TestSift tells you which *examples* depend
 on which inputs, so it can skip the ones whose inputs didn't change.
 The two solve adjacent problems; you typically want both.
 
 **Knapsack / Knapsack Pro / Test Boosters?** Those are test-splitting
-tools — they shard your suite across CI workers. rspec-tracer is
+tools — they shard your suite across CI workers. TestSift is
 orthogonal: it skips already-passing examples on a single worker.
-Compose them: shard with Knapsack, then skip with rspec-tracer.
+Compose them: shard with Knapsack, then skip with TestSift.
 A composition smoke spec (`spec/regressions/knapsack_coexistence_spec.rb`)
 proves they coexist.
 
 **Datadog Test Optimization / Buildkite Test Analytics / CircleCI
 Test Insights?** Those are hosted services: your test metadata ships
 to a vendor backend, with the pricing and procurement that implies.
-rspec-tracer runs entirely inside your test process -- the cache and
+TestSift runs entirely inside your test process -- the cache and
 reports are plain files in your repo, S3 bucket, or Redis. No SaaS
-backend, no telemetry, no per-seat pricing; keeping it that way is a
-standing commitment in [ROADMAP.md](ROADMAP.md)'s "Won't do" list.
+backend, no telemetry, no per-seat pricing, and TestSift keeps it
+that way.
 
 **`RSpec::Retry` / `RSpec::Rerun`?** Retries flaky failures.
-rspec-tracer detects flaky examples (same inputs, different outcomes)
+TestSift detects flaky examples (same inputs, different outcomes)
 and refuses to skip them on the next run. Compose: retry to make a
-flaky suite green, let rspec-tracer flag the flakes for you to
+flaky suite green, let TestSift flag the flakes for you to
 actually fix.
 
 **Monorepo with N apps?** Set per-app `cache_dir` in each app's
-`.rspec-tracer` (the default `rspec_tracer_cache/` would otherwise
+`.testsift` (the default `testsift_cache/` would otherwise
 collide across apps).
 
 **`tracks:` vs `track_rails_defaults` overlap?** When both attribute
@@ -494,7 +499,7 @@ taxonomy" for the rule.
 
 ## Reports
 
-After the run, `rspec_tracer_report/index.html` opens five HTML
+After the run, `testsift_report/index.html` opens five HTML
 reports. The first two deliver value even if you never let the
 tracer skip a single example:
 
@@ -504,7 +509,7 @@ tracer skip a single example:
   flagged, the tracer refuses to skip them on subsequent runs.
 - **Files Dependency** -- "if I change this file, which tests run?"
   The file-to-test map that makes refactors, reviews, and deletions
-  safer -- the report unique to rspec-tracer.
+  safer -- the report unique to TestSift.
 - **Examples Dependency** -- the per-example inverse: "what does this
   test depend on?"
 - **All Examples** -- basic test info (id, status, duration, the
@@ -512,7 +517,7 @@ tracer skip a single example:
 - **Duplicate Examples** -- pairs RSpec couldn't uniquely identify
   (file:line collisions; only appears when duplicates are present).
 
-Plus a machine-readable `rspec_tracer_report/report.json` for CI
+Plus a machine-readable `testsift_report/report.json` for CI
 dashboards, and a terminal summary with a per-reason breakdown after
 every run (see [Quick start](#quick-start)).
 
@@ -527,7 +532,7 @@ that page is authoritative for the dates below.
 
 | Version | CI-gated | Status |
 |---------|----------|--------|
-| Ruby 3.1 | Yes | Supported. Upstream EOL was 2025-03-26, so the committed six-month window has lapsed -- and 3.1 is still supported today because the policy is a minimum, not a schedule. It remains the floor for the 2.0 release line. |
+| Ruby 3.1 | Yes | Supported. Upstream EOL was 2025-03-26, so the committed six-month window has lapsed -- and 3.1 is still supported today because the policy is a minimum, not a schedule. It remains the floor. |
 | Ruby 3.2 | Yes | Supported. Upstream EOL was 2026-04-01; supported until at least 2026-10-01, and potentially longer -- the policy is a minimum. |
 | Ruby 3.3 | Yes | Supported. Upstream EOL is expected 2027-03-31; supported until at least six months past the published EOL date. |
 | Ruby 3.4 | Yes | Supported, until at least six months past its upstream EOL date (not yet announced). |
@@ -539,13 +544,10 @@ reports are welcome and get investigated.
 
 ## Documentation + coverage
 
-- **Docs site**: [avmnu-sng.github.io/rspec-tracer](https://avmnu-sng.github.io/rspec-tracer/)
-  publishes a YARD API reference, the cookbook, internals deep-dives,
-  and the sample HTML report for every rolling main + tagged release.
-  The landing page lets you switch versions; per-version subpaths look
-  like `/main/yard/`, `/main/demo/`, `/v2.0.0.pre.1/yard/`, etc.
+- **API reference**: `task docs:yard` builds the YARD reference
+  locally. A hosted docs site is not published for TestSift yet.
 
-- **Coverage**: tracked by [Codecov](https://codecov.io/gh/avmnu-sng/rspec-tracer)
+- **Coverage**: tracked by [Codecov](https://codecov.io/gh/salasebas/testsift)
   (per-PR delta + diff-coverage gate ≥ 90%; project history). Multi-
   suite resultsets (`unit`, `edge-cases`, `regressions-plain`, `fuzz`)
   merge via SimpleCov.collate in the CI `coverage` job; the same
@@ -554,34 +556,17 @@ reports are welcome and get investigated.
 
 ## Help and community
 
-- **Bug reports + feature requests** — [GitHub Issues](https://github.com/avmnu-sng/rspec-tracer/issues).
+- **Bug reports + feature requests** — [GitHub Issues](https://github.com/salasebas/testsift/issues).
   Include Ruby / Rails / RSpec / SimpleCov versions and your
-  `.rspec-tracer` config.
-- **Usage questions, design discussion, "how do I X?"** — [GitHub Discussions](https://github.com/avmnu-sng/rspec-tracer/discussions).
-- **Roadmap** — [`ROADMAP.md`](ROADMAP.md) at repo root + the live
-  [project board](https://github.com/users/avmnu-sng/projects).
+  `.testsift` config.
+- **Roadmap** — [TestSift roadmap](https://github.com/salasebas/testsift/issues/1).
 - **Architecture deep-dive** — [`ARCHITECTURE.md`](ARCHITECTURE.md).
-- **Upgrading from 1.x** — [`UPGRADING.md`](UPGRADING.md).
+- **Moving from rspec-tracer** — [`UPGRADING.md`](UPGRADING.md).
+- **Upstream history** — [`docs/upstream/`](docs/upstream/) keeps the
+  RSpec Tracer changelog, roadmap, and 1.x → 2.0 upgrade guide as
+  they were at the fork point.
 - **Contributing** — [`.github/CONTRIBUTING.md`](.github/CONTRIBUTING.md).
 
 Released under the [MIT License](LICENSE). Everyone interacting in
 the project is expected to follow the
 [Code of Conduct](.github/CODE_OF_CONDUCT.md).
-
-## Section anchor map (1.x → 2.0)
-
-The README was restructured in 2.0. If you bookmarked a 1.x section,
-here's where its content lives now:
-
-| 1.x anchor                            | 2.0 anchor                                              |
-|---------------------------------------|---------------------------------------------------------|
-| `#getting-started`                    | [Quick start](#quick-start)                             |
-| `#working-with-jruby`                 | [Quick start](#quick-start) (JRuby noted under floors in [`UPGRADING.md`](UPGRADING.md)) |
-| `#working-with-parallel-tests`        | [Working with parallel_tests](#working-with-parallel_tests) under Rails quick start |
-| `#configuring-ci`                     | [Configuring CI](#configuring-ci)                       |
-| `#caching-rspec-tracer-in-ci`         | [Caching rspec-tracer in CI](#caching-rspec-tracer-in-ci) |
-| `#advanced-configuration`             | Split between [Per-example `tracks:` DSL](#per-example-tracks-dsl), [Pluggable storage](#pluggable-storage), and [`UPGRADING.md`](UPGRADING.md) |
-| `#available-settings`                 | Inline across the new sections; see also [`ARCHITECTURE.md`](ARCHITECTURE.md) |
-| `#filters`                            | Inline under [SimpleCov interop](#simplecov-interop) and the configuration DSL examples |
-| `#duplicate-examples`                 | [Reports](#reports) under "Duplicate Examples"          |
-| `#demo`                               | [Reports](#reports)                                     |

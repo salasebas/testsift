@@ -1,14 +1,19 @@
 version: '3'
 
-# Release preflight gate: maintainer-run checks before cutting a tag.
-# Runs every check, collects results, and exits nonzero only on hard
-# failures (packaged-gem hygiene, CHANGELOG/VERSION consistency).
-# Checks that need human judgment print VERIFY-MANUALLY blocks and do
-# not fail the run. See RELEASING.md for the full tag-cut procedure.
+# Release checks. `release:verify` installs the built gem in isolation
+# and exercises it; the release workflow runs it before publishing.
+# `release:preflight` adds the checks that need a human read before a
+# release PR is merged. See RELEASING.md.
 
 tasks:
+  release:verify:
+    desc: Build the gem, install it in an isolated GEM_HOME, and run require, CLI, and a cold/warm fixture from it
+    deps: [gem:build]
+    cmds:
+      - ruby scripts/verify_built_gem.rb pkg/testsift-{{.VERSION}}.gem
+
   release:preflight:
-    desc: Run the pre-tag release checks (see RELEASING.md)
+    desc: Run the pre-release checks before merging a release PR (see RELEASING.md)
     deps: [gem:build]
     silent: true
     cmds:
@@ -17,20 +22,21 @@ tasks:
         fail=0
 
         echo "== [1/5] Hardcoded pre-release version strings =========="
-        # Pre-release strings anywhere outside CHANGELOG.md history
-        # must be bumped to the release version or explicitly
-        # confirmed at tag time (e.g. install snippets in docs).
+        # Pre-release strings outside the changelog and the preserved
+        # upstream history are stale install snippets or promises;
+        # confirm each one before the release PR merges.
         if git grep -InE '[0-9]+\.[0-9]+\.[0-9]+\.pre\.[0-9]+|\.rc\.[0-9]+' \
-            -- ':(exclude)CHANGELOG.md'; then
-          echo "VERIFY-MANUALLY: bump or confirm each hit above at tag time."
+            -- ':(exclude)CHANGELOG.md' ':(exclude)docs/upstream' \
+            ':(exclude)benchmark/results'; then
+          echo "VERIFY-MANUALLY: confirm each hit above before merging."
         else
-          echo "PASS: no pre-release version strings outside CHANGELOG.md."
+          echo "PASS: no pre-release version strings outside release history."
         fi
         echo
 
         echo "== [2/5] Forward version promises ========================"
         # Docs sometimes promise a feature for a future version; each
-        # promise must still be true (or be rewritten) at tag time.
+        # promise must still be true (or be rewritten) at release time.
         # Case-insensitive and tolerant of up to two punctuation
         # characters before the version (e.g. a backtick-quoted
         # "Lands in vN.N.N"); the example spells the version with N
@@ -50,7 +56,7 @@ tasks:
         # hunts for; the classes match identically to the bare letters.
         rm -rf tmp/preflight-unpack
         mkdir -p tmp
-        gem unpack "pkg/rspec-tracer-{{.VERSION}}.gem" \
+        gem unpack "pkg/testsift-{{.VERSION}}.gem" \
           --target tmp/preflight-unpack > /dev/null
         if grep -rInE 'M[0-9]+\.[0-9]+|docs/rev[a]mp|feedb[a]ck_[a-z_]+|kick[o]ff|personal-inst[a]ll' \
             tmp/preflight-unpack; then
@@ -87,19 +93,22 @@ tasks:
         fi
         echo
 
-        echo "== [5/5] CHANGELOG vs RSpecTracer::VERSION ==============="
-        latest=$(grep -m1 -E '^## \[' CHANGELOG.md \
-          | sed -E 's/^## \[([^]]+)\].*/\1/')
-        if [ "$latest" = "Unreleased" ]; then
-          echo "PASS: CHANGELOG has an [Unreleased] block; cut it to"
-          echo "  {{.VERSION}} as part of the tag procedure (RELEASING.md)."
+        echo "== [5/5] CHANGELOG vs TestSift::VERSION ==============="
+        # release-please writes the version heading and the constant in
+        # the same release PR, so the newest heading always names the
+        # current version once a release exists.
+        latest=$(grep -m1 -E '^## \[?[0-9]' CHANGELOG.md \
+          | sed -E 's/^## \[?([0-9][^] (]*).*/\1/' || true)
+        if [ -z "$latest" ]; then
+          echo "PASS: no release in CHANGELOG yet; the first release PR"
+          echo "  writes the {{.VERSION}} entry."
         elif [ "$latest" = "{{.VERSION}}" ]; then
-          echo "PASS: CHANGELOG latest block matches RSpecTracer::VERSION"
+          echo "PASS: CHANGELOG latest block matches TestSift::VERSION"
           echo "  ({{.VERSION}})."
         else
           echo "FAIL: CHANGELOG latest block is [$latest] but"
-          echo "  RSpecTracer::VERSION is {{.VERSION}}; add an [Unreleased]"
-          echo "  or matching version block before tagging."
+          echo "  TestSift::VERSION is {{.VERSION}}; release-please"
+          echo "  updates both together, so one was edited by hand."
           fail=1
         fi
         echo
@@ -108,6 +117,6 @@ tasks:
           echo "release:preflight: FAILED -- fix the FAIL items above."
         else
           echo "release:preflight: OK -- work through the VERIFY-MANUALLY"
-          echo "items above before tagging."
+          echo "items above before merging the release PR."
         fi
         exit "$fail"

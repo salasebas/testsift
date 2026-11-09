@@ -29,7 +29,7 @@ tasks:
       Rails integration test against the reference Rails app. Also
       includes the coverage.json byte-equivalence round-trip spec
       (drives the same fixture; opts out of SimpleCov via
-      RSPEC_TRACER_FIXTURE_NO_SIMPLECOV=1 inside the spec). Excluded
+      TESTSIFT_FIXTURE_NO_SIMPLECOV=1 inside the spec). Excluded
       from the default rspec sweep (via .rspec --exclude-pattern) because
       a full cycle is 12 scenarios x cold+warm subprocess runs,
       ~2-3 minutes. The CI `rails` job invokes this per Rails matrix cell.
@@ -40,9 +40,9 @@ tasks:
     desc: >-
       Narrow-AR-schema integration test. Drives the rails fixture
       with use_transactional_fixtures = false
-      (RSPEC_TRACER_RAILS_TRANSACTIONAL=false) and asserts the per-example
+      (TESTSIFT_RAILS_TRANSACTIONAL=false) and asserts the per-example
       schema-subscriber attribution path
-      (lib/rspec_tracer/rails/notifications.rb #record_ar_schema) only
+      (lib/testsift/rails/notifications.rb #record_ar_schema) only
       attributes db/schema.rb to the AR-touching example - so a schema
       mutation re-runs only that example, not the entire suite. The
       fixture's narrow_schema_spec.rb uses sequence-based unique
@@ -74,8 +74,8 @@ tasks:
       Wide-AR-schema integration test under the
       `database_cleaner-active_record :truncation` strategy in an around
       hook. Drives spec/wide_schema_spec.rb with
-      RSPEC_TRACER_RAILS_TRANSACTIONAL=false +
-      RSPEC_TRACER_DB_CLEANER_STRATEGY=truncation; the rails_helper's
+      TESTSIFT_RAILS_TRANSACTIONAL=false +
+      TESTSIFT_DB_CLEANER_STRATEGY=truncation; the rails_helper's
       `config.around(:each, :db_cleaned)` wraps tagged examples in
       DatabaseCleaner.cleaning so TRUNCATE queries fire sql.active_record
       inside the per-example bucket. Asserts the same widening-boundary

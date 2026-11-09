@@ -1,6 +1,6 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/storage/serializer/msgpack'
+require 'testsift/storage/serializer/msgpack'
 
 # Unit-level round-trip + type-extension contract for the Msgpack
 # serializer. JsonBackend-level coverage at
@@ -11,7 +11,7 @@ require 'rspec_tracer/storage/serializer/msgpack'
 # "NoMethodError: undefined method 'to_msgpack' for an instance of
 # Time" / "Symbol -> String coercion" symptom level.
 # rubocop:disable RSpec/ExampleLength
-RSpec.describe RSpecTracer::Storage::Serializer::Msgpack do
+RSpec.describe TestSift::Storage::Serializer::Msgpack do
   describe 'round-trip' do
     it 'preserves String values' do
       bytes = described_class.encode('id_1' => 'value')

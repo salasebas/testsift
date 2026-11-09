@@ -4,9 +4,9 @@ require 'fileutils'
 require 'json'
 require 'tmpdir'
 require 'yaml'
-require 'rspec_tracer/tracker/io_hooks'
+require 'testsift/tracker/io_hooks'
 
-RSpec.describe RSpecTracer::Tracker::IOHooks do
+RSpec.describe TestSift::Tracker::IOHooks do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
 
@@ -217,7 +217,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks do
     end
 
     it 'is a no-op when no bucket is set' do
-      # The outer rspec-tracer ReporterHook installs a bucket on every
+      # The outer testsift ReporterHook installs a bucket on every
       # example; clear it explicitly so _record's `bucket.nil?` guard
       # actually fires (the early-return :then branch).
       described_class.clear_bucket
@@ -326,7 +326,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks do
       let(:path) { write_fixture('downstream.yml') }
 
       before do
-        allow(RSpecTracer::Tracker::Input).to receive(:for_file).and_raise(StandardError, 'boom')
+        allow(TestSift::Tracker::Input).to receive(:for_file).and_raise(StandardError, 'boom')
       end
 
       it 'swallows the StandardError raised by the downstream Input builder' do

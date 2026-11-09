@@ -5,13 +5,13 @@ require 'stringio'
 require 'tmpdir'
 require 'set'
 
-require 'rspec_tracer/cli/snapshot_helpers'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
-require 'rspec_tracer/storage/schema'
+require 'testsift/cli/snapshot_helpers'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
+require 'testsift/storage/schema'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::CLI::SnapshotHelpers do
+RSpec.describe TestSift::CLI::SnapshotHelpers do
   let(:stderr) { StringIO.new }
 
   describe '.help_requested?' do
@@ -32,7 +32,7 @@ RSpec.describe RSpecTracer::CLI::SnapshotHelpers do
   describe '.load_snapshot' do
     it 'prints a prefixed no-cache message and returns nil when no run is recorded' do
       Dir.mktmpdir do |dir|
-        allow(RSpecTracer).to receive(:storage_backend).and_return(:json)
+        allow(TestSift).to receive(:storage_backend).and_return(:json)
         expect(described_class.load_snapshot(dir, command: 'blast-radius', stderr: stderr)).to be_nil
         expect(stderr.string).to include("blast-radius: no cache yet at #{dir} -- run rspec first")
       end
@@ -42,29 +42,29 @@ RSpec.describe RSpecTracer::CLI::SnapshotHelpers do
       Dir.mktmpdir do |dir|
         File.write(File.join(dir, 'last_run.json'),
                    JSON.dump('schema_version' => 9999, 'run_id' => 'stale_run'))
-        allow(RSpecTracer).to receive(:storage_backend).and_return(:json)
+        allow(TestSift).to receive(:storage_backend).and_return(:json)
         expect(described_class.load_snapshot(dir, command: 'explain', stderr: stderr)).to be_nil
         expect(stderr.string)
-          .to include("explain: cache at #{dir} is incompatible with this rspec-tracer; next rspec run is cold")
+          .to include("explain: cache at #{dir} is incompatible with this testsift; next rspec run is cold")
       end
     end
 
     it 'returns the snapshot and the backend it was loaded through on success' do
       Dir.mktmpdir do |dir|
-        snapshot = RSpecTracer::Storage::Snapshot.empty(
-          schema_version: RSpecTracer::Storage::Schema::CURRENT, run_id: 'run_helpers'
+        snapshot = TestSift::Storage::Snapshot.empty(
+          schema_version: TestSift::Storage::Schema::CURRENT, run_id: 'run_helpers'
         )
         snapshot.all_examples = { 'a/spec.rb[1:1]' => { 'example_id' => 'a/spec.rb[1:1]' } }
-        RSpecTracer::Storage::JsonBackend.new(cache_path: dir).save_graph(
-          snapshot, schema_version: RSpecTracer::Storage::Schema::CURRENT
+        TestSift::Storage::JsonBackend.new(cache_path: dir).save_graph(
+          snapshot, schema_version: TestSift::Storage::Schema::CURRENT
         )
-        allow(RSpecTracer).to receive(:storage_backend).and_return(:json)
+        allow(TestSift).to receive(:storage_backend).and_return(:json)
 
         loaded = described_class.load_snapshot(dir, command: 'explain', stderr: stderr)
         expect(loaded).not_to be_nil
         loaded_snapshot, backend = loaded
         expect(loaded_snapshot.all_examples.keys).to eq(['a/spec.rb[1:1]'])
-        expect(backend).to be_a(RSpecTracer::Storage::JsonBackend)
+        expect(backend).to be_a(TestSift::Storage::JsonBackend)
         expect(stderr.string).to be_empty
       end
     end
@@ -73,7 +73,7 @@ RSpec.describe RSpecTracer::CLI::SnapshotHelpers do
   describe '.filter_decisions_persisted?' do
     it 'is true for the json backend, which persists filtered_examples' do
       Dir.mktmpdir do |dir|
-        backend = RSpecTracer::Storage::JsonBackend.new(cache_path: dir)
+        backend = TestSift::Storage::JsonBackend.new(cache_path: dir)
         expect(described_class.filter_decisions_persisted?(backend)).to be(true)
       end
     end

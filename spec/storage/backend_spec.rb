@@ -1,12 +1,12 @@
 # frozen_string_literal: true
 
 require 'tmpdir'
-require 'rspec_tracer/storage/backend'
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/sqlite_backend' if RUBY_ENGINE == 'ruby'
+require 'testsift/storage/backend'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/sqlite_backend' if RUBY_ENGINE == 'ruby'
 
 # rubocop:disable RSpec/MultipleExpectations, RSpec/ExampleLength
-RSpec.describe RSpecTracer::Storage::Backend do
+RSpec.describe TestSift::Storage::Backend do
   describe 'REQUIRED_METHODS' do
     it 'is frozen so callers cannot mutate the required-method list' do
       expect(described_class::REQUIRED_METHODS).to be_frozen
@@ -75,7 +75,7 @@ RSpec.describe RSpecTracer::Storage::Backend do
       it 'returns a JsonBackend instance' do
         backend = described_class.build(cache_path: cache_path, configuration: build_config(backend: :json))
 
-        expect(backend).to be_a(RSpecTracer::Storage::JsonBackend)
+        expect(backend).to be_a(TestSift::Storage::JsonBackend)
       end
 
       it 'conforms to the protocol so callers can dispatch through last_run_id / load_graph' do
@@ -87,16 +87,16 @@ RSpec.describe RSpecTracer::Storage::Backend do
       it 'selects the :json serializer when storage_backend_opts is empty' do
         backend = described_class.build(cache_path: cache_path, configuration: build_config(backend: :json))
 
-        expect(backend.serializer).to eq(RSpecTracer::Storage::Serializer::Json)
+        expect(backend.serializer).to eq(TestSift::Storage::Serializer::Json)
       end
 
       it 'selects the :msgpack serializer when configured via storage_backend_opts' do
-        skip 'msgpack gem unavailable' unless RSpecTracer::Storage::Serializer::Msgpack.available?
+        skip 'msgpack gem unavailable' unless TestSift::Storage::Serializer::Msgpack.available?
         config = build_config(backend: :json, opts: { serializer: :msgpack })
 
         backend = described_class.build(cache_path: cache_path, configuration: config)
 
-        expect(backend.serializer).to eq(RSpecTracer::Storage::Serializer::Msgpack)
+        expect(backend.serializer).to eq(TestSift::Storage::Serializer::Msgpack)
       end
 
       # Mutant kwarg-threading kill: each of these knobs (logger,
@@ -107,11 +107,11 @@ RSpec.describe RSpecTracer::Storage::Backend do
       # so each kwarg gets its own kill signal.
       it 'threads logger / retention / warn knobs + default :json serializer through to JsonBackend.new' do
         config = build_config(backend: :json)
-        allow(RSpecTracer::Storage::JsonBackend).to receive(:new).and_call_original
+        allow(TestSift::Storage::JsonBackend).to receive(:new).and_call_original
 
         described_class.build(cache_path: cache_path, configuration: config)
 
-        expect(RSpecTracer::Storage::JsonBackend).to have_received(:new).with(
+        expect(TestSift::Storage::JsonBackend).to have_received(:new).with(
           cache_path: cache_path,
           logger: config.logger,
           retention_local_count: 5,
@@ -123,11 +123,11 @@ RSpec.describe RSpecTracer::Storage::Backend do
 
       it 'threads the storage_backend_opts[:serializer] override through to JsonBackend.new' do
         config = build_config(backend: :json, opts: { serializer: :msgpack })
-        allow(RSpecTracer::Storage::JsonBackend).to receive(:new).and_call_original
+        allow(TestSift::Storage::JsonBackend).to receive(:new).and_call_original
 
         described_class.build(cache_path: cache_path, configuration: config)
 
-        expect(RSpecTracer::Storage::JsonBackend).to have_received(:new).with(
+        expect(TestSift::Storage::JsonBackend).to have_received(:new).with(
           hash_including(serializer: :msgpack)
         )
       end
@@ -139,29 +139,29 @@ RSpec.describe RSpecTracer::Storage::Backend do
       it 'returns a SqliteBackend instance' do
         backend = described_class.build(cache_path: cache_path, configuration: build_config(backend: :sqlite))
 
-        expect(backend).to be_a(RSpecTracer::Storage::SqliteBackend)
+        expect(backend).to be_a(TestSift::Storage::SqliteBackend)
       end
 
       it 'threads cache_path + logger through to SqliteBackend.new' do
         config = build_config(backend: :sqlite)
-        allow(RSpecTracer::Storage::SqliteBackend).to receive(:new).and_call_original
+        allow(TestSift::Storage::SqliteBackend).to receive(:new).and_call_original
 
         described_class.build(cache_path: cache_path, configuration: config)
 
-        expect(RSpecTracer::Storage::SqliteBackend)
+        expect(TestSift::Storage::SqliteBackend)
           .to have_received(:new).with(cache_path: cache_path, logger: config.logger)
       end
 
       it 'falls back to JsonBackend with a warn when SqliteBackend raises SqliteBackendError' do
-        allow(RSpecTracer::Storage::SqliteBackend)
+        allow(TestSift::Storage::SqliteBackend)
           .to receive(:new)
-          .and_raise(RSpecTracer::Storage::SqliteBackend::SqliteBackendError, 'simulated missing gem')
+          .and_raise(TestSift::Storage::SqliteBackend::SqliteBackendError, 'simulated missing gem')
         config = build_config(backend: :sqlite)
         allow(config.logger).to receive(:warn)
 
         backend = described_class.build(cache_path: cache_path, configuration: config)
 
-        expect(backend).to be_a(RSpecTracer::Storage::JsonBackend)
+        expect(backend).to be_a(TestSift::Storage::JsonBackend)
         expect(config.logger)
           .to have_received(:warn).with(/sqlite backend unavailable.*simulated missing gem/)
       end
@@ -180,12 +180,12 @@ RSpec.describe RSpecTracer::Storage::Backend do
       it 'falls through to the :json branch (default behavior for unknown symbols)' do
         backend = described_class.build(cache_path: cache_path, configuration: build_config(backend: :unknown))
 
-        expect(backend).to be_a(RSpecTracer::Storage::JsonBackend)
+        expect(backend).to be_a(TestSift::Storage::JsonBackend)
       end
     end
 
-    it 'defaults the configuration parameter to RSpecTracer when omitted' do
-      allow(RSpecTracer).to receive_messages(
+    it 'defaults the configuration parameter to TestSift when omitted' do
+      allow(TestSift).to receive_messages(
         storage_backend: :json, storage_backend_opts: {},
         cache_retention_local_count: nil, cache_size_warn_per_file_mb: nil,
         cache_size_warn_total_mb: nil, logger: logger
@@ -193,7 +193,7 @@ RSpec.describe RSpecTracer::Storage::Backend do
 
       backend = described_class.build(cache_path: cache_path)
 
-      expect(backend).to be_a(RSpecTracer::Storage::JsonBackend)
+      expect(backend).to be_a(TestSift::Storage::JsonBackend)
     end
   end
 end

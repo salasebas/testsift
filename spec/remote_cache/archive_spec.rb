@@ -5,10 +5,10 @@ require 'fileutils'
 require 'json'
 require 'tmpdir'
 
-require 'rspec_tracer/remote_cache/archive'
+require 'testsift/remote_cache/archive'
 
 # rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations, RSpec/InstanceVariable
-RSpec.describe RSpecTracer::RemoteCache::Archive do
+RSpec.describe TestSift::RemoteCache::Archive do
   around do |example|
     Dir.mktmpdir do |dir|
       @dir = dir

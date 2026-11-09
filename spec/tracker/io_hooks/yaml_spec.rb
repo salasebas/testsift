@@ -3,10 +3,10 @@
 require 'fileutils'
 require 'tmpdir'
 require 'yaml'
-require 'rspec_tracer/tracker/io_hooks'
-require 'rspec_tracer/tracker/io_hooks/yaml'
+require 'testsift/tracker/io_hooks'
+require 'testsift/tracker/io_hooks/yaml'
 
-RSpec.describe RSpecTracer::Tracker::IOHooks::YAMLReads do
+RSpec.describe TestSift::Tracker::IOHooks::YAMLReads do
   let(:tmp_base) { Dir.mktmpdir }
   let(:root) { File.join(tmp_base, 'project').tap { |p| FileUtils.mkdir_p(p) } }
   let(:bucket) { {} }
@@ -19,15 +19,15 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::YAMLReads do
   after { FileUtils.rm_rf(tmp_base) if tmp_base }
 
   around do |example|
-    RSpecTracer::Tracker::IOHooks.install(root: root)
+    TestSift::Tracker::IOHooks.install(root: root)
     example.run
   ensure
-    RSpecTracer::Tracker::IOHooks.uninstall
+    TestSift::Tracker::IOHooks.uninstall
   end
 
   describe '#load_file' do
     let(:parsed) do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { YAML.load_file(fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { YAML.load_file(fixture) }
     end
 
     it 'records the path' do
@@ -40,7 +40,7 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::YAMLReads do
     end
 
     it 'forwards to super without recording when no bucket is active' do
-      RSpecTracer::Tracker::IOHooks.clear_bucket
+      TestSift::Tracker::IOHooks.clear_bucket
 
       expect(YAML.load_file(fixture)).to eq('a' => 1, 'b' => 2)
     end
@@ -48,13 +48,13 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::YAMLReads do
 
   describe '#safe_load_file' do
     it 'records the path' do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { YAML.safe_load_file(fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { YAML.safe_load_file(fixture) }
 
       expect(bucket).to have_key('data:config.yml')
     end
 
     it 'forwards to super without recording when no bucket is active' do
-      RSpecTracer::Tracker::IOHooks.clear_bucket
+      TestSift::Tracker::IOHooks.clear_bucket
 
       expect(YAML.safe_load_file(fixture)).to eq('a' => 1, 'b' => 2)
     end
@@ -62,13 +62,13 @@ RSpec.describe RSpecTracer::Tracker::IOHooks::YAMLReads do
 
   describe '#unsafe_load_file' do
     it 'records the path' do
-      RSpecTracer::Tracker::IOHooks.with_bucket(bucket) { YAML.unsafe_load_file(fixture) }
+      TestSift::Tracker::IOHooks.with_bucket(bucket) { YAML.unsafe_load_file(fixture) }
 
       expect(bucket).to have_key('data:config.yml')
     end
 
     it 'forwards to super without recording when no bucket is active' do
-      RSpecTracer::Tracker::IOHooks.clear_bucket
+      TestSift::Tracker::IOHooks.clear_bucket
 
       expect(YAML.unsafe_load_file(fixture)).to eq('a' => 1, 'b' => 2)
     end

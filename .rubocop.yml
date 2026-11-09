@@ -8,9 +8,9 @@ AllCops:
   SuggestExtensions: false
   TargetRubyVersion: 3.1
   Exclude:
-    - "rspec-tracer.gemspec"
+    - "testsift.gemspec"
     - "benchmark/fixtures/**/*"
-    - "lib/rspec_tracer/reporters/html/**/*"
+    - "lib/testsift/reporters/html/**/*"
     - "spec/fixtures/**/*"
     - "tmp/**/*"
     - "vendor/**/*"

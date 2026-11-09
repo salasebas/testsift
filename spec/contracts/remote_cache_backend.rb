@@ -1,8 +1,8 @@
 # frozen_string_literal: true
 
-require 'rspec_tracer/remote_cache/backend'
+require 'testsift/remote_cache/backend'
 
-# Shared-examples contract for RSpecTracer::RemoteCache::Backend
+# Shared-examples contract for TestSift::RemoteCache::Backend
 # implementations. Each backend's unit spec includes these examples
 # with `include_examples 'a RemoteCache::Backend'` after binding:
 #
@@ -18,14 +18,14 @@ require 'rspec_tracer/remote_cache/backend'
 # where a real storage target (localstack) is available.
 RSpec.shared_examples 'a RemoteCache::Backend' do
   describe 'required methods' do
-    RSpecTracer::RemoteCache::Backend::REQUIRED_METHODS.each do |method|
+    TestSift::RemoteCache::Backend::REQUIRED_METHODS.each do |method|
       it "responds to :#{method}" do
         expect(backend).to respond_to(method)
       end
     end
 
     it 'passes Backend.conforms?' do
-      expect(RSpecTracer::RemoteCache::Backend.conforms?(backend)).to be(true)
+      expect(TestSift::RemoteCache::Backend.conforms?(backend)).to be(true)
     end
   end
 

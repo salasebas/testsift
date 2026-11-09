@@ -1,11 +1,11 @@
 # frozen_string_literal: true
 
 require 'set'
-require 'rspec_tracer/storage/lazy_snapshot'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/lazy_snapshot'
+require 'testsift/storage/snapshot'
 
 # rubocop:disable RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Storage::LazySnapshot do
+RSpec.describe TestSift::Storage::LazySnapshot do
   let(:reader_class) do
     Class.new do
       attr_reader :read_fields
@@ -89,7 +89,7 @@ RSpec.describe RSpecTracer::Storage::LazySnapshot do
     end
 
     it 'returns a Hash keyed by Snapshot member names' do
-      expect(snapshot.to_h.keys).to match_array(RSpecTracer::Storage::Snapshot.members)
+      expect(snapshot.to_h.keys).to match_array(TestSift::Storage::Snapshot.members)
     end
 
     it 'carries schema_version and run_id as eager members' do
@@ -102,7 +102,7 @@ RSpec.describe RSpecTracer::Storage::LazySnapshot do
   describe '#to_snapshot' do
     it 'returns a Storage::Snapshot carrying the same values' do
       eager = snapshot.to_snapshot
-      expect(eager).to be_a(RSpecTracer::Storage::Snapshot)
+      expect(eager).to be_a(TestSift::Storage::Snapshot)
       expect(eager.dependency).to eq('ex1' => Set.new(['/a.rb']))
       expect(eager.run_id).to eq('abc')
     end
@@ -110,7 +110,7 @@ RSpec.describe RSpecTracer::Storage::LazySnapshot do
 
   describe 'LAZY_FIELDS constant' do
     it 'contains every Snapshot member except schema_version and run_id' do
-      expected = RSpecTracer::Storage::Snapshot.members - %i[schema_version run_id]
+      expected = TestSift::Storage::Snapshot.members - %i[schema_version run_id]
       expect(described_class::LAZY_FIELDS).to eq(expected)
     end
 

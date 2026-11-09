@@ -14,7 +14,7 @@
 # fork patch was a localized nil-guard.
 #
 # 2.0 closes this architecturally: `Example.from`
-# (lib/rspec_tracer/example.rb) builds the example identity hash from
+# (lib/testsift/example.rb) builds the example identity hash from
 # `metadata[:file_path]` via `SourceFile.file_path` (path resolution,
 # no disk check) + `SourceFile.file_name` (root-relative path
 # normalization). Neither helper requires the file to exist on disk.
@@ -30,7 +30,7 @@ require 'digest'
 require 'json'
 require 'set'
 
-require 'rspec_tracer'
+require 'testsift'
 
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleExpectations, RSpec/VerifiedDoubles
 RSpec.describe 'gem-generated example with phantom file_path (regression for upstream #72)' do
@@ -60,11 +60,11 @@ RSpec.describe 'gem-generated example with phantom file_path (regression for ups
 
   describe 'Example.from with a non-existent source file' do
     it 'returns a deterministic identity hash without raising' do
-      expect { RSpecTracer::Example.from(phantom_example) }.not_to raise_error
+      expect { TestSift::Example.from(phantom_example) }.not_to raise_error
     end
 
     it 'returns the canonical identity-hash shape' do
-      result = RSpecTracer::Example.from(phantom_example)
+      result = TestSift::Example.from(phantom_example)
 
       expect(result).to include(
         :example_group, :description, :full_description, :shared_group,
@@ -73,18 +73,18 @@ RSpec.describe 'gem-generated example with phantom file_path (regression for ups
     end
 
     it 'computes a stable example_id (md5 of the identity payload)' do
-      first = RSpecTracer::Example.from(phantom_example)
-      second = RSpecTracer::Example.from(phantom_example)
+      first = TestSift::Example.from(phantom_example)
+      second = TestSift::Example.from(phantom_example)
 
       expect(first[:example_id]).to eq(second[:example_id])
       expect(first[:example_id]).to match(/\A[0-9a-f]{32}\z/)
     end
 
     it 'normalizes the phantom path to a root-relative file_name' do
-      result = RSpecTracer::Example.from(phantom_example)
+      result = TestSift::Example.from(phantom_example)
 
       # The file_path /synthesized/by/gem.rb starts with '/' and is
-      # NOT under RSpecTracer.root + the file does not exist, so
+      # NOT under TestSift.root + the file does not exist, so
       # SourceFile.absolute_external_file? returns false. The path
       # falls through to File.expand_path under the project root,
       # then file_name strips the project-root prefix - returning
@@ -97,9 +97,9 @@ RSpec.describe 'gem-generated example with phantom file_path (regression for ups
     it 'returns a normalized path for a non-existent absolute path under root' do
       synthesized = '/synthesized/by/gem.rb'
 
-      expect { RSpecTracer::SourceFile.file_path(synthesized) }.not_to raise_error
-      expect(RSpecTracer::SourceFile.file_path(synthesized))
-        .to eq(File.expand_path('synthesized/by/gem.rb', RSpecTracer.root))
+      expect { TestSift::SourceFile.file_path(synthesized) }.not_to raise_error
+      expect(TestSift::SourceFile.file_path(synthesized))
+        .to eq(File.expand_path('synthesized/by/gem.rb', TestSift.root))
     end
 
     it 'returns nil from from_path when the file is missing (callers must handle)' do
@@ -107,7 +107,7 @@ RSpec.describe 'gem-generated example with phantom file_path (regression for ups
       # non-existent paths so callers can decide whether to skip or
       # graceful-degrade. The 1.x runner.rb crash was a missing nil
       # guard; 2.0 has no caller of from_path that doesn't handle nil.
-      expect(RSpecTracer::SourceFile.from_path('/synthesized/by/gem.rb')).to be_nil
+      expect(TestSift::SourceFile.from_path('/synthesized/by/gem.rb')).to be_nil
     end
   end
 end

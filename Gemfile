@@ -31,7 +31,7 @@ group :development do
   # weekly `combinations` workflow overrides each axis explicitly via
   # the named ENV var to exercise the full supported cross-product.
   #
-  # Env names are prefixed `RSPEC_TRACER_*` to keep them in their own
+  # Env names are prefixed `TESTSIFT_*` to keep them in their own
   # namespace. `SQLITE3_VERSION` and `PARALLEL_TESTS_VERSION` (without
   # the prefix) are set by `full-matrix.yml` at STEP level for the Rails
   # / parallel-tests fixture Gemfiles - sharing those names between the
@@ -57,24 +57,24 @@ group :development do
   # in the bundle on 4.0+. On Ruby <= 3.4 it's still in stdlib so
   # `gem 'benchmark'` is harmless. Floor of 0.4 is the first 4.0-
   # extracted release.
-  gem 'benchmark', ENV.fetch('RSPEC_TRACER_BENCHMARK_VERSION', '>= 0.4')
+  gem 'benchmark', ENV.fetch('TESTSIFT_BENCHMARK_VERSION', '>= 0.4')
 
   # parallel + parallel_tests: 1.x / 2.x and 4.x / 5.x respectively.
   # parallel 2.x requires Ruby >= 3.3; on lower Rubies Bundler picks 1.x.
-  gem 'parallel', ENV.fetch('RSPEC_TRACER_PARALLEL_VERSION', '>= 1.26')
-  gem 'parallel_tests', ENV.fetch('RSPEC_TRACER_PARALLEL_TESTS_VERSION', '>= 4.10')
+  gem 'parallel', ENV.fetch('TESTSIFT_PARALLEL_VERSION', '>= 1.26')
+  gem 'parallel_tests', ENV.fetch('TESTSIFT_PARALLEL_TESTS_VERSION', '>= 4.10')
 
   # redis: 4.x (last patched 4.8.1) and 5.x (current 5.4.x). Both lines
   # install on every Ruby in the matrix. Default resolves to 5.x.
-  gem 'redis', ENV.fetch('RSPEC_TRACER_REDIS_VERSION', '>= 4.8')
+  gem 'redis', ENV.fetch('TESTSIFT_REDIS_VERSION', '>= 4.8')
 
   # connection_pool: 2.x (universal) and 3.x (Ruby >= 3.2 only). On
   # Ruby 3.1 / JRuby 9.4 Bundler backtracks to 2.x; on 3.2+ it picks 3.x.
-  gem 'connection_pool', ENV.fetch('RSPEC_TRACER_CONNECTION_POOL_VERSION', '>= 2.5')
+  gem 'connection_pool', ENV.fetch('TESTSIFT_CONNECTION_POOL_VERSION', '>= 2.5')
 
   # msgpack: single 1.x major line. -java platform variant exists for
   # JRuby. Both 1.7.x and 1.8.x install on every Ruby in the matrix.
-  gem 'msgpack', ENV.fetch('RSPEC_TRACER_MSGPACK_VERSION', '>= 1.7')
+  gem 'msgpack', ENV.fetch('TESTSIFT_MSGPACK_VERSION', '>= 1.7')
 
   # erb: pulled transitively via irb -> rdoc -> erb. erb 5.0+ bumped its
   # required_ruby_version to 3.2+; the matrix supports Ruby 3.1, so
@@ -82,7 +82,7 @@ group :development do
   # the lowest matrix Ruby) fails when erb >= 5.0 wins. Pin to the 4.x
   # line so resolution succeeds on every supported Ruby. Drop this pin
   # if the Ruby 3.1 floor is ever dropped from the matrix.
-  gem 'erb', ENV.fetch('RSPEC_TRACER_ERB_VERSION', '~> 4.0')
+  gem 'erb', ENV.fetch('TESTSIFT_ERB_VERSION', '~> 4.0')
 
   # sqlite3: per-Ruby gate because precompiled-binary ceilings differ
   # between 1.x and 2.x lines and the source-build path needs a C
@@ -99,9 +99,9 @@ group :development do
   # and 2.x; either pin satisfies the backend's runtime needs.
   if RUBY_ENGINE == 'ruby'
     if Gem::Version.new(RUBY_VERSION) >= Gem::Version.new('3.2')
-      gem 'sqlite3', ENV.fetch('RSPEC_TRACER_SQLITE3_VERSION', '>= 2.0')
+      gem 'sqlite3', ENV.fetch('TESTSIFT_SQLITE3_VERSION', '>= 2.0')
     else
-      gem 'sqlite3', ENV.fetch('RSPEC_TRACER_SQLITE3_VERSION', '~> 1.7')
+      gem 'sqlite3', ENV.fetch('TESTSIFT_SQLITE3_VERSION', '~> 1.7')
     end
   end
 
@@ -127,7 +127,7 @@ group :development do
 
   # Coexistence smoke specs. Used only by
   # spec/regressions/*_coexistence_spec.rb to verify that popular
-  # RSpec extensions compose with rspec-tracer's Module#prepend chain
+  # RSpec extensions compose with testsift's Module#prepend chain
   # on RSpec::Core::Runner / Reporter. Installed by default but never
   # required by lib/ or unit specs - the regression specs explicitly
   # require them in subprocess shape, so the outer rspec process is

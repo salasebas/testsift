@@ -8,8 +8,8 @@ require 'net/http'
 require 'open3'
 require 'securerandom'
 
-require 'rspec_tracer/remote_cache/s3_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/remote_cache/s3_backend'
+require 'testsift/storage/schema'
 
 # Integration test: S3Backend round-trip against LocalStack.
 #
@@ -47,7 +47,7 @@ RSpec.describe 'RemoteCache::S3Backend against LocalStack', :integration, :local
   before(:all) do
     skip 'LocalStack not reachable; skipping integration specs' unless localstack_reachable?
 
-    @bucket = "rspec-tracer-it-#{SecureRandom.hex(4)}"
+    @bucket = "testsift-it-#{SecureRandom.hex(4)}"
     _stdout, stderr, status = Open3.capture3('awslocal', 's3', 'mb', "s3://#{@bucket}")
     raise "failed to create bucket #{@bucket}: #{stderr}" unless status.success?
   end
@@ -56,7 +56,7 @@ RSpec.describe 'RemoteCache::S3Backend against LocalStack', :integration, :local
     Open3.capture3('awslocal', 's3', 'rb', "s3://#{@bucket}", '--force') if defined?(@bucket) && @bucket
   end
 
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
   around do |example|
     Dir.mktmpdir do |dir|
@@ -82,9 +82,9 @@ RSpec.describe 'RemoteCache::S3Backend against LocalStack', :integration, :local
   end
 
   def build_backend(branch:, default_branch: 'main', test_suite_id: nil, prefix: nil)
-    RSpecTracer::RemoteCache::S3Backend.new(
+    TestSift::RemoteCache::S3Backend.new(
       bucket: @bucket,
-      prefix: prefix || "rspec-tracer-#{SecureRandom.hex(4)}",
+      prefix: prefix || "testsift-#{SecureRandom.hex(4)}",
       branch: branch,
       default_branch: default_branch,
       test_suite_id: test_suite_id,

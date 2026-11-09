@@ -2,10 +2,10 @@
 
 require 'tmpdir'
 require 'fileutils'
-require 'rspec_tracer/filter'
-require 'rspec_tracer/tracker/coverage_adapter'
+require 'testsift/filter'
+require 'testsift/tracker/coverage_adapter'
 
-RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
+RSpec.describe TestSift::Tracker::CoverageAdapter do
   # Dir.mktmpdir gives a plain path; let memoizes it per-example, after
   # hook cleans up. Avoids instance variables that RSpec/InstanceVariable
   # flags while keeping write_file helpers in scope.
@@ -205,7 +205,7 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
 
     it 'applies legacy-compatible filters keyed on file_name' do
       allow(Coverage).to receive(:peek_result).and_return(inside_root => [1])
-      filter = RSpecTracer::Filter.register(%r{/lib/foo\.rb\z})
+      filter = TestSift::Filter.register(%r{/lib/foo\.rb\z})
       adapter = described_class.new(root: root, filters: [filter])
 
       expect(adapter.peek).to be_empty
@@ -230,7 +230,7 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
     before { allow(Coverage).to receive(:peek_result).and_return(snapshot) }
 
     it 'returns the filtered line map and every tracked path from one snapshot' do
-      adapter = described_class.new(root: root, filters: [RSpecTracer::Filter.register(%r{/vendor/})])
+      adapter = described_class.new(root: root, filters: [TestSift::Filter.register(%r{/vendor/})])
 
       expect(adapter.peek_with_paths).to eq([{ kept => [1] }, [kept, filtered, '/elsewhere/lib/foo.rb']])
     end
@@ -242,7 +242,7 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
     end
 
     it 'keeps each path\'s filter decision across repeated snapshots' do
-      adapter = described_class.new(root: root, filters: [RSpecTracer::Filter.register(%r{/vendor/})])
+      adapter = described_class.new(root: root, filters: [TestSift::Filter.register(%r{/vendor/})])
       adapter.peek_with_paths
 
       expect(adapter.peek_with_paths.first).to eq(kept => [1])
@@ -250,7 +250,7 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
 
     it 'evaluates the filters once per path per run' do
       names = []
-      filter = RSpecTracer::Filter.register(->(source) { names.push(source[:file_name]).empty? })
+      filter = TestSift::Filter.register(->(source) { names.push(source[:file_name]).empty? })
 
       described_class.new(root: root, filters: [filter]).tap(&:peek_with_paths).peek_with_paths
 
@@ -263,7 +263,7 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
     let(:outside_root) { '/elsewhere/lib/foo.rb' }
 
     it 'filters by root prefix only (skips the user filters list)' do
-      filter = RSpecTracer::Filter.register(%r{/lib/foo\.rb\z})
+      filter = TestSift::Filter.register(%r{/lib/foo\.rb\z})
       allow(Coverage).to receive(:peek_result).and_return(inside_root => [1], outside_root => [1])
       adapter = described_class.new(root: root, filters: [filter])
 
@@ -303,7 +303,7 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
     end
 
     it 'filters by root prefix only (skips the user filters list)' do
-      filter = RSpecTracer::Filter.register(%r{/lib/foo\.rb\z})
+      filter = TestSift::Filter.register(%r{/lib/foo\.rb\z})
       stats = { lines: [1], branches: {} }
       allow(Coverage).to receive(:peek_result).and_return(inside_root => stats, outside_root => stats)
       adapter = described_class.new(root: root, filters: [filter], mode: :hash)

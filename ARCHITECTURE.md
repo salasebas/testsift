@@ -1,4 +1,4 @@
-# rspec-tracer 2.0 — Architecture
+# TestSift architecture
 
 ## Mental model
 
@@ -48,8 +48,8 @@ Every test has zero or more inputs from these buckets:
    boot.
 
 5. **Whole-suite invalidators** — inputs whose change invalidates every
-   example: `Gemfile.lock`, `.ruby-version`, the `.rspec-tracer` config file,
-   the `rspec-tracer` gem version itself.
+   example: `Gemfile.lock`, `.ruby-version`, the `.testsift` config file,
+   the `testsift` gem version itself.
    *Observed via:* digest check at boot; any mismatch forces full run.
 
 6. **Truly unobservable inputs** — ENV-var branches that changed without any
@@ -67,7 +67,7 @@ files we auto-intercept, the declared glob takes precedence (deterministic).
 ### Input kinds (closed enum)
 
 The 6 buckets above project onto an 8-symbol enum on
-`RSpecTracer::Tracker::Input#kind`:
+`TestSift::Tracker::Input#kind`:
 
 | Bucket                              | `:kind` symbol(s)              |
 |-------------------------------------|--------------------------------|
@@ -78,7 +78,7 @@ The 6 buckets above project onto an 8-symbol enum on
 | 5. Whole-suite invalidators         | `:lockfile`                    |
 | 6. Truly unobservable inputs        | `:env` (escape-hatch metadata) |
 
-Closed-enum (`ALLOWED_INPUT_KINDS` in `lib/rspec_tracer/tracker/input.rb`),
+Closed-enum (`ALLOWED_INPUT_KINDS` in `lib/testsift/tracker/input.rb`),
 validated in the constructor — typos raise. Adding a kind is a one-line
 change plus a test; shrinking the set is a `schema_version` bump.
 
@@ -93,7 +93,7 @@ etc.) and we want each observer to tag its kind narrowly.
 
 ```text
 ┌────────────────────────────────────────────────────────────────────┐
-│                         CLI (bin/rspec-tracer)                      │
+│                         CLI (bin/testsift)                      │
 ├────────────────────────────────────────────────────────────────────┤
 │                 RSpec integration (lib/.../rspec/)                  │
 │        (hooks, filter, parallel_tests glue, metadata DSL)           │
@@ -127,9 +127,9 @@ replaceable independently.
 ## Directory layout (2.0)
 
 ```text
-rspec-tracer/
+testsift/
 |-- lib/
-|   `-- rspec_tracer/
+|   `-- testsift/
 |       |-- version.rb
 |       |-- configuration.rb
 |       |-- tracker/                  <- core engine
@@ -190,7 +190,7 @@ rspec-tracer/
 |   `-- ruby_app/
 |-- Taskfile.yml                      <- dev loop; see DEV_LOOP.md
 |-- bin/
-|   |-- rspec-tracer                  <- CLI entry
+|   |-- testsift                  <- CLI entry
 |   |-- actionlint                    <- installed by `task install:tools`
 |   `-- shellcheck                    <- installed by `task install:tools`
 |-- benchmark/
@@ -207,7 +207,7 @@ rspec-tracer/
 ### Tracker ↔ RSpec integration
 
 ```ruby
-module RSpecTracer::Tracker
+module TestSift::Tracker
   # Called once at boot, before any examples run.
   def setup(configuration:) ; end
 
@@ -228,7 +228,7 @@ end
 ### Tracker ↔ Storage
 
 ```ruby
-module RSpecTracer::Storage::Backend
+module TestSift::Storage::Backend
   # Returns the stored dependency graph, or nil if none.
   def load_graph(schema_version:) ; end
 
@@ -243,7 +243,7 @@ end
 ### Storage ↔ Remote cache
 
 ```ruby
-module RSpecTracer::RemoteCache::Backend
+module TestSift::RemoteCache::Backend
   # Returns true if a remote cache exists for this ref and was downloaded.
   def download(ref) ; end
 
@@ -332,7 +332,7 @@ clean, fully-recorded history.
 
 | Input | Mechanism | Tier | Notes |
 |-------|-----------|------|-------|
-| Whole-suite invalidators (`Gemfile.lock`, `.ruby-version`, `.rspec-tracer`, gem version) | Digest snapshot at boot, value-equality compare | Sound | Any mismatch, including a watched file appearing or disappearing, forces a full run. |
+| Whole-suite invalidators (`Gemfile.lock`, `.ruby-version`, `.testsift`, gem version) | Digest snapshot at boot, value-equality compare | Sound | Any mismatch, including a watched file appearing or disappearing, forces a full run. |
 | Project Ruby source (`.rb` under root, not filtered) | `Coverage` diff per example + loaded-files over-approximation | Sound detection, conservative attribution | Content change is always caught (SHA256). Per-example precision degrades to "every example that ran after the file loaded" for files whose use leaves no coverage delta (constant lookups, memoized state). |
 | Declared file globs (`track_files`, `tracks: { files: ... }`) | Boot-time walk + digest per run | Sound, given the declaration | The guarantee is conditional and applies to files the cache has seen: any change or deletion under a declared glob re-runs the attributed examples. Files added after the last observed run follow the "New source files" row below. |
 | Declared ENV vars (`track_env`, `tracks: { env: ... }`) | Per-run value digest, compared against the cached snapshot | Sound, two documented exceptions | (1) An unset variable and an empty string digest identically, so unset -> `""` is not a change. (2) Wildcard patterns (`RAILS_*`) re-expand against the live environment each run; a variable that disappears entirely also drops off the watch list. Prefer literal names for variables that come and go. |
@@ -373,8 +373,8 @@ The escape hatch for all of these is declaration -- turning an
 unobservable input into a declared (sound-tier) one:
 
 ```ruby
-# .rspec-tracer -- suite-wide
-RSpecTracer.configure do
+# .testsift -- suite-wide
+TestSift.configure do
   track_files 'config/feature_flags/**/*.yml'
   track_env 'FEATURE_X'
 end
@@ -437,7 +437,7 @@ end
 ## Compatibility shims
 
 - `Storage::LegacyJsonBackend` can read 1.x cache files for a one-shot migration
-  tool (not part of 2.0 core — a separate `rspec-tracer-migrate` gem if users
+  tool (not part of 2.0 core — a separate `testsift-migrate` gem if users
   ask for it).
 - Default: 1.x caches are ignored, one cold run on upgrade.
 

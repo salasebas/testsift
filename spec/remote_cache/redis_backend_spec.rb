@@ -5,8 +5,8 @@ require 'fileutils'
 require 'json'
 require 'tmpdir'
 
-require 'rspec_tracer/remote_cache/redis_backend'
-require 'rspec_tracer/storage/schema'
+require 'testsift/remote_cache/redis_backend'
+require 'testsift/storage/schema'
 require_relative '../contracts/remote_cache_backend'
 
 # Minimal in-memory Redis stand-in. Supports only the commands
@@ -116,18 +116,18 @@ class FakeRedisStore
 end
 
 # rubocop:disable RSpec/InstanceVariable, RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
+RSpec.describe TestSift::RemoteCache::RedisBackend do
   around do |example|
-    Dir.mktmpdir('rspec-tracer-redis-cache-') do |cache|
+    Dir.mktmpdir('testsift-redis-cache-') do |cache|
       @cache_path = cache
       @fake = FakeRedisStore.new
       example.run
     end
   end
 
-  let(:current_schema) { RSpecTracer::Storage::Schema::CURRENT }
+  let(:current_schema) { TestSift::Storage::Schema::CURRENT }
 
-  def new_backend(branch: 'main', default_branch: 'main', test_suite_id: nil, prefix: 'rspec-tracer')
+  def new_backend(branch: 'main', default_branch: 'main', test_suite_id: nil, prefix: 'testsift')
     described_class.new(
       prefix: prefix,
       branch: branch,
@@ -182,8 +182,8 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
     end
 
     it 'trims trailing colons from the prefix' do
-      backend = new_backend(prefix: 'rspec-tracer::')
-      expect(backend.instance_variable_get(:@prefix)).to eq('rspec-tracer')
+      backend = new_backend(prefix: 'testsift::')
+      expect(backend.instance_variable_get(:@prefix)).to eq('testsift')
     end
 
     it 'accepts a class-level redis_client kwarg without requiring url' do
@@ -199,7 +199,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       allow(Redis).to receive(:new).with(url: 'redis://localhost:6379/0').and_return(fake_client)
 
       backend = described_class.new(
-        prefix: 'rspec-tracer', branch: 'main', default_branch: 'main',
+        prefix: 'testsift', branch: 'main', default_branch: 'main',
         cache_path: @cache_path, url: 'redis://localhost:6379/0'
       )
 
@@ -285,7 +285,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
 
     it 'ignores unsafe hash field names (absolute paths and ..)' do
       backend = new_backend
-      @fake.hset('rspec-tracer:main:safe-check', {
+      @fake.hset('testsift:main:safe-check', {
                    '_timestamp' => '1',
                    'last_run.json' => JSON.generate('schema_version' => current_schema, 'run_id' => 'r'),
                    'r/ok.json' => '{}',
@@ -331,7 +331,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       write_local_cache(run_id: 'run-fields')
       backend.upload('fields-sha')
 
-      stored = @fake.stored_hash('rspec-tracer:main:fields-sha')
+      stored = @fake.stored_hash('testsift:main:fields-sha')
       expect(stored.keys).to include('_timestamp', 'last_run.json',
                                      'run-fields/all_examples.json', 'run-fields/dependency.json')
       expect(stored['_timestamp'].to_i).to be > 0
@@ -342,7 +342,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       write_local_cache(run_id: 'run-s')
       backend.upload('suite-sha')
 
-      expect(@fake.stored_hash('rspec-tracer:main:suite-sha:3')).not_to be_nil
+      expect(@fake.stored_hash('testsift:main:suite-sha:3')).not_to be_nil
     end
 
     it 'writes under pr:<branch>:<sha> for a PR tier backend' do
@@ -350,7 +350,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       write_local_cache(run_id: 'run-pr')
       pr.upload('pr-sha')
 
-      expect(@fake.stored_hash('rspec-tracer:pr:feat:pr-sha')).not_to be_nil
+      expect(@fake.stored_hash('testsift:pr:feat:pr-sha')).not_to be_nil
     end
 
     it 'wraps the write in MULTI and DELs before HSET to flush stale fields' do
@@ -359,19 +359,19 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       backend.upload('multi-sha')
 
       expect(@fake.calls[:multi]).to eq(%i[enter exit])
-      expect(@fake.calls[:del].flatten).to include('rspec-tracer:main:multi-sha')
+      expect(@fake.calls[:del].flatten).to include('testsift:main:multi-sha')
     end
 
     context 'with ttl: positive integer (per-key EXPIRE atomic with HSET)' do
       it 'fires EXPIRE inside the same MULTI block as the HSET' do
         backend = described_class.new(
-          prefix: 'rspec-tracer', branch: 'main', default_branch: 'main',
+          prefix: 'testsift', branch: 'main', default_branch: 'main',
           cache_path: @cache_path, redis_client: @fake, ttl: 86_400
         )
         write_local_cache(run_id: 'run-ttl')
         backend.upload('ttl-sha')
 
-        expect(@fake.calls[:expire]).to include(['rspec-tracer:main:ttl-sha', 86_400])
+        expect(@fake.calls[:expire]).to include(['testsift:main:ttl-sha', 86_400])
         expect(@fake.calls[:multi]).to eq(%i[enter exit])
       end
 
@@ -416,8 +416,8 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
         write_local_cache(run_id: 'run-side-pr')
         pr.upload('side-sha')
 
-        expect(@fake.calls[:sadd]).to include(['rspec-tracer:pr_branches', 'feat-x'])
-        expect(@fake.smembers('rspec-tracer:pr_branches')).to include('feat-x')
+        expect(@fake.calls[:sadd]).to include(['testsift:pr_branches', 'feat-x'])
+        expect(@fake.smembers('testsift:pr_branches')).to include('feat-x')
       end
 
       it 'does NOT SADD on main-tier uploads (sidecar is PR-tier only)' do
@@ -434,7 +434,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
         write_local_cache(run_id: 'run-b')
         new_backend(branch: 'feat-b', default_branch: 'main').upload('sha-b')
 
-        expect(@fake.smembers('rspec-tracer:pr_branches')).to contain_exactly('feat-a', 'feat-b')
+        expect(@fake.smembers('testsift:pr_branches')).to contain_exactly('feat-a', 'feat-b')
       end
 
       it 'fires SADD inside the same MULTI block as the HSET (single round-trip)' do
@@ -466,14 +466,14 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
 
     it 'returns {} on non-hash JSON' do
       backend = new_backend(branch: 'feat', default_branch: 'main')
-      @fake.set('rspec-tracer:pr:feat:branch_refs', '"just a string"')
+      @fake.set('testsift:pr:feat:branch_refs', '"just a string"')
 
       expect(backend.branch_refs('feat')).to eq({})
     end
 
     it 'returns {} on malformed JSON' do
       backend = new_backend(branch: 'feat', default_branch: 'main')
-      @fake.set('rspec-tracer:pr:feat:branch_refs', '{not json')
+      @fake.set('testsift:pr:feat:branch_refs', '{not json')
 
       expect(backend.branch_refs('feat')).to eq({})
     end
@@ -491,14 +491,14 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       backend = new_backend(branch: 'main', default_branch: 'main')
       backend.write_branch_refs('main', 'sha' => 1)
 
-      expect(@fake.stored_string('rspec-tracer:pr:main:branch_refs')).to be_nil
+      expect(@fake.stored_string('testsift:pr:main:branch_refs')).to be_nil
     end
 
     it 'is a no-op for empty refs' do
       backend = new_backend(branch: 'feat', default_branch: 'main')
       backend.write_branch_refs('feat', {})
 
-      expect(@fake.stored_string('rspec-tracer:pr:feat:branch_refs')).to be_nil
+      expect(@fake.stored_string('testsift:pr:feat:branch_refs')).to be_nil
     end
   end
 
@@ -510,7 +510,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
     it 'prunes excess refs beyond count by _timestamp ordering' do
       backend = new_backend
       5.times do |i|
-        @fake.hset("rspec-tracer:main:sha-#{i}", {
+        @fake.hset("testsift:main:sha-#{i}", {
                      '_timestamp' => (Time.now.to_i - ((5 - i) * 3600)).to_s,
                      'last_run.json' => '{}'
                    })
@@ -520,63 +520,63 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
 
       expect(removed).to eq(3)
       # Newest two (sha-3, sha-4) should survive
-      expect(@fake.all_keys).to include('rspec-tracer:main:sha-3', 'rspec-tracer:main:sha-4')
+      expect(@fake.all_keys).to include('testsift:main:sha-3', 'testsift:main:sha-4')
     end
 
     it 'prunes refs older than duration_seconds by _timestamp' do
       backend = new_backend
       now = Time.now.to_i
-      @fake.hset('rspec-tracer:main:recent', { '_timestamp' => (now - 60).to_s })
-      @fake.hset('rspec-tracer:main:old', { '_timestamp' => (now - (30 * 86_400)).to_s })
+      @fake.hset('testsift:main:recent', { '_timestamp' => (now - 60).to_s })
+      @fake.hset('testsift:main:old', { '_timestamp' => (now - (30 * 86_400)).to_s })
 
       removed = backend.prune!(duration_seconds: 7 * 86_400)
 
       expect(removed).to eq(1)
-      expect(@fake.all_keys).not_to include('rspec-tracer:main:old')
-      expect(@fake.all_keys).to include('rspec-tracer:main:recent')
+      expect(@fake.all_keys).not_to include('testsift:main:old')
+      expect(@fake.all_keys).to include('testsift:main:recent')
     end
 
     it 'prunes dead PR branch when pr_branch_ttl exceeded' do
       pr = new_backend(branch: 'feat', default_branch: 'main')
       now = Time.now.to_i
-      @fake.hset('rspec-tracer:pr:feat:old-sha', { '_timestamp' => (now - (30 * 86_400)).to_s })
-      @fake.set('rspec-tracer:pr:feat:branch_refs', '{}')
+      @fake.hset('testsift:pr:feat:old-sha', { '_timestamp' => (now - (30 * 86_400)).to_s })
+      @fake.set('testsift:pr:feat:branch_refs', '{}')
 
       removed = pr.prune!(pr_branch_ttl_seconds: 14 * 86_400)
 
       expect(removed).to eq(1)
-      expect(@fake.all_keys.grep(/rspec-tracer:pr:feat:/)).to be_empty
+      expect(@fake.all_keys.grep(/testsift:pr:feat:/)).to be_empty
     end
 
     it 'leaves alive PR branch untouched when newest ref is within TTL' do
       pr = new_backend(branch: 'feat', default_branch: 'main')
       now = Time.now.to_i
-      @fake.hset('rspec-tracer:pr:feat:live-sha', { '_timestamp' => (now - 60).to_s })
+      @fake.hset('testsift:pr:feat:live-sha', { '_timestamp' => (now - 60).to_s })
 
       expect(pr.prune!(pr_branch_ttl_seconds: 14 * 86_400)).to eq(0)
     end
 
     it 'filters out branch_refs keys when enumerating refs' do
       backend = new_backend
-      @fake.set('rspec-tracer:main:branch_refs', '{}') # shouldn't happen at main tier but guard exists
+      @fake.set('testsift:main:branch_refs', '{}') # shouldn't happen at main tier but guard exists
 
       expect(backend.prune!(count: 10)).to eq(0)
     end
 
     it 'skips keys missing a _timestamp field' do
       backend = new_backend
-      @fake.hset('rspec-tracer:main:no-ts', { 'last_run.json' => '{}' })
+      @fake.hset('testsift:main:no-ts', { 'last_run.json' => '{}' })
 
       expect(backend.prune!(count: 0)).to eq(0) # no refs with timestamp to enumerate
     end
 
     it 'returns the partial count on a StandardError mid-prune' do
       new_backend
-      logger = instance_double(RSpecTracer::Logger)
+      logger = instance_double(TestSift::Logger)
       allow(logger).to receive(:debug)
       allow(logger).to receive(:warn)
       backend_with_logger = described_class.new(
-        prefix: 'rspec-tracer', branch: 'main', default_branch: 'main',
+        prefix: 'testsift', branch: 'main', default_branch: 'main',
         cache_path: @cache_path, redis_client: @fake, logger: logger
       )
       allow(@fake).to receive(:scan_each).and_raise(RuntimeError, 'network')
@@ -595,17 +595,17 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       admin = new_backend
       now = Time.now.to_i
       # live branch
-      @fake.hset('rspec-tracer:pr:live:sha1', { '_timestamp' => (now - 60).to_s })
-      @fake.set('rspec-tracer:pr:live:branch_refs', '{}')
+      @fake.hset('testsift:pr:live:sha1', { '_timestamp' => (now - 60).to_s })
+      @fake.set('testsift:pr:live:branch_refs', '{}')
       # dead branch
-      @fake.hset('rspec-tracer:pr:dead:sha2', { '_timestamp' => (now - (30 * 86_400)).to_s })
-      @fake.set('rspec-tracer:pr:dead:branch_refs', '{}')
+      @fake.hset('testsift:pr:dead:sha2', { '_timestamp' => (now - (30 * 86_400)).to_s })
+      @fake.set('testsift:pr:dead:branch_refs', '{}')
 
       removed = admin.prune_all!(pr_branch_ttl_seconds: 14 * 86_400)
 
       expect(removed).to eq(1)
-      expect(@fake.all_keys).to include('rspec-tracer:pr:live:sha1')
-      expect(@fake.all_keys.grep(/rspec-tracer:pr:dead:/)).to be_empty
+      expect(@fake.all_keys).to include('testsift:pr:live:sha1')
+      expect(@fake.all_keys.grep(/testsift:pr:dead:/)).to be_empty
     end
 
     it 'returns 0 when no PR branches exist' do
@@ -620,14 +620,14 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
     end
 
     it 'returns 0 and logs when DEL raises on a dead-branch prune' do
-      logger = instance_double(RSpecTracer::Logger)
+      logger = instance_double(TestSift::Logger)
       allow(logger).to receive(:debug)
       allow(logger).to receive(:warn)
-      admin = described_class.new(prefix: 'rspec-tracer', branch: 'main', default_branch: 'main',
+      admin = described_class.new(prefix: 'testsift', branch: 'main', default_branch: 'main',
                                   cache_path: @cache_path, redis_client: @fake, logger: logger)
       now = Time.now.to_i
-      @fake.hset('rspec-tracer:pr:dead:sha1', { '_timestamp' => (now - (30 * 86_400)).to_s })
-      @fake.set('rspec-tracer:pr:dead:branch_refs', '{}')
+      @fake.hset('testsift:pr:dead:sha1', { '_timestamp' => (now - (30 * 86_400)).to_s })
+      @fake.set('testsift:pr:dead:branch_refs', '{}')
       # Let scan_each succeed; raise on the bulk DEL.
       allow(@fake).to receive(:del).and_raise(RuntimeError, 'connection lost')
 
@@ -639,21 +639,21 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
   describe '#unbounded_warning' do
     it 'returns nil when ref count is at or below threshold' do
       backend = new_backend
-      @fake.hset('rspec-tracer:main:sha1', { '_timestamp' => '1' })
+      @fake.hset('testsift:main:sha1', { '_timestamp' => '1' })
 
       expect(backend.unbounded_warning(warn_threshold: 10)).to be_nil
     end
 
     it 'returns a warning when main tier ref count exceeds threshold' do
       backend = new_backend
-      5.times { |i| @fake.hset("rspec-tracer:main:sha-#{i}", { '_timestamp' => '1' }) }
+      5.times { |i| @fake.hset("testsift:main:sha-#{i}", { '_timestamp' => '1' }) }
 
       expect(backend.unbounded_warning(warn_threshold: 3)).to include('5 refs')
     end
 
     it 'excludes branch_refs keys from the count' do
       backend = new_backend
-      @fake.set('rspec-tracer:main:branch_refs', '{}') # not a real cache key
+      @fake.set('testsift:main:branch_refs', '{}') # not a real cache key
 
       expect(backend.unbounded_warning(warn_threshold: 0)).to be_nil
     end
@@ -661,7 +661,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
 
   describe 'private branch coverage' do
     let(:logger) do
-      logger = instance_double(RSpecTracer::Logger)
+      logger = instance_double(TestSift::Logger)
       allow(logger).to receive(:debug)
       allow(logger).to receive(:warn)
       logger
@@ -675,7 +675,7 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
 
     it 'pr_branch_ttl=nil on PR tier skips the dead-PR check (safe-nav else branch)' do
       pr = new_backend(branch: 'feat', default_branch: 'main')
-      @fake.hset('rspec-tracer:pr:feat:live-sha', { '_timestamp' => Time.now.to_i.to_s })
+      @fake.hset('testsift:pr:feat:live-sha', { '_timestamp' => Time.now.to_i.to_s })
 
       expect(pr.prune!(pr_branch_ttl_seconds: nil)).to eq(0)
     end
@@ -696,14 +696,14 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
     it 'returns nil from fetch_timestamp when the hash field is absent' do
       backend = new_backend
       # Key with no _timestamp field; hget returns nil → fetch_timestamp early-returns nil.
-      @fake.hset('rspec-tracer:main:no-ts', 'last_run.json' => '{}')
+      @fake.hset('testsift:main:no-ts', 'last_run.json' => '{}')
 
-      expect(backend.send(:fetch_timestamp, 'rspec-tracer:main:no-ts')).to be_nil
+      expect(backend.send(:fetch_timestamp, 'testsift:main:no-ts')).to be_nil
     end
 
     it 'returns 0 from delete_keys on an empty key list (prune-by-duration with no stale)' do
       backend = new_backend
-      @fake.hset('rspec-tracer:main:recent', { '_timestamp' => Time.now.to_i.to_s })
+      @fake.hset('testsift:main:recent', { '_timestamp' => Time.now.to_i.to_s })
 
       expect(backend.prune!(duration_seconds: 7 * 86_400)).to eq(0)
     end
@@ -712,13 +712,13 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
       pr = new_backend(branch: 'orphan', default_branch: 'main')
       # branch_refs key exists, but no actual cache refs — list_refs filters
       # branch_refs out so entries is empty.
-      @fake.set('rspec-tracer:pr:orphan:branch_refs', '{}')
+      @fake.set('testsift:pr:orphan:branch_refs', '{}')
 
       expect(pr.prune!(pr_branch_ttl_seconds: 14 * 86_400)).to eq(0)
     end
 
     it 'skips DEL when delete_branch_prefix has no matching keys (orphan branch_refs)' do
-      admin = described_class.new(prefix: 'rspec-tracer', branch: 'main', default_branch: 'main',
+      admin = described_class.new(prefix: 'testsift', branch: 'main', default_branch: 'main',
                                   cache_path: @cache_path, redis_client: @fake, logger: logger)
       # An orphan branch_refs key without any backing refs — the keys list
       # for the deletion is empty, so the bulk DEL is skipped.
@@ -736,10 +736,10 @@ RSpec.describe RSpecTracer::RemoteCache::RedisBackend do
 
     it 'logs the per-key prune messages when a logger is configured (log_debug then-branch)' do
       backend = described_class.new(
-        prefix: 'rspec-tracer', branch: 'main', default_branch: 'main',
+        prefix: 'testsift', branch: 'main', default_branch: 'main',
         cache_path: @cache_path, redis_client: @fake, logger: logger
       )
-      @fake.hset('rspec-tracer:main:old-sha', { '_timestamp' => (Time.now.to_i - (30 * 86_400)).to_s })
+      @fake.hset('testsift:main:old-sha', { '_timestamp' => (Time.now.to_i - (30 * 86_400)).to_s })
 
       backend.prune!(duration_seconds: 7 * 86_400)
 

@@ -1,0 +1,61 @@
+# frozen_string_literal: true
+
+# User-facing Rake task shim. The canonical loading pattern in a
+# user's own Rakefile (preserved from 1.x, documented in README.md
+# "Configuring CI"):
+#
+#   spec = Gem::Specification.find_by_name('testsift')
+#   load "#{spec.gem_dir}/lib/testsift/remote_cache/Rakefile"
+#
+# This file must remain at the same path and continue to define the
+# same two tasks. The `require 'testsift'` + `require
+# 'testsift/remote_cache'` pair lazy-loads the backend tree only
+# when the user actually invokes a cache task.
+
+require 'testsift'
+require 'testsift/remote_cache'
+
+# rubocop:disable Metrics/BlockLength
+namespace :testsift do
+  namespace :remote_cache do
+    desc 'Download cache'
+    task :download do
+      unless TestSift::RemoteCache::UserTasks.git_repo?
+        TestSift.logger.error 'Not a git repository'
+        exit
+      end
+
+      TestSift::RemoteCache::UserTasks.download!(
+        configuration: TestSift,
+        env: ENV
+      )
+    end
+
+    desc 'Upload cache'
+    task :upload do
+      unless TestSift::RemoteCache::UserTasks.git_repo?
+        TestSift.logger.error 'Not a git repository'
+        exit
+      end
+
+      unless ENV['CI'] == 'true' || TestSift.upload_non_ci_reports
+        TestSift.logger.warn 'Uploading reports from a non CI environment is disabled'
+        exit
+      end
+
+      TestSift::RemoteCache::UserTasks.upload!(
+        configuration: TestSift,
+        env: ENV
+      )
+    end
+
+    desc 'Prune dead PR branches across the whole remote cache (maintenance task)'
+    task :prune_all do
+      TestSift::RemoteCache::UserTasks.prune_all!(
+        configuration: TestSift,
+        env: ENV
+      )
+    end
+  end
+end
+# rubocop:enable Metrics/BlockLength

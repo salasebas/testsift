@@ -37,8 +37,8 @@ require 'set'
 require 'tmpdir'
 
 $LOAD_PATH.unshift File.expand_path('../../lib', __dir__)
-require 'rspec_tracer/storage/json_backend'
-require 'rspec_tracer/storage/snapshot'
+require 'testsift/storage/json_backend'
+require 'testsift/storage/snapshot'
 
 iterations = Integer(ENV.fetch('ITERATIONS', '300'))
 seed       = Integer(ENV.fetch('SEED', Random.new_seed.to_s))
@@ -51,7 +51,7 @@ rng        = Random.new(seed)
 sqlite_available =
   begin
     require 'sqlite3'
-    require 'rspec_tracer/storage/sqlite_backend'
+    require 'testsift/storage/sqlite_backend'
     RUBY_ENGINE == 'ruby'
   rescue LoadError
     false
@@ -64,8 +64,8 @@ puts "  sqlite_available=#{sqlite_available}"
 # corruption begins. Same shape as
 # spec/edge_cases/cache_corruption_spec.rb's helper.
 def build_baseline_snapshot
-  RSpecTracer::Storage::Snapshot.new(
-    schema_version: RSpecTracer::Storage::Schema::CURRENT,
+  TestSift::Storage::Snapshot.new(
+    schema_version: TestSift::Storage::Schema::CURRENT,
     run_id: 'fuzz-run',
     all_examples: { 'ex' => { id: 'ex', description: 'baseline' } },
     duplicate_examples: {},
@@ -95,7 +95,7 @@ CONTRACTED_OUTCOMES = %i[nil snapshot].freeze
 def run_backend_fuzz(backend:, targets:, iters:, rng:, max_bytes:, restore_proc:)
   # rubocop:enable Metrics/ParameterLists
   outcomes = Hash.new(0)
-  schema_version = RSpecTracer::Storage::Schema::CURRENT
+  schema_version = TestSift::Storage::Schema::CURRENT
 
   iters.times do
     target = targets.sample(random: rng)
@@ -124,13 +124,13 @@ started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
 all_outcomes = {}
 
 # 1. JsonBackend :json
-Dir.mktmpdir('rspec_tracer_fuzz_json_') do |cache_path|
-  backend = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json)
+Dir.mktmpdir('testsift_fuzz_json_') do |cache_path|
+  backend = TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :json)
   baseline = build_baseline_snapshot
-  backend.save_graph(baseline, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+  backend.save_graph(baseline, schema_version: TestSift::Storage::Schema::CURRENT)
 
-  manifest = File.join(cache_path, RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME)
-  per_field = RSpecTracer::Storage::JsonBackend::FIELD_NAMES.map { |f| File.join(cache_path, baseline.run_id, "#{f}.json") }
+  manifest = File.join(cache_path, TestSift::Storage::JsonBackend::LAST_RUN_FILENAME)
+  per_field = TestSift::Storage::JsonBackend::FIELD_NAMES.map { |f| File.join(cache_path, baseline.run_id, "#{f}.json") }
   targets = [manifest] + per_field
 
   restore = lambda do
@@ -146,13 +146,13 @@ Dir.mktmpdir('rspec_tracer_fuzz_json_') do |cache_path|
 end
 
 # 2. JsonBackend :msgpack
-Dir.mktmpdir('rspec_tracer_fuzz_msgpack_') do |cache_path|
-  backend = RSpecTracer::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack)
+Dir.mktmpdir('testsift_fuzz_msgpack_') do |cache_path|
+  backend = TestSift::Storage::JsonBackend.new(cache_path: cache_path, serializer: :msgpack)
   baseline = build_baseline_snapshot
-  backend.save_graph(baseline, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+  backend.save_graph(baseline, schema_version: TestSift::Storage::Schema::CURRENT)
 
-  manifest = File.join(cache_path, RSpecTracer::Storage::JsonBackend::LAST_RUN_FILENAME)
-  per_field = RSpecTracer::Storage::JsonBackend::FIELD_NAMES.map { |f| File.join(cache_path, baseline.run_id, "#{f}.msgpack.gz") }
+  manifest = File.join(cache_path, TestSift::Storage::JsonBackend::LAST_RUN_FILENAME)
+  per_field = TestSift::Storage::JsonBackend::FIELD_NAMES.map { |f| File.join(cache_path, baseline.run_id, "#{f}.msgpack.gz") }
   targets = [manifest] + per_field
 
   # Restoring the per-field files to a freshly-encoded msgpack-empty
@@ -163,7 +163,7 @@ Dir.mktmpdir('rspec_tracer_fuzz_msgpack_') do |cache_path|
     File.write(manifest,
                JSON.pretty_generate({ 'schema_version' => baseline.schema_version, 'run_id' => baseline.run_id,
                                       'timestamp' => Time.now.utc.iso8601 }))
-    backend.save_graph(baseline, schema_version: RSpecTracer::Storage::Schema::CURRENT) if rng.rand(50).zero?
+    backend.save_graph(baseline, schema_version: TestSift::Storage::Schema::CURRENT) if rng.rand(50).zero?
   end
 
   outcomes = run_backend_fuzz(backend: backend, targets: targets, iters: per_backend,
@@ -173,18 +173,18 @@ end
 
 # 3. SqliteBackend (skip on JRuby / missing gem)
 if sqlite_available
-  Dir.mktmpdir('rspec_tracer_fuzz_sqlite_') do |cache_path|
-    backend = RSpecTracer::Storage::SqliteBackend.new(cache_path: cache_path)
+  Dir.mktmpdir('testsift_fuzz_sqlite_') do |cache_path|
+    backend = TestSift::Storage::SqliteBackend.new(cache_path: cache_path)
     baseline = build_baseline_snapshot
-    backend.save_graph(baseline, schema_version: RSpecTracer::Storage::Schema::CURRENT)
+    backend.save_graph(baseline, schema_version: TestSift::Storage::Schema::CURRENT)
 
-    db_path = File.join(cache_path, RSpecTracer::Storage::SqliteBackend::DB_FILENAME)
+    db_path = File.join(cache_path, TestSift::Storage::SqliteBackend::DB_FILENAME)
     targets = [db_path]
 
     # SqliteBackend's only on-disk file is the .sqlite3. Restore by
     # re-saving the baseline (cheap; ~10ms per save).
     restore = lambda do
-      backend.save_graph(baseline, schema_version: RSpecTracer::Storage::Schema::CURRENT) if rng.rand(20).zero?
+      backend.save_graph(baseline, schema_version: TestSift::Storage::Schema::CURRENT) if rng.rand(20).zero?
     end
 
     outcomes = run_backend_fuzz(backend: backend, targets: targets, iters: per_backend,

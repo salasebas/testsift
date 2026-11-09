@@ -29,9 +29,9 @@ module IntegrationCleanup
   # canonical path set call `scrub_default!(root)`; specs that need
   # a narrower scrub pass paths to `scrub_paths!` directly.
   DEFAULT_SUBDIRS = %w[
-    rspec_tracer_cache
-    rspec_tracer_coverage
-    rspec_tracer_report
+    testsift_cache
+    testsift_coverage
+    testsift_report
     coverage
     tmp
   ].freeze

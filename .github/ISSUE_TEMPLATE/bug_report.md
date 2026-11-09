@@ -1,29 +1,29 @@
 ---
 name: Bug report
-about: Report a defect in rspec-tracer.
+about: Report a defect in TestSift.
 title: ''
 labels: bug
 ---
 
 <!--
 Before filing: check open and closed issues for an existing report.
-Run on the latest stable rspec-tracer. Replace everything above the
+Run on the latest stable TestSift. Replace everything above the
 first horizontal rule with your own content.
 -->
 
 ## Versions
 
-- [ ] `rspec-tracer`:
+- [ ] `testsift`:
 - [ ] `ruby`:
 - [ ] `rails` (if applicable):
 - [ ] `rspec` / `rspec-core`:
 - [ ] `simplecov` (if applicable):
 - [ ] OS:
 
-## `.rspec-tracer` config
+## `.testsift` config
 
 ```ruby
-# paste your .rspec-tracer block here (or note "defaults")
+# paste your .testsift block here (or note "defaults")
 ```
 
 ## Expected behaviour

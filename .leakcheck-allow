@@ -16,4 +16,5 @@ scripts/leak_check.rb  # gate implementation; spells out the very patterns it sc
 .gitignore  # the ignore rule must name the local-only planning tree it excludes
 CLAUDE.md  # agent guardrail doc; must name the local-only tree and its vocabulary to ban them
 AGENTS.md  # agent guardrail doc; must name the local-only tree and its vocabulary to ban them
-lib/rspec_tracer/reporters/html/package-lock.json  # npm-generated lockfile; base64 sha512 integrity hashes randomly contain letter+digit runs that collide with tag patterns
+lib/testsift/reporters/html/package-lock.json  # npm-generated lockfile; base64 sha512 integrity hashes randomly contain letter+digit runs that collide with tag patterns
+docs/upstream/CHANGELOG.md  # upstream release history preserved verbatim at the fork point; frozen shipped text

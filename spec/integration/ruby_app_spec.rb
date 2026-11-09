@@ -20,9 +20,9 @@ require 'open3'
 # rubocop:disable RSpec/DescribeClass, RSpec/MultipleExpectations
 RSpec.describe 'ruby_app v2 engine integration' do
   let(:fixture_root) { File.expand_path('../../benchmark/fixtures/ruby_app', __dir__) }
-  let(:cache_dir)    { File.join(fixture_root, 'rspec_tracer_cache') }
-  let(:report_dir)   { File.join(fixture_root, 'rspec_tracer_report') }
-  let(:coverage_dir) { File.join(fixture_root, 'rspec_tracer_coverage') }
+  let(:cache_dir)    { File.join(fixture_root, 'testsift_cache') }
+  let(:report_dir)   { File.join(fixture_root, 'testsift_report') }
+  let(:coverage_dir) { File.join(fixture_root, 'testsift_coverage') }
 
   around do |example|
     Bundler.with_unbundled_env do
@@ -61,20 +61,20 @@ RSpec.describe 'ruby_app v2 engine integration' do
       out, status = run_rspec
 
       expect(status.exitstatus).to eq(0), "cold run failed:\n#{out}"
-      expect(out).to include('RSpec tracer')
+      expect(out).to include('TestSift')
     end
 
     it 'writes a v2 cache stamped with the current schema_version' do
       run_rspec
 
-      expect(load_last_run_manifest['schema_version']).to eq(RSpecTracer::Storage::Schema::CURRENT)
+      expect(load_last_run_manifest['schema_version']).to eq(TestSift::Storage::Schema::CURRENT)
     end
 
     it 'writes every FILENAMES entry under the run-id directory' do
       run_rspec
 
       run_id = load_last_run_manifest.fetch('run_id')
-      RSpecTracer::Storage::JsonBackend::FILENAMES.each do |filename|
+      TestSift::Storage::JsonBackend::FILENAMES.each do |filename|
         expect(File).to exist(File.join(cache_dir, run_id, filename)), "missing #{filename}"
       end
     end
@@ -117,7 +117,7 @@ RSpec.describe 'ruby_app v2 engine integration' do
       html = File.read(File.join(report_dir, 'index.html'), encoding: 'UTF-8')
 
       expect(html).to include('id="fallback-all-examples"')
-      expect(html).not_to include('<!-- RSPEC_TRACER_FALLBACK -->')
+      expect(html).not_to include('<!-- TESTSIFT_FALLBACK -->')
     end
   end
 

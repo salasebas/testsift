@@ -1,5 +1,5 @@
 ---
-name: rspec-tracer CodeQL config
+name: testsift CodeQL config
 
 paths-ignore:
   # Instrumentation modules - prepend hooks forward a path argument
@@ -9,7 +9,7 @@ paths-ignore:
   # methods are the user's own File.open / Kernel.load / etc. calls
   # being transparently wrapped. Re-enabling analysis here would
   # generate a false positive for every new hook module added.
-  - lib/rspec_tracer/tracker/io_hooks/**
+  - lib/testsift/tracker/io_hooks/**
   # Specs that exercise the instrumented methods via dynamic tmpdir
   # fixtures; same false-positive shape.
   - spec/tracker/io_hooks/**

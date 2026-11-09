@@ -3,7 +3,7 @@
 # Widening-assertion spec for the
 # `DatabaseCleaner :transaction` strategy in an around hook.
 #
-# Real-user setup under test: a Rails project running the rspec-tracer
+# Real-user setup under test: a Rails project running the testsift
 # `track_ar_schema_notifications` DSL with `use_transactional_fixtures
 # = false` and `database_cleaner-active_record` configured for
 # :transaction cleanup in a `config.around { DatabaseCleaner.cleaning
@@ -32,15 +32,15 @@ require_relative '../support/fixture_bundle_helper'
 
 module WideArSchemaDbCleanerTransactionSpecHelpers
   TRACER_ENV = {
-    'RSPEC_TRACER' => '1',
-    'RSPEC_TRACER_RAILS_TRANSACTIONAL' => 'false',
-    'RSPEC_TRACER_DB_CLEANER_STRATEGY' => 'transaction'
+    'TESTSIFT' => '1',
+    'TESTSIFT_RAILS_TRANSACTIONAL' => 'false',
+    'TESTSIFT_DB_CLEANER_STRATEGY' => 'transaction'
   }.freeze
   SUBPROCESS_BUNDLE_ENV = { 'BUNDLE_FROZEN' => '1' }.freeze
   WIDE_SPEC = 'spec/wide_schema_spec.rb'
   SCHEMA_FILE_NAME = '/db/schema.rb'
 
-  MUTATION_MARKER = "\n# rspec-tracer wide-schema mutation marker\n"
+  MUTATION_MARKER = "\n# testsift wide-schema mutation marker\n"
 
   AR_DESCRIPTIONS = ['creates user A', 'creates user B', 'creates user C and counts'].freeze
   PURE_DESCRIPTION = 'performs only pure-Ruby computation'

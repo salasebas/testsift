@@ -37,7 +37,7 @@ How do we know the feature is done? List concrete, checkable items.
 
 - Ruby:
 - Rails (if applicable):
-- rspec-tracer:
+- TestSift:
 
 ## Additional context
 
