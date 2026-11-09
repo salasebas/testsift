@@ -30,8 +30,9 @@ report directories. [UPGRADING.md](UPGRADING.md) maps every old name.
 TestSift does not read rspec-tracer caches; the first run is cold.
 
 TestSift versions independently from `0.0.1` and releases through
-release-please ([RELEASING.md](RELEASING.md)). No `testsift` gem has been
-published yet. Upstream's changelog, roadmap, 1.x upgrade guide, and 1.x
+release-please ([RELEASING.md](RELEASING.md)). The first release,
+`0.0.1`, was published to [RubyGems](https://rubygems.org/gems/testsift)
+on November 9, 2026. Upstream's changelog, roadmap, 1.x upgrade guide, and 1.x
 design narrative are kept unchanged under [docs/upstream/](docs/upstream/);
 measurements and benchmark results recorded before the rename keep the
 names that were current when they were taken.
