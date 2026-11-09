@@ -218,8 +218,9 @@ module TestSift
       # Internal method on the tracer pipeline.
       # @api private
       def run_count
-        snapshot.all_examples.count do |_, meta|
-          meta.is_a?(::Hash) && meta[:execution_result]
+        skipped = snapshot.skipped_examples
+        snapshot.all_examples.count do |id, meta|
+          !skipped.include?(id) && meta.is_a?(::Hash) && meta[:execution_result]
         end
       end
 

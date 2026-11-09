@@ -23,7 +23,7 @@ RSpec.describe TestSift::Reporters::TerminalReporter do
     TestSift::Storage::Snapshot.empty(schema_version: 3, run_id: 'rid').tap do |s|
       s.all_examples = {
         'ex1' => { execution_result: { status: 'passed' } },
-        'ex2' => {},
+        'ex2' => { execution_result: { status: 'passed' } },
         'ex3' => { execution_result: { status: 'passed' } }
       }
       s.skipped_examples = Set.new(['ex2'])
@@ -60,6 +60,13 @@ RSpec.describe TestSift::Reporters::TerminalReporter do
       expect(io.string).to include('2 re-run')
       expect(io.string).to include('1 skipped')
       expect(io.string).to include('33% cached')
+    end
+
+    it 'reports 0 re-run when every example was restored from the cache' do
+      snap = build_populated_snapshot(skipped_examples: Set.new(%w[ex1 ex2 ex3]))
+      build_reporter(snap: snap).generate
+
+      expect(io.string).to include('3 examples tracked · 0 re-run · 3 skipped (100% cached)')
     end
 
     it 'emits a cache line when cache_path is in run_metadata' do
