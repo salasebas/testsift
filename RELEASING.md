@@ -46,7 +46,13 @@ the changelog; `docs`, `refactor`, `test`, `ci`, and `chore` do not.
    release-please opens or updates a release pull request
    (`chore(testsift): release …`) that bumps `TestSift::VERSION`,
    prepends the `CHANGELOG.md` entry, and updates the manifest.
-2. Before merging it, run the checks that need a human read:
+2. Approve the release pull request's workflow runs. release-please
+   opens it as `github-actions[bot]` with `GITHUB_TOKEN`, so GitHub
+   [holds its `ci`, `pr-title`, and `codeql` runs until someone with
+   write access approves them](https://github.blog/changelog/2026-06-11-bot-created-pull-requests-can-run-workflows-if-approved/).
+   Wait for them to pass. Runs still waiting when the pull request
+   merges end as failed without running any job.
+3. Before merging it, run the checks that need a human read:
 
    ```sh
    task release:preflight
@@ -57,15 +63,16 @@ the changelog; `docs`, `refactor`, `test`, `ci`, and `chore` do not.
    `GEM_HOME`, and runs `require 'testsift'`, `testsift --version`,
    and a cold then warm run of `benchmark/fixtures/ruby_app` from that
    install.
-3. Merge the release pull request. release-please tags `vX.Y.Z` and
+4. Merge the release pull request. release-please tags `vX.Y.Z` and
    creates the GitHub release; the `publish` job then checks the tag
    against `TestSift::VERSION`, runs `task release:verify` on the
    tagged commit, and pushes `pkg/testsift-X.Y.Z.gem` to RubyGems.
 
-The release pull request is opened with `GITHUB_TOKEN`, so GitHub does
-not run the `ci` workflow on it. It only changes the version, the
-changelog, and the manifest; `release:verify` in the `publish` job
-checks the built artifact.
+The release pull request only changes the version, the changelog, and
+the manifest. A GitHub App token for release-please would start its
+runs without approval; the approval click is kept instead, so the
+repository holds no App credentials. `release:verify` in the `publish`
+job checks the built artifact either way.
 
 ## One-time setup before the first release
 
