@@ -110,9 +110,6 @@ RSpec.describe TestSift::RemoteCache::UserTasks do
       logger: logger,
       cache_path: cache_path,
       remote_cache_backend_entry: nil,
-      reports_s3_path: nil,
-      reports_s3_path_set?: false,
-      use_local_aws: false,
       upload_non_ci_reports: false,
       cache_retention_count: nil,
       cache_retention_duration_seconds: nil,
@@ -317,33 +314,6 @@ RSpec.describe TestSift::RemoteCache::UserTasks do
       expect(info_messages).not_to(include(a_string_including('cross-branch fallback')))
     end
 
-    it 'does not probe the deprecated reports_s3_path when reports_s3_path_set? is false' do
-      config = build_config(remote_cache_backend_entry: nil, reports_s3_path_set?: false)
-      stub_ancestry
-
-      described_class.new(configuration: config, env: build_env).download!
-
-      expect(config).not_to have_received(:reports_s3_path)
-    end
-
-    it 'returns nil from the legacy probe when the getter yields a nil/empty value' do
-      # Edge case: reports_s3_path_set? returns true (env was set), but the
-      # getter returns nil (the env value failed valid_s3_path? in Configuration
-      # and never populated @reports_s3_path). The probe defensively bails out.
-      config = build_config(
-        remote_cache_backend_entry: nil,
-        reports_s3_path: nil,
-        reports_s3_path_set?: true
-      )
-      stub_ancestry
-
-      result = described_class.new(configuration: config, env: build_env).download!
-
-      expect(result).to be(false)
-      warns = captured_logs.select { |(level, _)| level == :warn }.map(&:last)
-      expect(warns).to include(a_string_including('no remote_cache_backend configured'))
-    end
-
     it 'merges branch_refs with ancestry on PR builds' do
       config = build_config(remote_cache_backend_entry: backend_entry)
       stub_ancestry(branch: 'feat', default_branch: 'main', ancestry_refs: { 'anc1' => 100 })
@@ -358,40 +328,6 @@ RSpec.describe TestSift::RemoteCache::UserTasks do
       expect(backend.calls[:branch_refs]).to include('feat')
       # Newest first: br1 (200), anc1 (100)
       expect(backend.calls[:download]).to eq(%w[br1 anc1])
-    end
-
-    it 'derives backend from legacy reports_s3_path DSL when remote_cache_backend is absent' do
-      config = build_config(
-        remote_cache_backend_entry: nil,
-        reports_s3_path: 's3://legacy-bucket/legacy-prefix',
-        reports_s3_path_set?: true,
-        use_local_aws: true
-      )
-      stub_ancestry(ancestry_refs: { 'sha1' => 100 })
-      stub_const('TestSift::RemoteCache::UserTasks::BUILT_IN_BACKENDS', s3: fake_backend_class)
-
-      described_class.new(configuration: config, env: build_env).download!
-
-      backend = fake_backend_class.all_instances.last
-      expect(backend.opts[:bucket]).to eq('legacy-bucket')
-      expect(backend.opts[:prefix]).to eq('legacy-prefix')
-      expect(backend.opts[:local]).to be(true)
-    end
-
-    it 'rejects a legacy reports_s3_path with a non-s3 scheme (returns nil → unconfigured)' do
-      config = build_config(
-        remote_cache_backend_entry: nil,
-        reports_s3_path: 'http://example.com/cache',
-        reports_s3_path_set?: true
-      )
-      stub_ancestry
-
-      result = described_class.new(configuration: config, env: build_env).download!
-
-      expect(result).to be(false)
-      expect(captured_logs.any? do |lvl, msg|
-        lvl == :warn && msg.include?('no remote_cache_backend configured')
-      end).to be(true)
     end
 
     it 'raises when GIT_BRANCH env is missing (caught and logged)' do
@@ -816,8 +752,6 @@ RSpec.describe TestSift::RemoteCache::UserTasks do
         define_method(:logger) { logger_local }
         define_method(:cache_path) { cache_path_local }
         define_method(:upload_non_ci_reports) { false }
-        define_method(:reports_s3_path) { nil }
-        define_method(:use_local_aws) { false }
         define_method(:remote_cache_backend_entry) { [backend_class, {}] }
       end
       config = config_class.new

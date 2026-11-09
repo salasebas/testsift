@@ -13,8 +13,8 @@ module TestSift
       # which normal `rspec` runs rely on. The `testsift` binary
       # sets this to its stderr BEFORE booting the tracer library, so
       # loggers constructed while the project's `.testsift` config
-      # loads (e.g. by the 1.x deprecation shims, or recreated after a
-      # config `log_level` call resets the memoized instance) already
+      # loads (including one recreated after a config `log_level` call
+      # resets the memoized instance) already
       # bind to stderr and machine-readable stdout (`blast-radius
       # --json`) stays free of diagnostics. See {TestSift::CLI}.
       #

@@ -27,6 +27,19 @@ still on rspec-tracer 1.x, the upstream 1.x → 2.0 guide is preserved in
 Old environment variables are not read. Rename each one, for example
 `RSPEC_TRACER_RUN_ALL_EXAMPLES` → `TESTSIFT_RUN_ALL_EXAMPLES`.
 
+## Removed options
+
+rspec-tracer 2.0 still accepted two 1.x remote-cache options and
+printed a deprecation warning. TestSift does not define them. Replace
+them before switching:
+
+| rspec-tracer | TestSift |
+| --- | --- |
+| `reports_s3_path 's3://bucket/prefix'` | `remote_cache_uri 's3://bucket/prefix'` or `remote_cache_backend :s3, bucket: 'bucket', prefix: 'prefix'` |
+| `use_local_aws true` | `remote_cache_backend :s3, bucket: 'bucket', prefix: 'prefix', local: true` |
+| `RSPEC_TRACER_REPORTS_S3_PATH` | `TESTSIFT_REMOTE_CACHE_URI`, read by a bare `remote_cache_uri` line in `.testsift` |
+| `RSPEC_TRACER_USE_LOCAL_AWS` | The `local: true` option of `remote_cache_backend` |
+
 ## Caches start cold
 
 TestSift does not read rspec-tracer caches. The first TestSift run
@@ -58,5 +71,6 @@ rspec-tracer (see [docs/CI_RECIPES.md](docs/CI_RECIPES.md)).
    `require 'testsift'` and `TestSift.start`.
 4. In your `Rakefile`, rename `rspec_tracer:remote_cache:*` task
    references to `testsift:remote_cache:*`.
-5. Rename `RSPEC_TRACER_*` variables in CI and local environments.
+5. Rename `RSPEC_TRACER_*` variables in CI and local environments,
+   and replace the [removed options](#removed-options).
 6. Update `.gitignore` for the new directory names.
