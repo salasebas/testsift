@@ -27,8 +27,8 @@ warm confirmation datasets, which have five clean repetitions and no profile.
 Nearest-rank p95 is the largest clean sample. Rails runs replay the dependency
 resolution retained in `../2026-11-04-issue-20/stock/metadata.json`. Each
 `metadata.json` pins the engine revision, driver hashes, lockfiles, and command.
-Campaigns ran in series in this order: Rails and large for `e225fbf` then
-`fb36816`; Rails and large for `bb26fc3`, a second large baseline, then sparse
+Campaigns ran in series in this order: Rails for `e225fbf` and `fb36816`,
+then large for both; Rails and large for `bb26fc3`, a second large baseline, then sparse
 for `bb26fc3` and `e225fbf`; finally warm confirmation for `bb26fc3`, `e225fbf`,
 and `bb26fc3` again.
 
@@ -57,24 +57,31 @@ Seconds are clean p50 / p95. The selected column is identical for every revision
 | --- | ---: | ---: | ---: | ---: | ---: |
 | Rails full branches | 308 | 11.31 / 11.43 | 8.17 / 8.17 | 8.43 / 9.24 | −25.5% |
 | Rails source defect, branches | 308 | 12.14 / 12.88 | 8.32 / 8.33 | 8.61 / 9.58 | −29.1% |
-| Rails input change, branches | 16 | 1.50 / 1.71 | 1.22 / 1.23 | 1.22 / 1.31 | −18.7% |
+| Rails input change, branches | 16 | 1.50 / 1.71 | 1.22 / 1.23 | 1.22 / 1.31 | −19.0% |
 | Rails full lines | 308 | 3.63 / 3.71 | 3.19 / 3.22 | 2.90 / 3.23 | −20.1% |
-| Rails source defect, lines | 308 | 3.65 / 3.66 | 3.20 / 3.20 | 3.08 / 3.17 | −15.6% |
-| Rails warm lines | 0 | 0.88 / 0.99 | 0.81 / 0.81 | 0.89 / 0.90 | +1.1% |
+| Rails source defect, lines | 308 | 3.65 / 3.66 | 3.20 / 3.20 | 3.08 / 3.17 | −15.5% |
+| Rails warm lines | 0 | 0.88 / 0.99 | 0.81 / 0.81 | 0.89 / 0.90 | +1.4% |
 | Large full lines | 10,000 | 17.77 / 17.84 | 16.83 / 16.89 | 10.38 / 11.14 | −41.6% |
-| Sparse full lines | 1,000 | 1.86 / 1.95 | — | 1.02 / 1.03 | −45.2% |
+| Sparse full lines | 1,000 | 1.86 / 1.95 | — | 1.02 / 1.03 | −45.3% |
 | Sparse full branches | 1,000 | 5.59 / 5.95 | — | 3.39 / 3.45 | −39.4% |
 | Sparse two-worker merge, lines | 1,000 | 2.40 / 2.47 | — | 1.96 / 1.97 | −18.3% |
-| Sparse two-worker merge, branches | 1,000 | 4.14 / 4.30 | — | 2.97 / 3.02 | −28.3% |
+| Sparse two-worker merge, branches | 1,000 | 4.14 / 4.30 | — | 2.97 / 3.02 | −28.2% |
 
-Change compares `bb26fc3` with `e225fbf`. The second large baseline measured
-18.39 / 18.58 seconds for full lines, so the large improvement is not host drift.
-Every p95 in the table also improves. Peak single-process RSS medians stay within
-1% of the baseline except Rails full branches: 222,640 KiB against 209,244 KiB
-(+6.4%). Its samples are 203,300, 222,640, and 226,124 KiB against 208,920 to
-212,868 KiB, so that spread overlaps the baseline and needs more repetitions
-before it can be called a regression. The per-run memo tables hold one entry per
-observed path, a few hundred on this fixture.
+Change compares the unrounded `bb26fc3` and `e225fbf` medians. The second large
+baseline measured 18.39 / 18.58 seconds for full lines, so the large improvement is
+not host drift. Every p95 in the table also improves.
+
+Peak single-process RSS medians move between −7.3% and +8.4% against the baseline.
+Full commands move at most +6.4% (Rails branches: 222,640 KiB against 209,244 KiB)
+and +4.0% (sparse branches); the two-worker merge cells move +8.4% (lines) and
+−7.3% (branches). Seven cells have three-sample ranges that do not overlap the
+baseline: four higher (Rails defect branches, sparse full lines and branches,
+sparse merge lines) and three lower (Rails input change lines, Rails warm lines,
+sparse merge branches). The new per-run tables hold one small entry per observed
+path, a few hundred on these fixtures, so they do not account for megabyte
+shifts. This dataset does not attribute the RSS changes. A quiet host with more
+repetitions is required before any memory claim, and a native candidate's
+no-worse-RSS gate must be measured against this revision.
 
 ## Allocations
 
@@ -82,7 +89,7 @@ Ruby objects allocated per complete full command, clean medians:
 
 | Workload | `e225fbf` | `fb36816` | `bb26fc3` |
 | --- | ---: | ---: | ---: |
-| Large full lines | 106,395,504 | 101,087,919 | 36,872,501 |
+| Large full lines | 106,395,503 | 101,087,919 | 36,872,501 |
 
 Large warm commands allocate 43,777,4xx objects on all three revisions, which
 shows that they execute the same work.
@@ -91,8 +98,8 @@ shows that they execute the same work.
 
 The first large campaign measured warm lines at 7.39 s for `e225fbf` and 8.16 s for
 `bb26fc3`. No changed method runs in a warm command: every example is skipped, so
-neither snapshot normalization nor attribution executes. The profiles show no
-component change larger than 0.2 s, and the allocation counts above are equal.
+neither snapshot normalization nor attribution executes. The largest profile
+component change is 0.22 s in reports, and the allocation counts above are equal.
 The interleaved confirmation ran `bb26fc3`, `e225fbf`, and `bb26fc3` again
 with five repetitions each:
 

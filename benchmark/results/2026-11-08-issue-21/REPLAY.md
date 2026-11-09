@@ -28,8 +28,8 @@ done
 ```
 
 The published dataset names match these output names. `large-e225fbf-r2` is a
-second run of the large baseline command. The first campaign also requested
-`parallel_full` for Rails; the driver excludes that cell for the Rails fixture,
+second run of the large baseline command. The first two Rails campaigns also
+requested `parallel_full`; the driver excludes that cell for the Rails fixture,
 so it produced no rows.
 
 On macOS without Docker, replace `run` with
