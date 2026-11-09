@@ -6,7 +6,7 @@ require 'open3'
 require 'tmpdir'
 
 RSpec.describe 'CurrentEvidence', if: RUBY_ENGINE == 'ruby' && RUBY_VERSION.start_with?('3.3.') &&
-  RUBY_PLATFORM.include?('linux') do
+  RUBY_PLATFORM.match?(/linux|darwin/) do
   subject(:result) do
     _, status = Open3.capture2e(environment, RbConfig.ruby, '-r', bootstrap, '-e', script)
     payload = JSON.parse(File.read(Dir[File.join(root, 'telemetry.*.json')].fetch(0)))

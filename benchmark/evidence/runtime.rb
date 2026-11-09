@@ -7,6 +7,7 @@ require 'optparse'
 require 'rbconfig'
 require 'tmpdir'
 require_relative 'coverage'
+require_relative 'host'
 
 module RuntimeEvidence
   def self.main
@@ -30,7 +31,7 @@ module RuntimeEvidence
   def self.sample(ruby, mode, touched, jit)
     Dir.mktmpdir('testsift-runtime') do |root|
       resource = File.join(root, 'time.txt')
-      command = ['/usr/bin/time', '-f', '%M', '-o', resource, ruby]
+      command = PerformanceEvidence::Host.timed([ruby], resource)
       command.push('--yjit', '--yjit-call-threshold=1') if jit
       command.push(__FILE__, '--child')
       env = { 'FILES' => '200', 'BRANCH_SITES' => '32', 'ITERATIONS' => '20',
@@ -43,7 +44,7 @@ module RuntimeEvidence
       JSON.parse(stdout).merge(command: command, env: env, requested_yjit: jit,
                                ruby_sha256: Digest::SHA256.file(ruby).hexdigest,
                                command_seconds: Process.clock_gettime(Process::CLOCK_MONOTONIC) - started,
-                               peak_rss_kib: File.read(resource).strip.to_i)
+                               peak_rss_kib: PerformanceEvidence::Host.resources(resource).fetch(:peak_rss_kib))
     end
   end
 end

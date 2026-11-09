@@ -9,13 +9,35 @@ and decisions. The [baseline guide](README.md) defines the common timing protoco
 
 ## Prepare the host
 
-Use the pinned MRI 3.3.10, the root bundle, and both fixture bundles. These drivers
-require Linux `/proc`, GNU `/usr/bin/time`, `taskset`, `tar`, a C compiler, and glibc
-2.33 or later for `mallinfo2`. The tiny malloc probe is benchmark instrumentation.
+Use the pinned MRI 3.3.10, the root bundle, and both fixture bundles. The drivers
+run natively on Linux and macOS. `host.rb` owns the platform differences:
+
+| Measurement | Linux | macOS |
+| --- | --- | --- |
+| Command RSS and CPU | GNU `/usr/bin/time -f` | BSD `/usr/bin/time -l` |
+| In-process peak RSS | `/proc/self/status` `VmHWM` | `getrusage` `ru_maxrss` |
+| Allocator sample | glibc 2.33+ `mallinfo2` | `malloc_zone_statistics` |
+| Host provenance | `/proc`, `taskset` | `sysctl`; no CPU affinity |
+
+Both need `tar` and a C compiler. The tiny malloc probe is benchmark instrumentation.
 It is compiled into the output directory and never loaded by the product.
 The real-branch generator spec excludes JRuby because its
 [Coverage implementation](https://github.com/jruby/jruby/blob/9.4.15.0/core/src/main/java/org/jruby/ext/coverage/CoverageModule.java#L75)
 does not support branch coverage. Product runtime support is unchanged.
+
+Use macOS for local iteration and paired before/after comparisons on one machine.
+Absolute numbers from different hosts are not comparable. Record publishable
+evidence with the same protocol as the retained Linux datasets. On a Mac, or any
+machine with Docker, the pinned container provides that host:
+
+```sh
+task benchmark:evidence:docker -- task benchmark:evidence:current -- --output tmp/linux-current
+```
+
+The container uses `.ruby-version`, mounts the checkout and its Git directory at
+their host paths, and keeps Linux gems in the `testsift-evidence-bundle` volume.
+Docker Desktop and OrbStack run it inside a Linux VM. Metadata records the VM kernel;
+on ARM the CPU model may be absent, so record the physical host separately.
 
 ```sh
 bundle install
@@ -163,10 +185,11 @@ RSpec documents that [dry runs skip examples and hooks](https://rspec.info/featu
 task benchmark:evidence:startup -- --modes lines --cases unwrapped_plain --repetitions 3 --profiles 0 --output tmp/current-discovery
 ```
 
-GNU time supplies peak process-tree RSS, which includes native allocations. It is
+`/usr/bin/time` supplies peak process-tree RSS, which includes native allocations. It is
 the maximum single-process peak, not simultaneous worker RSS summed together.
-Per-worker telemetry also records `/proc/self/status`'s `VmHWM`. Profile boundaries
-in the memory pass sample glibc used arena bytes plus used mmap bytes with `mallinfo2`. The maximum
+Per-worker telemetry also records the process peak (`VmHWM` on Linux, `ru_maxrss` on
+macOS). Profile boundaries in the memory pass sample glibc used arena bytes plus used
+mmap bytes with `mallinfo2`, or macOS malloc-zone bytes in use. The maximum
 sample is a lower bound, includes Ruby heap arenas, and excludes allocations
 that appear and disappear between boundaries. It is not native-only peak memory.
 GC malloc counters are net increases since collection, not heap peaks. Native-only

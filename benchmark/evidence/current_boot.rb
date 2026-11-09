@@ -2,6 +2,7 @@
 
 require 'fiddle'
 require_relative 'boot'
+require_relative 'host'
 
 module CurrentEvidence
   def self.profile_targets
@@ -58,12 +59,12 @@ module CurrentEvidence
   end
 
   def self.memory
-    status = File.read('/proc/self/status')
-    { process_peak_rss_kib: status[/^VmHWM:\s+(\d+)/, 1].to_i,
+    { process_peak_rss_kib: PerformanceEvidence::Host.process_peak_rss_kib,
       gc_malloc_increase_bytes: GC.stat(:malloc_increase_bytes),
       gc_oldmalloc_increase_bytes: GC.stat(:oldmalloc_increase_bytes),
       sampled_malloc_peak_bytes: @malloc_peak,
-      native_allocator_note: 'glibc used bytes include Ruby heap arenas; profile boundary samples are lower bounds.' }
+      native_allocator_note: 'Allocator used bytes (glibc mallinfo2 or macOS malloc zones) include Ruby heap ' \
+                             'arenas; profile boundary samples are lower bounds.' }
   end
 
   def self.sample_malloc

@@ -33,7 +33,7 @@ module PerformanceEvidence
     end
 
     def metadata
-      files = %w[current.rb current_boot.rb corpus.rb cache_probe.rb run.rb boot.rb malloc_probe.c]
+      files = %w[current.rb current_boot.rb corpus.rb cache_probe.rb run.rb boot.rb host.rb malloc_probe.c]
       super.merge(engine_revision: @revision,
                   driver_sha256: files.to_h { |name| [name, Digest::SHA256.file(File.join(__dir__, name)).hexdigest] },
                   root_lockfile: File.read(File.join(ROOT, 'Gemfile.lock')),

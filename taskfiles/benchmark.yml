@@ -76,6 +76,23 @@ tasks:
     cmds:
       - ruby benchmark/evidence/current.rb {{.CLI_ARGS}}
 
+  benchmark:evidence:docker:
+    desc: >-
+      Run evidence commands in the pinned Linux container, e.g.
+      task benchmark:evidence:docker -- task benchmark:evidence:current -- --output tmp/linux
+    vars:
+      IMAGE: testsift-evidence:{{.RUBY_VERSION}}
+      GIT_COMMON_DIR:
+        sh: cd "$(git rev-parse --git-common-dir)" && pwd
+    cmds:
+      - docker build --quiet --build-arg RUBY_VERSION={{.RUBY_VERSION}} -t {{.IMAGE}} benchmark/evidence
+      - >-
+        docker run --rm --user "$(id -u):$(id -g)"
+        -v testsift-evidence-bundle:/bundle
+        -v "{{.GIT_COMMON_DIR}}:{{.GIT_COMMON_DIR}}"
+        -v "{{.ROOT_DIR}}:{{.ROOT_DIR}}" -w "{{.ROOT_DIR}}"
+        {{.IMAGE}} sh -c "bundle install --quiet && {{.CLI_ARGS}}"
+
   benchmark:coverage:real:
     desc: Measure snapshots and scans of actual VM Coverage over executable Ruby files
     cmds:
