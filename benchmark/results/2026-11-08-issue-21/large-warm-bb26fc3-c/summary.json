@@ -1,0 +1,60 @@
+[
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "warm",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 5,
+    "p50_seconds": 8.023904550999987,
+    "p95_seconds": 8.20160001599993,
+    "median_peak_rss_kib": 590628.0,
+    "median_allocations": 43777486,
+    "cache_bytes": [
+      80655113,
+      80655113
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      82661041,
+      82661041
+    ],
+    "p95_peak_rss_kib": 603752.0,
+    "p95_allocations": 43777510,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "input_fault",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 5,
+    "p50_seconds": 8.10488372399982,
+    "p95_seconds": 8.665075916999967,
+    "median_peak_rss_kib": 587592.0,
+    "median_allocations": 43805308,
+    "cache_bytes": [
+      80655733,
+      80655734
+    ],
+    "selected_ratio": [
+      0.001,
+      0.001
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      82662047,
+      82662049
+    ],
+    "p95_peak_rss_kib": 588724.0,
+    "p95_allocations": 43805311,
+    "oracle_failure_observations": 50,
+    "failure_status_mismatches": 0
+  }
+]
