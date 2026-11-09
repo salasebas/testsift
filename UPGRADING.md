@@ -37,7 +37,7 @@ them before switching:
 | --- | --- |
 | `reports_s3_path 's3://bucket/prefix'` | `remote_cache_uri 's3://bucket/prefix'` or `remote_cache_backend :s3, bucket: 'bucket', prefix: 'prefix'` |
 | `use_local_aws true` | `remote_cache_backend :s3, bucket: 'bucket', prefix: 'prefix', local: true` |
-| `RSPEC_TRACER_REPORTS_S3_PATH` | `TESTSIFT_REMOTE_CACHE_URI` |
+| `RSPEC_TRACER_REPORTS_S3_PATH` | `TESTSIFT_REMOTE_CACHE_URI`, read by a bare `remote_cache_uri` line in `.testsift` |
 | `RSPEC_TRACER_USE_LOCAL_AWS` | The `local: true` option of `remote_cache_backend` |
 
 ## Caches start cold
