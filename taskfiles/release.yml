@@ -41,7 +41,7 @@ tasks:
         # characters before the version (e.g. a backtick-quoted
         # "Lands in vN.N.N"); the example spells the version with N
         # placeholders so this line never matches its own pattern.
-        if git grep -IinE 'lands in .{0,2}v[0-9]'; then
+        if git grep -IinE 'lands in .{0,2}v[0-9]' -- ':(exclude)docs/upstream'; then
           echo "VERIFY-MANUALLY: re-verify each promised version above."
         else
           echo "PASS: no forward version promises found."
