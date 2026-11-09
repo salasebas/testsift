@@ -24,14 +24,14 @@ module OSSBenchmark
       @oracles = {}
       @seeds = {}
       @patches = {}
-      @state = { oracles: @oracles, seeds: {} }
+      @state = { oracles: @oracles, seeds: {}, failures: [] }
     end
 
     def execute(&record)
       @record = record
       preflight
       oracles
-      @options.fetch(:tracers).each { |tracer| prime(tracer) } unless tracer_cases.empty?
+      @tracers = tracer_cases.empty? ? [] : @options.fetch(:tracers).select { |tracer| primed?(tracer) }
       rounds
     ensure
       @workspace.reset
@@ -80,9 +80,15 @@ module OSSBenchmark
       { ids: Validation.executed_ids(row), failures: row.fetch(:failures), total: row.fetch(:executed) }
     end
 
-    def prime(tracer)
+    # An invalid prime leaves no seed to warm from, so that tracer's cells
+    # are skipped and reported while the other tracer is still measured.
+    def primed?(tracer)
       row = sample('full', tracer, nil, round: 'prime')
-      raise EvidenceError, "#{tracer} prime run is invalid: #{row.fetch(:errors).join('; ')}" unless row[:valid]
+      unless row[:valid]
+        @state[:failures] << { project: @workspace.name, tracer: tracer,
+                               error: "prime run is invalid: #{row.fetch(:errors).join('; ')}" }
+        return false
+      end
 
       seed = File.join(@directory, 'seeds', tracer)
       FileUtils.mkdir_p(seed)
@@ -92,11 +98,12 @@ module OSSBenchmark
       end
       @seeds[tracer] = seed
       @state[:seeds][tracer] = { path: seed, identity: identity(seed), cache_examples: row.fetch(:cache_examples) }
+      true
     end
 
     def cells
       controls = (@options.fetch(:cases) & CONTROL_CASES).map { |kase| [kase, nil, nil] }
-      controls + @options.fetch(:tracers).product(tracer_cases).flat_map do |tracer, kase|
+      controls + @tracers.product(tracer_cases).flat_map do |tracer, kase|
         case kase
         when 'changed' then changes.map { |change| ['changed', tracer, change.fetch('name')] }
         when 'fault' then [['fault', tracer, 'fault']]

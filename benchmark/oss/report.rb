@@ -22,6 +22,7 @@ module OSSBenchmark
 
     def summarize(rows, projects, failures)
       measured = rows.select { |row| row[:round].is_a?(Integer) }
+      failures += projects.values.flat_map { |state| state.fetch(:failures) }
       problems = (failures + rows.select { |row| problem?(row) }.map { |row| problem(row) }).uniq
       { valid: problems.empty?, problems: problems,
         cells: measured.group_by { |row| row.values_at(*CELL_KEYS) }.map { |key, samples| cell(key, samples) },
