@@ -65,8 +65,8 @@ jobs:
       # fallback prefixes progressively widen the match.
       - restore_cache:
           keys:
-            - testsift-v1-{{ arch }}-ruby-3.3.10-testsift-0.1.0-{{ checksum "Gemfile.lock" }}
-            - testsift-v1-{{ arch }}-ruby-3.3.10-testsift-0.1.0-
+            - testsift-v1-{{ arch }}-ruby-3.3.10-testsift-0.0.1-{{ checksum "Gemfile.lock" }}
+            - testsift-v1-{{ arch }}-ruby-3.3.10-testsift-0.0.1-
             - testsift-v1-{{ arch }}-ruby-3.3.10-
 
       - run:
@@ -77,7 +77,7 @@ jobs:
       # exact key. If the same key already has an entry, CircleCI
       # writes the new content (last-write-wins).
       - save_cache:
-          key: testsift-v1-{{ arch }}-ruby-3.3.10-testsift-0.1.0-{{ checksum "Gemfile.lock" }}
+          key: testsift-v1-{{ arch }}-ruby-3.3.10-testsift-0.0.1-{{ checksum "Gemfile.lock" }}
           paths:
             - testsift_cache
 ```
@@ -104,7 +104,7 @@ cache:
   # ladder via `key:files:`. Pair that with a literal prefix so the
   # tracer-version bump is a single string edit.
   key:
-    prefix: testsift-v1-ruby-3.3.10-testsift-0.1.0
+    prefix: testsift-v1-ruby-3.3.10-testsift-0.0.1
     files:
       - Gemfile.lock
   paths:
@@ -132,7 +132,7 @@ rspec:
       - RUBY_VERSION: ['3.1.6', '3.2.5', '3.3.10', '3.4.1']
   cache:
     key:
-      prefix: testsift-v1-ruby-${RUBY_VERSION}-testsift-0.1.0
+      prefix: testsift-v1-ruby-${RUBY_VERSION}-testsift-0.0.1
       files: [Gemfile.lock]
     paths: [testsift_cache/]
   ```
@@ -158,9 +158,9 @@ steps:
           restore: pipeline
           save: pipeline
           key: |
-            v1-testsift-{{ os }}-ruby-3.3.10-testsift-0.1.0-{{ hash "Gemfile.lock" }}
+            v1-testsift-{{ os }}-ruby-3.3.10-testsift-0.0.1-{{ hash "Gemfile.lock" }}
           fallback_keys:
-            - v1-testsift-{{ os }}-ruby-3.3.10-testsift-0.1.0-
+            - v1-testsift-{{ os }}-ruby-3.3.10-testsift-0.0.1-
             - v1-testsift-{{ os }}-ruby-3.3.10-
 ```
 

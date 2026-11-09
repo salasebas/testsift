@@ -7,8 +7,10 @@ edits `CHANGELOG.md` or `TestSift::VERSION` by hand.
 ## Versioning
 
 TestSift versions independently of the RSpec Tracer baseline it forked
-from (`2.0.0.rc.1`). The first release is `0.1.0`. While the major
-version is `0`, the public API may still change:
+from (`2.0.0.rc.1`). The first release is `0.0.1`: a working build that
+claims the `testsift` name on RubyGems and exercises the whole release
+pipeline. While the major version is `0`, the public API may still
+change:
 
 | Commit type | Before 1.0.0 | From 1.0.0 |
 | --- | --- | --- |
@@ -16,8 +18,10 @@ version is `0`, the public API may still change:
 | `feat:` | patch | minor |
 | `feat!:` or a `BREAKING CHANGE:` footer | minor | major |
 
-Users pin `~> 0.1.0` to receive fixes and features without breaking
-changes. TestSift does not publish `.pre` or `.rc` versions: the `0.x`
+Users pin the current minor (for example `~> 0.0.1`) to receive fixes
+and features without breaking changes. To cut the first feature-complete
+release, set `"release-as": "0.1.0"` in `release-please-config.json`,
+merge the release PR, then remove the key. TestSift does not publish `.pre` or `.rc` versions: the `0.x`
 line is the prerelease phase, and `1.0.0` marks the first stable API.
 release-please would write a prerelease as `0.1.0-beta.1`, which
 RubyGems rewrites to `0.1.0.pre.beta.1`, so tags and gem versions would
@@ -25,7 +29,7 @@ stop matching.
 
 Configuration lives in `release-please-config.json` (release type
 `ruby`, `bump-minor-pre-major`, `bump-patch-for-minor-pre-major`,
-`initial-version` `0.1.0`) and `.release-please-manifest.json` (the
+`initial-version` `0.0.1`) and `.release-please-manifest.json` (the
 last released version; empty until the first release).
 
 ## Commit messages
@@ -73,9 +77,12 @@ checks the built artifact.
   required reviewer, so every publish waits for approval.
 - On rubygems.org, add a pending
   [trusted publisher](https://guides.rubygems.org/trusted-publishing/)
-  for the gem `testsift`: repository `salasebas/testsift`, workflow
-  `release.yml`, environment `rubygems`. No API key is stored in the
-  repository.
+  for the gem `testsift`: repository owner `salasebas`, repository
+  `testsift`, workflow `release.yml`, environment `rubygems`. A pending
+  publisher expires 12 hours after it is created and does not reserve
+  the name, so create it just before merging the first release PR. The
+  first successful push turns it into a permanent publisher and makes
+  you the gem owner. No API key is stored in the repository.
 
 ## If publishing fails
 

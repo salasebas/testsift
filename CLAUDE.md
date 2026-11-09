@@ -138,7 +138,7 @@ as a preconditioned dep, but raw `bundle exec` skips that guard.
 
 Trunk-based. PRs into `testsift` (the default branch), squash-merged
 with a Conventional Commit title (`feat:`, `fix:`, `perf:`, `docs:`,
-...; checked by `pr-title.yml`). Versions start at `0.1.0` and never
+...; checked by `pr-title.yml`). Versions start at `0.0.1` and never
 use `.pre`/`.rc` suffixes. release-please (`release.yml`) keeps a
 release PR open that bumps `TestSift::VERSION` and writes
 `CHANGELOG.md`; never edit either by hand. Merging the release PR tags

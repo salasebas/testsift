@@ -10,7 +10,7 @@ dependency map.**
 TestSift is an independent project that started as a fork of
 [RSpec Tracer](https://github.com/avmnu-sng/rspec-tracer) at upstream
 `v2.0.0.rc.1` (commit `f13851f7b3393aaafa7c7df088c1605747f07ce5`). It
-ships its own gem, `testsift`, versioned from `0.1.0`; it is not
+ships its own gem, `testsift`, versioned from `0.0.1`; it is not
 upstream's 2.0 release. [FORK.md](FORK.md) records the baseline and
 attribution, [UPGRADING.md](UPGRADING.md) covers moving from
 `rspec-tracer`, and the
@@ -69,7 +69,7 @@ is supported until at least six months past its upstream EOL -- see
 gem 'testsift', github: 'salasebas/testsift', branch: 'testsift',
                 group: :test, require: false
 # After the first RubyGems release:
-# gem 'testsift', '~> 0.1.0', group: :test, require: false
+# gem 'testsift', '~> 0.0.1', group: :test, require: false
 ```
 
 Add the tracer's working directories to your `.gitignore` before the

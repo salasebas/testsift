@@ -13,7 +13,7 @@ The fork was created on November 3, 2026.
 | Imported gem version | `2.0.0.rc.1` |
 | Imported gem and namespace | `rspec-tracer`, `RSpecTracer` |
 | TestSift gem and namespace | `testsift`, `TestSift` |
-| TestSift initial version | `0.1.0` |
+| TestSift initial version | `0.0.1` |
 | License | MIT. The upstream copyright notice stays in [LICENSE](LICENSE) next to TestSift's. |
 
 The development branch starts from the tagged commit. The fork's `main`
@@ -29,7 +29,7 @@ file, `TESTSIFT_*` environment variables, and `testsift_*` cache and
 report directories. [UPGRADING.md](UPGRADING.md) maps every old name.
 TestSift does not read rspec-tracer caches; the first run is cold.
 
-TestSift versions independently from `0.1.0` and releases through
+TestSift versions independently from `0.0.1` and releases through
 release-please ([RELEASING.md](RELEASING.md)). No `testsift` gem has been
 published yet. Upstream's changelog, roadmap, 1.x upgrade guide, and 1.x
 design narrative are kept unchanged under [docs/upstream/](docs/upstream/);
