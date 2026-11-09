@@ -134,12 +134,22 @@ module RSpecTracer
       # Skip block decides exclusion; everything that survives gets
       # normalized through the array/hash mode handling.
       def normalize(raw)
-        raw.each_with_object({}) do |(path, stats), acc|
-          next unless path.start_with?(@root_prefix)
+        project_paths(raw).each_with_object({}) do |path, acc|
           next if yield(path)
 
+          stats = raw[path]
           acc[path] = @mode == :hash ? stats[:lines] : stats
         end
+      end
+
+      # Coverage keeps every file it has seen while it runs, so an
+      # unchanged key count means an unchanged key set (the same
+      # invariant LoadedFilesTracker#new_filtered_paths relies on).
+      def project_paths(raw)
+        return @project_paths if @project_paths_size == raw.size
+
+        @project_paths_size = raw.size
+        @project_paths = raw.keys.select { |path| path.start_with?(@root_prefix) }
       end
 
       # Internal method on the tracer pipeline.

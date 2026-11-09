@@ -882,6 +882,19 @@ RSpec.describe RSpecTracer::Engine do
 
       expect(names).to eq(['/lib/a.rb'])
     end
+
+    it 'records the latest digest when a file changes between examples' do
+      tracker = build_tracker.tap(&:setup)
+      a_path = File.join(root, 'lib/a.rb')
+      stub_example_snapshots(tracker, { a_path => [0] }, { a_path => [1] })
+      tracker.tap(&:example_started).example_finished('ex1')
+      File.write(a_path, "module A; VALUE = 2; end\n")
+      RSpecTracer::Tracker::FileDigest.reset!
+
+      tracker.tap(&:example_started).example_finished('ex2')
+
+      expect(tracker.all_files.fetch(a_path)[:digest]).to eq(Digest::SHA256.file(a_path).hexdigest)
+    end
   end
 
   # The seed_*_from_previous methods carry forward the prior run's

@@ -152,6 +152,15 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
       expect(adapter.peek.keys).to eq([inside_root])
     end
 
+    it 'includes a project file that first appears in a later snapshot' do
+      later = write_file('lib/later.rb', "puts 2\n")
+      first = { inside_root => [1], outside_root => [1] }
+      allow(Coverage).to receive(:peek_result).and_return(first, first.merge(later => [1]))
+      adapter = described_class.new(root: root).tap(&:peek)
+
+      expect(adapter.peek.keys).to eq([inside_root, later])
+    end
+
     it 'normalizes hash-mode (SimpleCov branch tracking) to line arrays' do
       allow(Coverage).to receive(:peek_result).and_return(
         inside_root => { lines: [1, 0], branches: { foo: {} } }
