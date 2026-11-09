@@ -17,8 +17,10 @@ attribution, [UPGRADING.md](UPGRADING.md) covers moving from
 [TestSift roadmap](https://github.com/salasebas/testsift/issues/1)
 tracks engine extraction, coverage integration, and a Minitest adapter.
 
-No TestSift version has been published to RubyGems yet; until one is,
-install from this repository.
+[![Gem Version](https://badge.fury.io/rb/testsift.svg)](https://rubygems.org/gems/testsift)
+The gem is on [RubyGems](https://rubygems.org/gems/testsift). `0.0.1`
+claims the name and proves the release pipeline; `0.x` releases may
+still change the public API.
 
 TestSift records the inputs it can observe for each RSpec
 example -- Ruby files, file I/O, Rails templates and queries,
@@ -66,10 +68,7 @@ is supported until at least six months past its upstream EOL -- see
 
 ```ruby
 # Gemfile -- 0.x releases may change the public API; pin the minor
-gem 'testsift', github: 'salasebas/testsift', branch: 'testsift',
-                group: :test, require: false
-# After the first RubyGems release:
-# gem 'testsift', '~> 0.0.1', group: :test, require: false
+gem 'testsift', '~> 0.0.1', group: :test, require: false
 ```
 
 Add the tracer's working directories to your `.gitignore` before the
