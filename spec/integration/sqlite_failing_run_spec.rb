@@ -17,8 +17,8 @@ end
 # written while that SystemExit is pending. sqlite3 1.x (the Ruby 3.1 pin)
 # re-raises it from every statement, which aborted the second red run's
 # finalize: no summary, and the cache stayed at the first run.
-# rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Storage::SqliteBackend do
+# rubocop:disable RSpec/DescribeClass, RSpec/ExampleLength, RSpec/MultipleExpectations
+RSpec.describe 'SQLite cache persistence across failing runs' do
   let(:root) { Dir.mktmpdir('sqlite-red-run') }
   let(:lib_path) { File.expand_path('../../lib', __dir__) }
 
@@ -57,4 +57,4 @@ RSpec.describe RSpecTracer::Storage::SqliteBackend do
     expect(second).to include('rspec-tracer: 2 examples tracked')
   end
 end
-# rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
+# rubocop:enable RSpec/DescribeClass, RSpec/ExampleLength, RSpec/MultipleExpectations

@@ -9,8 +9,8 @@ require 'tmpdir'
 # Loaded-file tracking reads the paths of the example-finish Coverage
 # snapshot. These runs use real Coverage and real require/load/autoload
 # to pin which example each newly loaded file is attributed to.
-# rubocop:disable RSpec/ExampleLength, RSpec/MultipleExpectations
-RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
+# rubocop:disable RSpec/DescribeClass, RSpec/ExampleLength, RSpec/MultipleExpectations
+RSpec.describe 'loaded-file attribution in real RSpec runs' do
   let(:root) { Dir.mktmpdir('loaded-files') }
   let(:lib_path) { File.expand_path('../../lib', __dir__) }
   let(:first_run_files) { %w[/lib/boot_dep.rb /lib/setup_dep.rb /lib/body_dep.rb /lib/teardown_dep.rb] }
@@ -137,4 +137,4 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     expect(output).to include('running 4 examples (actual: 5, skipped: 1)')
   end
 end
-# rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
+# rubocop:enable RSpec/DescribeClass, RSpec/ExampleLength, RSpec/MultipleExpectations
