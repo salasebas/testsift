@@ -144,7 +144,7 @@ The same profiles on `e225fbf` show what was removed:
 interpreters on 200 files with 32 branch sites each. Values are
 `Coverage.peek_result` p50 / p95 milliseconds over 40 snapshots without JIT, plus
 the objects each snapshot allocates.
-[runtime-macos.json](runtime-macos.json) holds every row.
+[runtime-macos.json.gz](runtime-macos.json.gz) holds every row.
 
 | Ruby | Lines snapshot | Branches snapshot | Branch allocations |
 | --- | ---: | ---: | ---: |
