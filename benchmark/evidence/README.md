@@ -1,6 +1,6 @@
 # Measure selector cost on the imported TestSift baseline
 
-Use this Linux benchmark to compare complete RSpec processes, including Bundler,
+Use this benchmark to compare complete RSpec processes, including Bundler,
 boot, discovery, selection, cache reads and writes, report generation, and process
 exit. It extracts the requested Git revision into a new workspace under the output
 directory. It never changes the original fixture sources or the production library.
@@ -10,7 +10,8 @@ The default source revision is the imported `v2.0.0.rc.1`,
 ## Run the experiment
 
 Use the repository's pinned Ruby and install the root bundle first. This benchmark
-also requires GNU `/usr/bin/time`, `tar`, `taskset`, and Linux `/proc`.
+runs on Linux and macOS; see [Prepare the host](CURRENT_ENGINE.md#prepare-the-host)
+for platform tools and the pinned Linux container.
 
 ```sh
 bundle install
@@ -113,7 +114,7 @@ uninstrumented repetitions. Individual stdout, RSpec JSON, and worker telemetry
 remain in `runs/`. The extracted source and seed caches also remain available.
 
 Wall time comes from the parent monotonic clock around the entire subprocess.
-GNU time's `peak_rss_kib` is the maximum resident set of a process in the command's
+`peak_rss_kib` is the maximum resident set of a process in the command's
 waited tree. For parallel runs it is not the sum of simultaneous worker memory.
 Allocations count Ruby objects after the bootstrap begins through the final exit
 callbacks, summed across workers. They exclude the parallel controller, Ruby

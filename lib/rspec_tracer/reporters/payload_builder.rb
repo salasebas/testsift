@@ -172,15 +172,21 @@ module RSpecTracer
       def aggregate_spec_counts(example_ids)
         counts = ::Hash.new(0)
         example_ids.each do |id|
-          meta = @snapshot.all_examples[id]
-          next unless meta.is_a?(::Hash)
-
-          spec = meta[:rerun_file_name] || meta[:file_name]
-          next if spec.nil? || spec.to_s.empty?
-
-          counts[spec.to_s] += 1
+          spec = spec_files[id]
+          counts[spec] += 1 if spec
         end
         counts.sort_by { |name, count| [-count, name] }.to_h
+      end
+
+      # Internal method on the tracer pipeline.
+      # @api private
+      def spec_files
+        @spec_files ||= @snapshot.all_examples.each_with_object({}) do |(id, meta), acc|
+          next unless meta.is_a?(::Hash)
+
+          spec = (meta[:rerun_file_name] || meta[:file_name]).to_s
+          acc[id] = spec unless spec.empty?
+        end
       end
 
       # Internal method on the tracer pipeline.

@@ -152,6 +152,24 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
       expect(adapter.peek.keys).to eq([inside_root])
     end
 
+    it 'includes a project file that first appears in a later snapshot' do
+      later = write_file('lib/later.rb', "puts 2\n")
+      first = { inside_root => [1], outside_root => [1] }
+      allow(Coverage).to receive(:peek_result).and_return(first, first.merge(later => [1]))
+      adapter = described_class.new(root: root).tap(&:peek)
+
+      expect(adapter.peek.keys).to eq([inside_root, later])
+    end
+
+    it 'follows a restarted Coverage whose file set changed without changing size' do
+      replacement = write_file('lib/replacement.rb', "puts 3\n")
+      snapshots = [inside_root, replacement].map { |path| { path => { lines: [1] }, outside_root => { lines: [1] } } }
+      allow(Coverage).to receive(:peek_result).and_return(*snapshots)
+      adapter = described_class.new(root: root, mode: :hash).tap(&:peek)
+
+      expect(adapter.peek).to eq(replacement => [1])
+    end
+
     it 'normalizes hash-mode (SimpleCov branch tracking) to line arrays' do
       allow(Coverage).to receive(:peek_result).and_return(
         inside_root => { lines: [1, 0], branches: { foo: {} } }
@@ -198,6 +216,45 @@ RSpec.describe RSpecTracer::Tracker::CoverageAdapter do
       adapter = described_class.new(root: root, filters: [])
 
       expect(adapter.peek).to eq(inside_root => [1])
+    end
+  end
+
+  describe '#peek_with_paths' do
+    let(:kept) { write_file('lib/foo.rb', "puts 1\n") }
+    let(:filtered) { write_file('vendor/bar.rb', "puts 2\n") }
+    let(:snapshot) do
+      { kept => { lines: [1], branches: {} }, filtered => { lines: [2], branches: {} },
+        '/elsewhere/lib/foo.rb' => { lines: [3] } }
+    end
+
+    before { allow(Coverage).to receive(:peek_result).and_return(snapshot) }
+
+    it 'returns the filtered line map and every tracked path from one snapshot' do
+      adapter = described_class.new(root: root, filters: [RSpecTracer::Filter.register(%r{/vendor/})])
+
+      expect(adapter.peek_with_paths).to eq([{ kept => [1] }, [kept, filtered, '/elsewhere/lib/foo.rb']])
+    end
+
+    it 'requests a single Coverage snapshot' do
+      described_class.new(root: root).peek_with_paths
+
+      expect(Coverage).to have_received(:peek_result).once
+    end
+
+    it 'keeps each path\'s filter decision across repeated snapshots' do
+      adapter = described_class.new(root: root, filters: [RSpecTracer::Filter.register(%r{/vendor/})])
+      adapter.peek_with_paths
+
+      expect(adapter.peek_with_paths.first).to eq(kept => [1])
+    end
+
+    it 'evaluates the filters once per path per run' do
+      names = []
+      filter = RSpecTracer::Filter.register(->(source) { names.push(source[:file_name]).empty? })
+
+      described_class.new(root: root, filters: [filter]).tap(&:peek_with_paths).peek_with_paths
+
+      expect(names).to contain_exactly('/lib/foo.rb', '/vendor/bar.rb')
     end
   end
 

@@ -75,6 +75,9 @@ module RSpecTracer
       @duplicate_examples = {}
       @examples_coverage = {}
       @all_files = {}
+      @file_names = {}
+      @absolute_paths = {}
+      @filter_decisions = {}
       @tracks_files = Hash.new { |h, id| h[id] = Set.new } # id => Set<abs_path>
       @tracks_env = Hash.new { |h, id| h[id] = Set.new }   # id => Set<env_name>
       @tracked_env_names = Set.new
@@ -217,7 +220,7 @@ module RSpecTracer
     # Internal method on the tracer pipeline.
     # @api private
     def example_finished(example_id)
-      after_peek = @coverage_adapter.peek
+      after_peek, coverage_paths = @coverage_adapter.peek_with_paths
       record_coverage_delta(example_id, @before_peek, after_peek)
       io_inputs = @current_bucket.values
       rails_inputs = @current_rails_bucket ? @current_rails_bucket.values : []
@@ -225,7 +228,7 @@ module RSpecTracer
       clear_rails_bucket
 
       transitive_inputs = @loaded_files_tracker.loaded_set_inputs |
-        @loaded_files_tracker.stop_example(example_id)
+        @loaded_files_tracker.stop_example(example_id, coverage_paths)
       coverage_inputs = @coverage_adapter.compute_diff(@before_peek, after_peek)
       declared_inputs = @declared_globs.walk
       tracks_inputs = per_example_tracks_inputs(example_id)
@@ -616,7 +619,7 @@ module RSpecTracer
       return unless prev.dependency.is_a?(Hash)
 
       prev.dependency.each do |example_id, file_names|
-        paths = Set.new
+        paths = []
         file_names.each do |name|
           next if filtered_by_current_filters?(name)
 
@@ -631,7 +634,9 @@ module RSpecTracer
     # `attribute_to_example` (engine.rb:770) so both fresh + carry-
     # forward attributions converge on the same filter behavior.
     def filtered_by_current_filters?(file_name)
-      @configuration.filters.any? { |f| f.match?(file_name: file_name) }
+      @filter_decisions.fetch(file_name) do
+        @filter_decisions[file_name] = @configuration.filters.any? { |f| f.match?(file_name: file_name) }
+      end
     end
 
     # Internal method on the tracer pipeline.
@@ -766,18 +771,25 @@ module RSpecTracer
     # Internal method on the tracer pipeline.
     # @api private
     def attribute_to_example(example_id, inputs)
-      paths = Set.new
+      paths = []
       inputs.each do |input|
-        next if @configuration.filters.any? { |f| f.match?(file_name: path_to_file_name(input.path)) }
+        file_name = attributed_file_name(input.path)
+        next if file_name.nil?
 
         paths << input.path
-        @all_files[input.path] = {
-          file_name: path_to_file_name(input.path),
-          file_path: input.path,
-          digest: input.digest
-        }
+        entry = @all_files[input.path]
+        next if entry && entry[:digest] == input.digest && entry[:file_name] == file_name
+
+        @all_files[input.path] = { file_name: file_name, file_path: input.path, digest: input.digest }
       end
       @graph.register_example(example_id, paths)
+    end
+
+    # Internal method on the tracer pipeline.
+    # @api private
+    def attributed_file_name(path)
+      file_name = path_to_file_name(path)
+      file_name unless filtered_by_current_filters?(file_name)
     end
 
     # Internal method on the tracer pipeline.
@@ -860,16 +872,16 @@ module RSpecTracer
     # Internal method on the tracer pipeline.
     # @api private
     def absolute_path(file_name)
-      File.expand_path(file_name.to_s.sub(%r{^/}, ''), @configuration.root)
+      @absolute_paths[file_name] ||= -File.expand_path(file_name.to_s.sub(%r{^/}, ''), @configuration.root)
     end
 
     # Internal method on the tracer pipeline.
     # @api private
     def path_to_file_name(abs_path)
-      root_prefix = "#{@configuration.root}/"
-      return abs_path unless abs_path.start_with?(root_prefix)
-
-      "/#{abs_path[root_prefix.length..]}"
+      @file_names[abs_path] ||= begin
+        root_prefix = "#{@configuration.root}/"
+        -(abs_path.start_with?(root_prefix) ? "/#{abs_path[root_prefix.length..]}" : abs_path)
+      end
     end
 
     # Internal method on the tracer pipeline.

@@ -100,8 +100,8 @@ module RSpecTracer
       # Internal method on the tracer pipeline.
       # @api private
       def dependency_by_name
-        @graph.dependency_hash.transform_values do |paths|
-          paths.to_set { |p| path_to_file_name(p) }
+        @graph.example_ids.to_h do |id|
+          [id, @graph.paths_for(id).to_set { |p| path_to_file_name(p) }]
         end
       end
 

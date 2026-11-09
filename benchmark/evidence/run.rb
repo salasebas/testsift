@@ -8,6 +8,8 @@ require 'optparse'
 require 'rbconfig'
 require 'time'
 
+require_relative 'host'
+
 module PerformanceEvidence
   ROOT = File.expand_path('../..', __dir__)
   BOOT = File.join(__dir__, 'boot.rb')
@@ -88,9 +90,7 @@ module PerformanceEvidence
         baseline_revision: @revision, driver_revision: command('git', 'rev-parse', 'HEAD').strip,
         driver_sha256: [__FILE__, BOOT].to_h { |path| [File.basename(path), Digest::SHA256.file(path).hexdigest] },
         recorded_at: Time.now.utc.iso8601, ruby: RUBY_DESCRIPTION,
-        kernel: command('uname', '-srmo').strip, cpu: File.read('/proc/cpuinfo').lines.grep(/^model name/).first&.strip,
-        memory: File.read('/proc/meminfo').lines.first.strip,
-        cpu_affinity: command('taskset', '-pc', Process.pid.to_s).strip,
+        **Host.description,
         options: @options, bundle_path: ENV.fetch('BUNDLE_PATH', nil),
         lockfiles: @options.fetch(:fixtures).to_h do |fixture|
           path = File.join(@work, FIXTURES.fetch(fixture), 'Gemfile.lock')
@@ -273,7 +273,7 @@ module PerformanceEvidence
       env = environment(fixture, mode, scenario, directory, iteration)
       args = invocation(scenario, directory)
       time = File.join(directory, 'time.txt')
-      full_command = ['/usr/bin/time', '-f', '%M %U %S', '-o', time, *args]
+      full_command = Host.timed(args, time)
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       output, status = Open3.capture2e(env, *full_command, chdir: cwd(fixture))
       elapsed = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
@@ -306,18 +306,18 @@ module PerformanceEvidence
     end
 
     def measurements(directory, fixture)
-      resource = File.readlines(File.join(directory, 'time.txt')).last.split.map(&:to_f)
       payloads = read_payloads(directory, 'rspec*.json')
       examples = payloads.flat_map { |payload| payload.fetch('examples') }
       telemetry = read_payloads(directory, 'telemetry.*.json')
       raise "missing telemetry/results: #{directory}" if telemetry.empty? || payloads.empty?
 
-      { peak_rss_kib: resource[0], user_seconds: resource[1], system_seconds: resource[2],
+      Host.resources(File.join(directory, 'time.txt')).merge(
         allocations: telemetry.sum { |payload| payload.fetch('allocations') }, telemetry: telemetry,
         cache_bytes: cache_size(fixture), cache_examples: cache_examples(fixture), selected: examples.size,
         ids: examples.map { |example| example.fetch('id') },
         failures: failed_ids(examples),
-        artifact_directory: directory }
+        artifact_directory: directory
+      )
     end
 
     def read_payloads(directory, pattern)

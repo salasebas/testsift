@@ -1,0 +1,118 @@
+[
+  {
+    "fixture": "rails",
+    "mode": "lines",
+    "scenario": "unwrapped_plain",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 3,
+    "p50_seconds": 3.4002770829974907,
+    "p95_seconds": 3.4512307180120843,
+    "median_peak_rss_kib": 160196.0,
+    "median_allocations": null,
+    "cache_bytes": [
+      0,
+      0
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      0,
+      0
+    ],
+    "p95_peak_rss_kib": 161352.0,
+    "p95_allocations": null,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "plain",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 3,
+    "p50_seconds": 0.28993915898900013,
+    "p95_seconds": 0.33132470199780073,
+    "median_peak_rss_kib": 33804.0,
+    "median_allocations": 92000,
+    "cache_bytes": [
+      0,
+      0
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      0,
+      0
+    ],
+    "p95_peak_rss_kib": 33840.0,
+    "p95_allocations": 92001,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "lines",
+    "scenario": "plain",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 3,
+    "p50_seconds": 3.343688156004646,
+    "p95_seconds": 3.6477573180018226,
+    "median_peak_rss_kib": 162400.0,
+    "median_allocations": 3472768,
+    "cache_bytes": [
+      0,
+      0
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      0,
+      0
+    ],
+    "p95_peak_rss_kib": 163400.0,
+    "p95_allocations": 3472869,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "unwrapped_plain",
+    "profile": false,
+    "variant": "stock",
+    "repetitions": 3,
+    "p50_seconds": 0.22699726700375322,
+    "p95_seconds": 0.247411030009971,
+    "median_peak_rss_kib": 34232.0,
+    "median_allocations": null,
+    "cache_bytes": [
+      0,
+      0
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      0,
+      0
+    ],
+    "p95_peak_rss_kib": 34236.0,
+    "p95_allocations": null,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  }
+]

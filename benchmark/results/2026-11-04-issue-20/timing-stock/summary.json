@@ -1,0 +1,350 @@
+[
+  {
+    "fixture": "ruby",
+    "mode": "branches",
+    "scenario": "warm",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 0.39479098698939197,
+    "p95_seconds": 0.39479098698939197,
+    "median_peak_rss_kib": 41880.0,
+    "median_allocations": 213248,
+    "cache_bytes": [
+      69599,
+      69599
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      120301,
+      120301
+    ],
+    "p95_peak_rss_kib": 41880.0,
+    "p95_allocations": 213248,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "lines",
+    "scenario": "full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 8.38741112498974,
+    "p95_seconds": 8.38741112498974,
+    "median_peak_rss_kib": 206324.0,
+    "median_allocations": 11210240,
+    "cache_bytes": [
+      2122057,
+      2122057
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      2929473,
+      2929473
+    ],
+    "p95_peak_rss_kib": 206324.0,
+    "p95_allocations": 11210240,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "branches",
+    "scenario": "warm",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 1.8474337180086877,
+    "p95_seconds": 1.8474337180086877,
+    "median_peak_rss_kib": 177248.0,
+    "median_allocations": 2378694,
+    "cache_bytes": [
+      2133764,
+      2133764
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      2952132,
+      2952132
+    ],
+    "p95_peak_rss_kib": 177248.0,
+    "p95_allocations": 2378694,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "branches",
+    "scenario": "full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 0.7139772039954551,
+    "p95_seconds": 0.7139772039954551,
+    "median_peak_rss_kib": 41896.0,
+    "median_allocations": 1352095,
+    "cache_bytes": [
+      68182,
+      68182
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      120652,
+      120652
+    ],
+    "p95_peak_rss_kib": 41896.0,
+    "p95_allocations": 1352095,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "dependency",
+    "scenario": "full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 0.3747662230016431,
+    "p95_seconds": 0.3747662230016431,
+    "median_peak_rss_kib": 43820.0,
+    "median_allocations": 248725,
+    "cache_bytes": [
+      54737,
+      54737
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      116058,
+      116058
+    ],
+    "p95_peak_rss_kib": 43820.0,
+    "p95_allocations": 248725,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "dependency",
+    "scenario": "full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 7.88462387000618,
+    "p95_seconds": 7.88462387000618,
+    "median_peak_rss_kib": 200160.0,
+    "median_allocations": 11194114,
+    "cache_bytes": [
+      1868578,
+      1868578
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      2912682,
+      2912682
+    ],
+    "p95_peak_rss_kib": 200160.0,
+    "p95_allocations": 11194114,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "dependency",
+    "scenario": "warm",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 0.3468889900104841,
+    "p95_seconds": 0.3468889900104841,
+    "median_peak_rss_kib": 37916.0,
+    "median_allocations": 162153,
+    "cache_bytes": [
+      56178,
+      56178
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      112900,
+      112900
+    ],
+    "p95_peak_rss_kib": 37916.0,
+    "p95_allocations": 162153,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "warm",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 0.400106108005275,
+    "p95_seconds": 0.400106108005275,
+    "median_peak_rss_kib": 37892.0,
+    "median_allocations": 164052,
+    "cache_bytes": [
+      69592,
+      69592
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      114487,
+      114487
+    ],
+    "p95_peak_rss_kib": 37892.0,
+    "p95_allocations": 164052,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "dependency",
+    "scenario": "warm",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 1.6220160910015693,
+    "p95_seconds": 1.6220160910015693,
+    "median_peak_rss_kib": 139696.0,
+    "median_allocations": 2019990,
+    "cache_bytes": [
+      1880276,
+      1880276
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      2886151,
+      2886151
+    ],
+    "p95_peak_rss_kib": 139696.0,
+    "p95_allocations": 2019990,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "branches",
+    "scenario": "full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 24.199164448000374,
+    "p95_seconds": 24.199164448000374,
+    "median_peak_rss_kib": 225172.0,
+    "median_allocations": 76136164,
+    "cache_bytes": [
+      2122060,
+      2122060
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      2955248,
+      2955248
+    ],
+    "p95_peak_rss_kib": 225172.0,
+    "p95_allocations": 76136164,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "ruby",
+    "mode": "lines",
+    "scenario": "full",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 0.3443680710042827,
+    "p95_seconds": 0.3443680710042827,
+    "median_peak_rss_kib": 43480.0,
+    "median_allocations": 250372,
+    "cache_bytes": [
+      68152,
+      68152
+    ],
+    "selected_ratio": [
+      1.0,
+      1.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      117650,
+      117650
+    ],
+    "p95_peak_rss_kib": 43480.0,
+    "p95_allocations": 250372,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  },
+  {
+    "fixture": "rails",
+    "mode": "lines",
+    "scenario": "warm",
+    "profile": true,
+    "variant": "stock",
+    "repetitions": 1,
+    "p50_seconds": 1.5047870029957267,
+    "p95_seconds": 1.5047870029957267,
+    "median_peak_rss_kib": 135136.0,
+    "median_allocations": 2040637,
+    "cache_bytes": [
+      2133740,
+      2133740
+    ],
+    "selected_ratio": [
+      0.0,
+      0.0
+    ],
+    "omitted_failing_tests": 0,
+    "report_bytes": [
+      2902943,
+      2902943
+    ],
+    "p95_peak_rss_kib": 135136.0,
+    "p95_allocations": 2040637,
+    "oracle_failure_observations": 0,
+    "failure_status_mismatches": 0
+  }
+]

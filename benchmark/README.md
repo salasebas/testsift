@@ -13,6 +13,14 @@ See the [issue #3 results](results/2026-11-04-issue-3/REPORT.md),
 [Coverage and Rust assessment](COVERAGE_RUST_RESEARCH.md). These experiments do not
 change the existing benchmark limits.
 
+The separate [current-engine driver](evidence/CURRENT_ENGINE.md) adds executable
+scale corpora, independent input-failure oracles, backend checks, and runtime
+comparisons. Its measurements stay outside the frozen imported-baseline dataset.
+The [issue #21 comparison](results/2026-11-08-issue-21/REPORT.md) measures the
+shared example-boundary snapshot and per-run filter decisions with the same driver.
+The [Ruby optimization report](results/2026-11-09-ruby-optimization/REPORT.md)
+breaks down where the time goes after those changes and where native work could help.
+
 ## Scenarios
 
 | Name | What it measures | Fixture |

@@ -66,7 +66,7 @@ RSpec.describe RSpecTracer::Engine do
 
     it 'routes notification bucket through example_started / example_finished' do
       tracker = build_tracker(stub_configuration(rails?: true)).tap(&:setup)
-      allow(tracker.coverage_adapter).to receive(:peek).and_return({}, {})
+      stub_example_snapshots(tracker, {}, {})
       template = File.join(root, 'app/views/show.erb')
       FileUtils.mkdir_p(File.dirname(template))
       File.write(template, '<h1>x</h1>')

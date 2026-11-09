@@ -65,7 +65,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
 
         snapshots = []
         5.times do |i|
-          tracker.stop_example("ex#{i}")
+          tracker.stop_example("ex#{i}", peek_sequence.shift || [])
           snapshots << tracker.loaded_set
         end
 
@@ -83,7 +83,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
 
         sizes = [tracker.loaded_set_size]
         4.times do |i|
-          tracker.stop_example("ex#{i}")
+          tracker.stop_example("ex#{i}", peek_sequence.shift || [])
           sizes << tracker.loaded_set_size
         end
 
@@ -101,7 +101,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
 
         3.times do |i|
           before_paths = tracker.loaded_set
-          new_inputs = tracker.stop_example("ex#{i}")
+          new_inputs = tracker.stop_example("ex#{i}", peek_sequence.shift || [])
           # Every returned Input is a NEW observation - not already in
           # the loaded_set before this stop_example call fired.
           expect(new_inputs.map(&:path)).to all(satisfy { |p| !before_paths.include?(p) })
@@ -121,7 +121,7 @@ RSpec.describe 'LoadedFilesTracker monotonicity' do
 
         snapshots = [tracker.loaded_set_inputs]
         4.times do |i|
-          tracker.stop_example("ex#{i}")
+          tracker.stop_example("ex#{i}", peek_sequence.shift || [])
           snapshots << tracker.loaded_set_inputs
         end
 

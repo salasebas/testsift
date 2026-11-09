@@ -39,10 +39,7 @@ module RSpecTracer
         return super unless RSpecTracer.engine
 
         actual_count = ::RSpec.world.example_count
-        if _rspec_tracer_no_examples?(actual_count)
-          super
-          return
-        end
+        return super if _rspec_tracer_no_examples?(actual_count)
 
         starting = Process.clock_gettime(Process::CLOCK_MONOTONIC)
         filtered_examples_map, filtered_example_groups = _rspec_tracer_build_filter_decision

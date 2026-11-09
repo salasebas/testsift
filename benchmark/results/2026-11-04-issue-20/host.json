@@ -1,0 +1,77 @@
+{
+  "os_release": {
+    "command": [
+      "cat",
+      "/etc/os-release"
+    ],
+    "output": "NAME=\"Fedora Linux\"\nVERSION=\"44 (Workstation Edition)\"\nRELEASE_TYPE=stable\nID=fedora\nVERSION_ID=44\nVERSION_CODENAME=\"\"\nPRETTY_NAME=\"Fedora Linux 44 (Workstation Edition)\"\nANSI_COLOR=\"0;38;2;60;110;180\"\nLOGO=fedora-logo-icon\nCPE_NAME=\"cpe:/o:fedoraproject:fedora:44\"\nDEFAULT_HOSTNAME=\"fedora\"\nHOME_URL=\"https://fedoraproject.org/\"\nDOCUMENTATION_URL=\"https://docs.fedoraproject.org/en-US/fedora/f44/\"\nSUPPORT_URL=\"https://ask.fedoraproject.org/\"\nBUG_REPORT_URL=\"https://bugzilla.redhat.com/\"\nREDHAT_BUGZILLA_PRODUCT=\"Fedora\"\nREDHAT_BUGZILLA_PRODUCT_VERSION=44\nREDHAT_SUPPORT_PRODUCT=\"Fedora\"\nREDHAT_SUPPORT_PRODUCT_VERSION=44\nSUPPORT_END=2027-05-19\nVARIANT=\"Workstation Edition\"\nVARIANT_ID=workstation\n"
+  },
+  "glibc": {
+    "command": [
+      "getconf",
+      "GNU_LIBC_VERSION"
+    ],
+    "output": "glibc 2.43\n"
+  },
+  "task": {
+    "command": [
+      "task",
+      "--version"
+    ],
+    "output": "3.45.4\n"
+  },
+  "bundler": {
+    "command": [
+      "bundle",
+      "--version"
+    ],
+    "output": "Bundler version 2.5.22\n"
+  },
+  "gnu_time": {
+    "command": [
+      "/usr/bin/time",
+      "--version"
+    ],
+    "output": "time (GNU Time) 1.9\nCopyright (C) 2018 Free Software Foundation, Inc.\nLicense GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\nWritten by David Keppel, David MacKenzie, and Assaf Gordon.\n"
+  },
+  "tar": {
+    "command": [
+      "tar",
+      "--version"
+    ],
+    "output": "tar (GNU tar) 1.35\nCopyright (C) 2023 Free Software Foundation, Inc.\nLicense GPLv3+: GNU GPL version 3 or later <https://gnu.org/licenses/gpl.html>.\nThis is free software: you are free to change and redistribute it.\nThere is NO WARRANTY, to the extent permitted by law.\n\nWritten by John Gilmore and Jay Fenlason.\n"
+  },
+  "observed_at": "2026-11-04T17:57:07Z",
+  "ruby_build": {
+    "description": "ruby 3.3.10 (2025-10-23 revision 343ea05002) [x86_64-linux]",
+    "binary": "/home/sebastian/.local/share/rv/rubies/ruby-3.3.10/bin/ruby",
+    "binary_sha256": "319409b91f0fb24a23533afd078187e40633c4221e003dc2c51626b3939e8c77",
+    "configure_args": " '--prefix=/home/linuxbrew/.linuxbrew/Cellar/rv-ruby@3.3.10/3.3.10' '--enable-load-relative' '--without-ext=win32,win32ole' '--without-gmp' '--disable-install-doc' '--disable-install-rdoc' '--disable-dependency-tracking' '--enable-yjit' '--with-libyaml-dir=/home/linuxbrew/.linuxbrew/opt/rv-portable-libyaml' '--with-libffi-dir=/home/linuxbrew/.linuxbrew/opt/rv-portable-libffi' '--with-zlib-dir=/home/linuxbrew/.linuxbrew/opt/rv-portable-zlib' 'MKDIR_P=/bin/mkdir -p' 'ac_cv_lib_z_uncompress=no' 'cflags=-fPIC' 'cxxflags=-fPIC' 'CC=cc' 'CXX=c++'"
+  },
+  "load_observations": [
+    {
+      "at": "2026-11-04T18:24:45Z",
+      "loadavg": "9.64 7.34 4.99 5/5096 4",
+      "governors": {
+        "/sys/devices/system/cpu/cpufreq/policy0/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy1/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy10/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy11/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy2/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy3/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy4/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy5/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy6/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy7/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy8/scaling_governor": "performance",
+        "/sys/devices/system/cpu/cpufreq/policy9/scaling_governor": "performance"
+      }
+    },
+    {
+      "at": "2026-11-04T19:06:25Z",
+      "loadavg": "1.92 2.03 3.55 2/5025 4"
+    }
+  ],
+  "ruby_environment": {
+  }
+}
