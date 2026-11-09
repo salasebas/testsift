@@ -23,13 +23,14 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
         add_filter '/vendor/'
       end
     RUBY
-    %w[boot setup body teardown context lazy loaded].each do |name|
+    %w[boot setup body teardown context lazy loaded pending retried].each do |name|
       write("lib/#{name}_dep.rb", "module #{name.capitalize}Dep\n  VALUE = :#{name}\nend\n")
     end
     write('vendor/filtered_dep.rb', "module FilteredDep; end\n")
     write('loading_spec.rb', <<~RUBY)
       require 'rspec_tracer'
       RSpecTracer.start
+      require 'rspec/retry'
       require_relative 'lib/boot_dep'
       autoload :LazyDep, File.join(__dir__, 'lib/lazy_dep.rb')
 
@@ -56,6 +57,21 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
           expect(LoadedDep::VALUE).to eq(:different)
         end
       end
+
+      RSpec.describe 'third group' do
+        it 'is pending after a load' do
+          pending('not implemented')
+          require_relative 'lib/pending_dep'
+          expect(PendingDep::VALUE).to eq(:different)
+        end
+
+        attempts = 0
+        it 'passes on a retry after a load', retry: 2 do
+          attempts += 1
+          require_relative 'lib/retried_dep' if attempts == 1
+          expect(attempts).to eq(2)
+        end
+      end
     RUBY
   end
 
@@ -67,9 +83,9 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     File.write(path, contents)
   end
 
-  def run_project
+  def run_project(spec = 'loading_spec.rb')
     Open3.capture2e(RbConfig.ruby, '-I', lib_path, '-rrspec/core', '-e', 'exit RSpec::Core::Runner.run(ARGV)',
-                    File.join(root, 'loading_spec.rb'), chdir: root)
+                    File.join(root, spec), chdir: root)
   end
 
   def cache(name)
@@ -96,7 +112,19 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     expect(dependencies.fetch('reads constants loaded earlier')).not_to include('/lib/loaded_dep.rb')
     expect(dependencies.fetch('loads a file and fails')).to include('/lib/loaded_dep.rb')
     expect(dependencies.values.flatten).not_to include('/vendor/filtered_dep.rb')
+    expect(dependencies.fetch('is pending after a load')).to include('/lib/pending_dep.rb')
+    expect(dependencies.fetch('passes on a retry after a load')).to include('/lib/retried_dep.rb')
     expect(cache('failed_examples').size).to eq(1)
+    expect(cache('pending_examples').size).to eq(1)
+  end
+
+  it 'finishes a run without examples' do
+    write('empty_spec.rb', "require 'rspec_tracer'\nRSpecTracer.start\nRSpec.describe('nothing') {}\n")
+
+    output, status = run_project('empty_spec.rb')
+
+    expect(status.exitstatus).to eq(0), output
+    expect(File).not_to exist(File.join(root, 'rspec_tracer_cache', 'last_run.json'))
   end
 
   it 'reselects only the examples that observed a file loaded between examples' do
@@ -106,7 +134,7 @@ RSpec.describe RSpecTracer::Tracker::LoadedFilesTracker do
     output, status = run_project
 
     expect(status.exitstatus).to eq(1), output
-    expect(output).to include('running 2 examples (actual: 3, skipped: 1)')
+    expect(output).to include('running 4 examples (actual: 5, skipped: 1)')
   end
 end
 # rubocop:enable RSpec/ExampleLength, RSpec/MultipleExpectations
