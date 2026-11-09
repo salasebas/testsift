@@ -35,7 +35,7 @@ module RuntimeEvidence
       command.push('--yjit', '--yjit-call-threshold=1') if jit
       command.push(__FILE__, '--child')
       env = { 'FILES' => '200', 'BRANCH_SITES' => '32', 'ITERATIONS' => '20',
-              'MODE' => mode, 'TOUCHED' => touched.to_s, 'RUBYOPT' => nil,
+              'MODE' => mode, 'TOUCHED' => touched.to_s, 'RUBYOPT' => nil, 'GEM_HOME' => nil, 'GEM_PATH' => nil,
               'RUBY_YJIT_ENABLE' => nil, 'RUBY_MJIT_ENABLE' => nil }
       started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
       stdout, stderr, status = Open3.capture3(env, *command)
