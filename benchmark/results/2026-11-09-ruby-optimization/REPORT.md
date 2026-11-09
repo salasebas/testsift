@@ -59,12 +59,12 @@ Clean p50 / p95 seconds. Change compares the `7d95a29` and `e225fbf` medians.
 | Rails warm branches | 0 | 0.99 / 1.03 | 0.88 / 1.20 | −10.7% |
 | Rails warm lines | 0 | 0.90 / 1.09 | 1.07 / 1.38 | +18.5% |
 
-The large baseline ran first in this window, under the highest load. The
-quieter [issue #21 campaign](../2026-11-08-issue-21/REPORT.md) measured the same
-baseline command at 17.77 s, so the conservative large full-run improvement is
-about 31%. `bb26fc3` measured 12.32 / 12.58 s for large full lines and 8.57 /
-9.83 s for large warm in this window: the new commit leaves full runs at that
-level and halves warm runs.
+The large campaigns ran in the order `7d95a29`, `e225fbf`, `bb26fc3` under a
+load average of 6–12. The quieter [issue #21 campaign](../2026-11-08-issue-21/REPORT.md)
+measured the same baseline command at 17.77 s; that value comes from a different
+campaign and does not bound this comparison. `bb26fc3` measured 12.32 / 12.58 s
+for large full lines and 8.57 / 9.83 s for large warm, right after the baseline:
+the new commit leaves full runs at that level and halves warm runs.
 
 Three Rails lines cells got slower in that single pass while their allocations
 fell by 37–40%. An interleaved confirmation ran Rails lines full and warm with
