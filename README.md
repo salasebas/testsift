@@ -544,7 +544,9 @@ reports are welcome and get investigated.
 ## Documentation + coverage
 
 - **API reference**: `task docs:yard` builds the YARD reference
-  locally. A hosted docs site is not published for TestSift yet.
+  locally under `doc/yard/`. TestSift does not publish a hosted docs
+  site; this README, [COOKBOOK.md](COOKBOOK.md), and
+  [UPGRADING.md](UPGRADING.md) are the user documentation.
 
 - **Coverage**: tracked by [Codecov](https://codecov.io/gh/salasebas/testsift)
   (per-PR delta + diff-coverage gate ≥ 90%; project history). Multi-
