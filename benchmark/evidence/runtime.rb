@@ -44,7 +44,7 @@ module RuntimeEvidence
       JSON.parse(stdout).merge(command: command, env: env, requested_yjit: jit,
                                ruby_sha256: Digest::SHA256.file(ruby).hexdigest,
                                command_seconds: Process.clock_gettime(Process::CLOCK_MONOTONIC) - started,
-                               peak_rss_kib: PerformanceEvidence::Host.resources(resource).fetch(:peak_rss_kib))
+                               peak_rss_kib: PerformanceEvidence::Host.resources(resource).fetch(:peak_rss_kib).to_i)
     end
   end
 end
