@@ -7,7 +7,7 @@ Observed on 2026-11-08 on macOS with MRI 3.3.10, after the final code change:
 | `task lint:ruby` | 261 files, no offenses |
 | `task lint:actions lint:yaml check:bundle` | Passed |
 | `task security:bundle-audit security:trivy` | Passed |
-| `task test:unit` | 2,187 examples, zero failures, two pending LocalStack cases |
+| `task test:unit` | 2,188 examples, zero failures, two pending LocalStack cases |
 | `task test:property` | 25 examples, zero failures |
 | `task test:mutation:smoke` | 308 mutations, 93.18% coverage |
 | `task test:dogfood` | Passed |
@@ -30,8 +30,12 @@ Each new test was observed failing before it was trusted:
   real Coverage and real `require`, `load`, and `autoload` in hooks, bodies, and
   `before(:context)`. Its expectations come from the loaded-file contract: a file
   first loaded during or before an example belongs to that example and every later
-  one, and configured filters exclude it. It passed on the pre-change engine and
-  failed both examples when the engine passed `[]` to the tracker.
+  one, and configured filters exclude it. It also covers a pending example, an
+  rspec-retry example that loads a file on its failed first attempt, and a run
+  without examples. The attribution examples passed on the pre-change engine and
+  failed when the engine passed `[]` to the tracker. The empty run exposed that
+  `RSpec::Core::Runner.run` returned `nil` instead of an exit code; it failed
+  before the runner-hook fix and passes after it.
 - `spec/tracker/coverage_adapter_spec.rb` and `spec/engine_spec.rb`, filters are
   evaluated once per path per run. Both failed on the pre-change code. The adapter's
   per-path decision spec failed when the memo used one key for every path; the same
