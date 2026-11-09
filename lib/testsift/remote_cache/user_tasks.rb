@@ -2,7 +2,6 @@
 
 require 'English'
 require 'time'
-require 'uri'
 
 require_relative 'git_ancestry'
 require_relative 'local_fs_backend'
@@ -222,47 +221,12 @@ module TestSift
       # Internal method on the tracer pipeline.
       # @api private
       def build_backend(ancestry)
-        entry = remote_cache_backend_entry
+        entry = safe_config(:remote_cache_backend_entry)
         raise 'no remote_cache_backend configured' if entry.nil?
 
         name_or_class, user_opts = entry
         klass = resolve_backend_class(name_or_class)
         klass.new(**merge_runtime_opts(user_opts, ancestry))
-      end
-
-      # Internal method on the tracer pipeline.
-      # @api private
-      def remote_cache_backend_entry
-        explicit = safe_config(:remote_cache_backend_entry)
-        return explicit if explicit
-
-        derive_from_legacy_dsl
-      end
-
-      # Probe the legacy `reports_s3_path` DSL when no explicit
-      # `remote_cache_backend` is configured. Gated on
-      # {Configuration#reports_s3_path_set?} so the deprecation
-      # warning fires only when the user actually set the DSL or its
-      # env var — never on the probe path when neither is configured.
-      # @api private
-      def derive_from_legacy_dsl
-        return nil unless safe_config(:reports_s3_path_set?)
-
-        s3_uri = safe_config(:reports_s3_path)
-        return nil if s3_uri.nil? || s3_uri.to_s.empty?
-
-        uri = URI.parse(s3_uri)
-        return nil unless uri.scheme == 's3' && uri.host && !uri.host.empty?
-
-        prefix = uri.path.to_s.sub(%r{^/}, '')
-        [
-          :s3,
-          {
-            bucket: uri.host,
-            prefix: prefix,
-            local: safe_config(:use_local_aws) == true
-          }
-        ]
       end
 
       # Internal method on the tracer pipeline.

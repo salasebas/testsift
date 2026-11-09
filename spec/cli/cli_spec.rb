@@ -84,21 +84,20 @@ RSpec.describe TestSift::CLI do
 
     # rubocop:disable RSpec/ExampleLength
     it 'routes logger writes fired during library boot (config load) to stderr' do
-      # The `.testsift` 1.x deprecation shims (`reports_s3_path`,
-      # `use_local_aws`) write through a logger constructed WHILE
+      # A `.testsift` can write through a logger constructed WHILE
       # load_tracer boots the library -- before with_logger_on can
       # rebind the memoized instance. Logger.default_out must already
       # point at stderr inside that window, or the warning lands on
       # stdout ahead of machine-readable output (`blast-radius
       # --json`). End-to-end variant (real config, real subprocess):
-      # spec/edge_cases/cli_deprecated_config_purity_spec.rb.
+      # spec/edge_cases/cli_config_load_logging_purity_spec.rb.
       allow(described_class).to receive(:load_tracer) do
-        TestSift::Logger.new(2).warn('deprecation fired at config load')
+        TestSift::Logger.new(2).warn('warning fired at config load')
         true
       end
       allow(described_class).to receive(:dispatch).and_return(0)
       expect(described_class.run(%w[doctor], stdout: stdout, stderr: stderr)).to eq(0)
-      expect(stderr.string).to include('deprecation fired at config load')
+      expect(stderr.string).to include('warning fired at config load')
       expect(stdout.string).to be_empty
     end
 

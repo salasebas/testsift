@@ -539,87 +539,6 @@ module TestSift
       count * units[match[2].downcase]
     end
 
-    # Deprecated in 2.0. Kept per USER_FACING_SURFACE.md section 3 "deprecated
-    # options keep working with one-time warnings." Migration target:
-    # `remote_cache_uri` (for the URI form) or
-    # `remote_cache_backend :s3, bucket:, prefix:` (for structured form).
-    # @deprecated Use {#remote_cache_uri} or {#remote_cache_backend}.
-    #   Pre-2.0 1.x compatibility shim. Fires a one-time `logger.warn`
-    #   at first use; the value still resolves so 1.x configs keep
-    #   working until the 3.0 removal.
-    # @param s3_path [String, nil] `s3://bucket/prefix`.
-    # @return [String, nil]
-    def reports_s3_path(s3_path = nil)
-      return @reports_s3_path if defined?(@reports_s3_path) && s3_path.nil?
-
-      warn_once_deprecation(
-        :reports_s3_path,
-        '`reports_s3_path` / `TESTSIFT_REPORTS_S3_PATH` is deprecated; ' \
-        "use `remote_cache_uri 's3://bucket/prefix'` or `remote_cache_backend :s3, bucket:, prefix:` instead."
-      )
-
-      path = if ENV.key?('TESTSIFT_REPORTS_S3_PATH')
-               ENV['TESTSIFT_REPORTS_S3_PATH']
-             else
-               s3_path
-             end
-
-      @reports_s3_path = path if valid_s3_path?(path)
-    end
-
-    # Probe-path predicate. True when the user explicitly set
-    # `reports_s3_path` via the DSL OR the `TESTSIFT_REPORTS_S3_PATH`
-    # environment variable. Distinct from {#reports_s3_path} (the
-    # getter), which fires a one-time deprecation warning on every
-    # call from an unconfigured state — including the
-    # `RemoteCache::UserTasks#derive_from_legacy_dsl` probe that runs
-    # whenever any `rake testsift:remote_cache:*` task fires.
-    # Callers that need to detect whether the legacy DSL was actually
-    # used (vs probing) should read this predicate first.
-    #
-    # @return [Boolean]
-    def reports_s3_path_set?
-      return true if defined?(@reports_s3_path) && @reports_s3_path
-      return false unless ENV.key?('TESTSIFT_REPORTS_S3_PATH')
-
-      env_value = ENV.fetch('TESTSIFT_REPORTS_S3_PATH', nil)
-      !env_value.nil? && !env_value.empty?
-    end
-
-    # Deprecated in 2.0. Migration: `remote_cache_backend :s3, ...,
-    # local: true`. Kept for backward compat; UserTasks derives the
-    # `local:` opt from this when `remote_cache_backend` is absent.
-    # @deprecated Use `remote_cache_backend :s3, ..., local: true`.
-    #   Pre-2.0 1.x compatibility shim for `awslocal` / LocalStack.
-    #   Fires a one-time `logger.warn` at first use.
-    # @param new_flag [Boolean, nil]
-    # @return [Boolean]
-    def use_local_aws(new_flag = nil)
-      return @use_local_aws if defined?(@use_local_aws) && new_flag.nil?
-
-      warn_once_deprecation(
-        :use_local_aws,
-        '`use_local_aws` / `TESTSIFT_USE_LOCAL_AWS` is deprecated; ' \
-        'use `remote_cache_backend :s3, ..., local: true` instead.'
-      )
-
-      @use_local_aws = if ENV.key?('TESTSIFT_USE_LOCAL_AWS')
-                         ENV['TESTSIFT_USE_LOCAL_AWS'] == 'true'
-                       else
-                         new_flag == true
-                       end
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def warn_once_deprecation(key, message)
-      @_deprecation_warnings ||= {}
-      return if @_deprecation_warnings.key?(key)
-
-      @_deprecation_warnings[key] = true
-      logger.warn("testsift deprecation: #{message}")
-    end
-
     # Allow remote-cache uploads from non-CI environments (default
     # `false`). Reads `TESTSIFT_UPLOAD_NON_CI_REPORTS=true` as
     # an alternate enable.
@@ -1367,16 +1286,6 @@ module TestSift
     # @raise [NotImplementedError]
     def coverage_filters=(new_filteres)
       raise NotImplementedError
-    end
-
-    # Internal method on the tracer pipeline.
-    # @api private
-    def valid_s3_path?(s3_path)
-      uri = URI.parse(s3_path)
-
-      uri.scheme == 's3' && !uri.host.empty?
-    rescue URI::InvalidURIError => _e
-      false
     end
 
     # Internal method on the tracer pipeline.

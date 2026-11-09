@@ -99,18 +99,15 @@ module TestSift
     # the previous value afterwards. This must wrap {.load_tracer}:
     # booting the library `load`s the project + global `.testsift`
     # configs, and those can write through the logger BEFORE
-    # {.with_logger_on} ever runs -- the 1.x-compat deprecation shims
-    # (`reports_s3_path`, `use_local_aws`) fire a one-time
-    # `logger.warn` at first use, and in a fresh CLI process
-    # "one-time" means every invocation. The logger's default
-    # destination is stdout -- the stream machine consumers parse --
-    # so that warning would land ahead of e.g. the `blast-radius
-    # --json` document and break `| jq`. With the default rebound,
-    # every logger constructed during the window binds to stderr,
+    # {.with_logger_on} ever runs. The logger's default destination
+    # is stdout -- the stream machine consumers parse -- so such a
+    # write would land ahead of e.g. the `blast-radius --json`
+    # document and break `| jq`. With the default rebound, every
+    # logger constructed during the window binds to stderr,
     # including loggers recreated mid-load when a config sets
-    # `log_level` (which resets the memoized instance) after a
-    # deprecated DSL call. Normal `rspec` runs (whose users expect
-    # stdout logs) never enter this path and stay untouched.
+    # `log_level` (which resets the memoized instance). Normal
+    # `rspec` runs (whose users expect stdout logs) never enter this
+    # path and stay untouched.
     # @api private
     def self.with_default_logger_out(stderr)
       previous = TestSift::Logger.default_out

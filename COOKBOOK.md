@@ -276,14 +276,9 @@ bundle exec rspec       # warm again
 The 1.x cache is refused; the first 2.0 run rebuilds it. Subsequent
 runs warm-skip as before.
 
-**1.x → 2.0 deprecated DSL** (still works, fires a one-time warn):
-
-| 1.x                                 | 2.0 replacement                                       |
-|-------------------------------------|-------------------------------------------------------|
-| `reports_s3_path 's3://...'`        | `remote_cache_uri 's3://...'`                         |
-| `use_local_aws true`                | `remote_cache_backend :s3, local: true`               |
-| `TESTSIFT_REPORTS_S3_PATH=...`  | `TESTSIFT_REMOTE_CACHE_URI=...`                   |
-| `TESTSIFT_USE_LOCAL_AWS=true`   | Pass via `remote_cache_backend` params instead.       |
+The 1.x remote-cache options `reports_s3_path` and `use_local_aws`
+were removed; [UPGRADING.md](UPGRADING.md#removed-options) lists
+their replacements.
 
 The `rake testsift:remote_cache:download` / `:upload` task
 surface is unchanged since rspec-tracer 1.x. See the upstream
