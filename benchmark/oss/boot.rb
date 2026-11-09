@@ -14,6 +14,7 @@ require 'json'
 module OSSBenchmark
   module Boot
     START = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+    PID = Process.pid
     ALLOCATIONS = GC.stat(:total_allocated_objects)
     TRACERS = {
       'testsift' => { gem: 'testsift', require: 'testsift', constant: 'TestSift' },
@@ -77,7 +78,10 @@ module OSSBenchmark
 
     # Registered before the tracer's own at_exit hooks, so it runs after them
     # and its counters include cache persistence and report generation.
+    # Processes the suite forks inherit this hook; only the original writes.
     def finish
+      return unless Process.pid == PID
+
       status = $ERROR_INFO.is_a?(SystemExit) ? $ERROR_INFO.status : nil
       @telemetry.merge!(finished: true, exit_status: status, examples: @listener.examples,
                         allocations: GC.stat(:total_allocated_objects) - ALLOCATIONS,

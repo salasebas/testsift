@@ -28,10 +28,6 @@ module OSSBenchmark
 
   class EvidenceError < StandardError; end
 
-  # Runs one campaign: per project, set up the pinned workspace, require two
-  # identical passing plain runs, record independent plain oracles for every
-  # changed revision and fault, prime each tracer from an empty cache, then
-  # run shuffled rounds of every requested cell.
   class Runner
     attr_reader :options, :testsift
 
@@ -91,7 +87,7 @@ module OSSBenchmark
         return "gem 'testsift', '= #{@options[:testsift_version]}', require: false"
       end
 
-      revision = host_command('git', 'rev-parse', "#{@options.fetch(:revision)}^{commit}").strip
+      revision = host_command('git', 'rev-parse', "#{@options[:revision] || 'HEAD'}^{commit}").strip
       directory = File.join(@output, 'testsift')
       archive = File.join(@output, 'testsift.tar')
       FileUtils.mkdir_p(directory)
@@ -170,7 +166,7 @@ module OSSBenchmark
 
   def self.main(arguments = ARGV)
     options = { projects: nil, suite: 'full', cases: CASES.dup, tracers: ['testsift'], repetitions: 5,
-                seed: 30_031, revision: 'HEAD', workdir: '/var/tmp/testsift-oss',
+                seed: 30_031, workdir: '/var/tmp/testsift-oss',
                 output: "tmp/oss/#{Time.now.utc.strftime('%Y%m%dT%H%M%S')}", arguments: arguments.dup }
     parser(options).parse!(arguments.dup)
     validate(options)
@@ -211,9 +207,8 @@ module OSSBenchmark
     options[:projects] ||= projects.keys
     validate_names(options, projects)
     raise ArgumentError, 'repetitions must be positive' unless options[:repetitions].positive?
-    if options[:testsift_version] && options[:arguments].include?('--revision')
-      raise ArgumentError, 'pass --revision or --testsift-version, not both'
-    end
+    raise ArgumentError, 'pass --revision or --testsift-version, not both' if options[:testsift_version] &&
+                                                                          options[:revision]
 
     options[:projects].each { |name| validate_project(name, projects.fetch(name), options) }
   end
@@ -228,9 +223,13 @@ module OSSBenchmark
 
   def self.validate_project(name, project, options)
     raise ArgumentError, "#{name} has no suite #{options[:suite]}" unless project.fetch('suites').key?(options[:suite])
-    return if options[:runner].nil? || project.fetch('runners').key?(options[:runner])
 
-    raise ArgumentError, "#{name} has no runner #{options[:runner]}"
+    runner = project.fetch('runners').fetch(options[:runner] || project.fetch('default_runner')) do
+      raise ArgumentError, "#{name} has no runner #{options[:runner]}"
+    end
+    return unless options[:workers] && runner.fetch('workers') == 1
+
+    raise ArgumentError, "#{name}'s #{options[:runner] || project['default_runner']} runner is serial; drop --workers"
   end
 end
 

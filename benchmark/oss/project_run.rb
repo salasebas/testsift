@@ -9,9 +9,6 @@ require_relative '../evidence/host'
 require_relative 'validation'
 
 module OSSBenchmark
-  # The measured cells of one project. Each sample restores the workspace,
-  # restores the requested seed cache, applies its mutation, and times the
-  # project's own runner from spawn through every worker's exit.
   class ProjectRun
     attr_reader :state
 
@@ -60,9 +57,11 @@ module OSSBenchmark
     end
 
     def oracles
-      changes.each do |change|
-        @oracles[change.fetch('name')] = oracle(valid_oracle(change.fetch('name')))
+      if tracer_cases.include?('changed')
+        changes.each { |change| @oracles[change.fetch('name')] = oracle(valid_oracle(change.fetch('name'))) }
       end
+      return unless tracer_cases.include?('fault')
+
       row = valid_oracle('fault')
       raise EvidenceError, 'fault did not fail the independent plain run' if row.fetch(:failures).empty?
 
@@ -80,8 +79,6 @@ module OSSBenchmark
       { ids: Validation.executed_ids(row), failures: row.fetch(:failures), total: row.fetch(:executed) }
     end
 
-    # An invalid prime leaves no seed to warm from, so that tracer's cells
-    # are skipped and reported while the other tracer is still measured.
     def primed?(tracer)
       row = sample('full', tracer, nil, round: 'prime')
       unless row[:valid]

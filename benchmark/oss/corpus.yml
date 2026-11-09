@@ -33,7 +33,7 @@ projects:
     ruby: 3.4.12
     # RuboCop commits no Gemfile.lock. This resolution was produced from the
     # pinned Gemfile with Ruby 3.4.12 and Bundler 2.6.9.
-    lockfile: locks/rubocop/Gemfile.lock
+    lockfile: locks/rubocop.lock
     env: {}
     requires: [git]
     services: []
@@ -85,8 +85,6 @@ projects:
       DB_PORT: '55414'
       DB_USER: postgres
       DB_PASS: postgres
-      REDIS_HOST: 127.0.0.1
-      REDIS_PORT: '56380'
     requires: [git, docker, node, npx, vips, ffmpeg]
     services: [mastodon-postgres, mastodon-redis]
     # Mirrors .github/workflows/test-ruby.yml: the test environment reads the

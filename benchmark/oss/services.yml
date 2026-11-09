@@ -16,9 +16,11 @@ services:
       test: [CMD, pg_isready, -U, postgres]
       interval: 1s
       retries: 60
+  # spec/lib/mastodon/redis_configuration_spec.rb expects the default
+  # redis://localhost:6379 with no REDIS_* variables set, as in Mastodon's CI.
   mastodon-redis:
     image: redis:7-alpine
-    ports: ['127.0.0.1:56380:6379']
+    ports: ['127.0.0.1:6379:6379']
     healthcheck:
       test: [CMD, redis-cli, ping]
       interval: 1s

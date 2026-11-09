@@ -70,8 +70,6 @@ module OSSBenchmark
         errors: samples.flat_map { _1[:errors] }.uniq }
     end
 
-    # Each tracer must select the same set in every round of a case, and the
-    # two tracers are compared with each other.
     def compare(rows)
       traced = rows.select { |row| row[:tracer] && row[:valid] }
       traced.group_by { |row| row.values_at(:project, :case, :variant) }.map do |(project, kase, variant), samples|

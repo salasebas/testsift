@@ -14,14 +14,12 @@ module OSSBenchmark
   RSPEC_TRACER_VERSION = '2.0.0.rc.1'
   RUBY_ROOTS = ['~/.local/share/rv/rubies/ruby-%s', '~/.rubies/ruby-%s', '/opt/rubies/ruby-%s',
                 '~/.rbenv/versions/%s', '~/.asdf/installs/ruby/%s', '~/.local/share/mise/installs/ruby/%s'].freeze
+  STRIPPED_PREFIXES = %w[BUNDLE_ GEM_ TESTSIFT_ RSPEC_TRACER_].freeze
   STRIPPED_ENV = %w[RUBYOPT RUBYLIB CI COVERAGE TEST_ENV_NUMBER PARALLEL_TEST_GROUPS
                     PARALLEL_TEST_PROCESSORS].freeze
 
   class SetupError < StandardError; end
 
-  # One project checkout outside the TestSift source tree, pinned to the
-  # manifest commit. Benchmark-owned files are excluded from Git, so a clean
-  # `git status` proves the tracked tree matches the pin before each sample.
   class Workspace
     attr_reader :name, :spec, :path, :ruby_bin, :log
 
@@ -38,7 +36,7 @@ module OSSBenchmark
     end
 
     def env(extra = {})
-      base = ENV.to_h.reject { |key, _| key.start_with?('BUNDLE_', 'GEM_') || STRIPPED_ENV.include?(key) }
+      base = ENV.to_h.reject { |key, _| key.start_with?(*STRIPPED_PREFIXES) || STRIPPED_ENV.include?(key) }
       base.merge('PATH' => "#{@ruby_bin}:#{ENV.fetch('PATH')}", 'BUNDLE_GEMFILE' => gemfile,
                  'BUNDLE_PATH' => @bundle_path).merge(project_env).merge(extra).compact
     end
@@ -198,8 +196,6 @@ module OSSBenchmark
       @originals[relative] = File.exist?(full) ? [File.binread(full), File.mtime(full)] : nil
     end
 
-    # Restores every path a mutation touched, with its original mtime, and
-    # deletes all tracer output, so each sample starts from the same bytes.
     def reset
       @originals.each do |relative, original|
         full = File.join(@path, relative)

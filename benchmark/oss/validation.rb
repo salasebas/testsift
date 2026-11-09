@@ -4,10 +4,6 @@ require 'json'
 require 'set'
 
 module OSSBenchmark
-  # Integrity checks decide whether a row is a measurement at all.
-  # Selection checks compare a traced run with the independent plain oracle
-  # of the same source tree; a missed failure is a result, and it also makes
-  # the campaign exit nonzero.
   class Validation
     COMPLETE_CASES = %w[plain coverage_control full invalidated].freeze
 
