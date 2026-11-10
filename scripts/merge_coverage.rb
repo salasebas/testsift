@@ -21,11 +21,11 @@
 #
 # Output:
 #   - coverage/index.html          (HTML report)
-#   - coverage/coverage.json       (JSON report; codecov + dashboards)
+#   - coverage/coverage.xml        (Cobertura report uploaded to Codecov)
 #   - coverage/.last_run.json      (last-run summary)
 
 require 'simplecov'
-require 'simplecov_json_formatter'
+require 'simplecov-cobertura'
 
 resultsets = ARGV.empty? ? Dir['coverage_artifacts/**/.resultset.json'] : ARGV
 abort 'no resultsets to collate' if resultsets.empty?
@@ -52,6 +52,6 @@ SimpleCov.collate(resultsets) do
 
   formatter SimpleCov::Formatter::MultiFormatter.new([
     SimpleCov::Formatter::HTMLFormatter,
-    SimpleCov::Formatter::JSONFormatter
+    SimpleCov::Formatter::CoberturaFormatter
   ])
 end
