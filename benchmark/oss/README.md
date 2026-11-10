@@ -58,7 +58,7 @@ task benchmark:oss -- --projects rubocop --tracers testsift,rspec-tracer --tests
 | `--projects LIST` | Projects from corpus.yml. Default: all, one after another. |
 | `--suite NAME` | `full` (default) or a fixed subset named in corpus.yml, such as `subset` or `smoke`. |
 | `--cases LIST` | Default: all cases below. |
-| `--changes LIST` | Change names from corpus.yml for the `changed` case. Default: all. |
+| `--changes LIST` | Change names from corpus.yml for the `changed` case; names are per project, so pass `--projects` too. Default: all. |
 | `--tracers LIST` | `testsift`, `rspec-tracer`, or both. Default: `testsift`. |
 | `--revision REV` | TestSift Git revision to archive and measure. Default: `HEAD`. |
 | `--testsift-version V` | Measure a released TestSift gem instead of a revision. |
