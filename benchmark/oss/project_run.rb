@@ -41,7 +41,8 @@ module OSSBenchmark
     end
 
     def changes
-      @spec.fetch('changes')
+      selected = @options[:changes]
+      @spec.fetch('changes').select { |change| selected.nil? || selected.include?(change.fetch('name')) }
     end
 
     def preflight

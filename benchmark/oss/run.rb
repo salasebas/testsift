@@ -190,6 +190,7 @@ module OSSBenchmark
     flags.on('--suite NAME', 'full or a fixed subset named in corpus.yml') { |value| options[:suite] = value }
     flags.on('--cases LIST', Array, CASES.join(',')) { |value| options[:cases] = value }
     flags.on('--tracers LIST', Array, TRACERS.keys.join(',')) { |value| options[:tracers] = value }
+    flags.on('--changes LIST', Array, 'change names in corpus.yml; default: all') { |value| options[:changes] = value }
     flags.on('--runner NAME', 'runner named in corpus.yml') { |value| options[:runner] = value }
     flags.on('--workers N', Integer) { |value| options[:workers] = value }
   end
@@ -215,14 +216,26 @@ module OSSBenchmark
 
   def self.validate_names(options, projects)
     unknown = { project: options[:projects] - projects.keys, case: options[:cases] - CASES,
-                tracer: options[:tracers] - TRACERS.keys }.reject { |_, values| values.empty? }
+                tracer: options[:tracers] - TRACERS.keys,
+                change: options[:changes].to_a - projects.slice(*options[:projects]).values.flat_map do |project|
+                  project.fetch('changes').map { |change| change.fetch('name') }
+                end }.reject { |_, values| values.empty? }
     return if unknown.empty?
 
     raise ArgumentError, "unknown #{unknown.map { |kind, values| "#{kind}: #{values.join(', ')}" }.join('; ')}"
   end
 
+  def self.validate_changes(name, project, options)
+    return unless options[:changes] && options[:cases].include?('changed')
+    return if project.fetch('changes').any? { |change| options[:changes].include?(change.fetch('name')) }
+
+    raise ArgumentError, "--changes names no change of #{name}"
+  end
+
   def self.validate_project(name, project, options)
     raise ArgumentError, "#{name} has no suite #{options[:suite]}" unless project.fetch('suites').key?(options[:suite])
+
+    validate_changes(name, project, options)
 
     runner = project.fetch('runners').fetch(options[:runner] || project.fetch('default_runner')) do
       raise ArgumentError, "#{name} has no runner #{options[:runner]}"
