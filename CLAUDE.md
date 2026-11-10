@@ -74,8 +74,8 @@ commit messages are the only materials that survive in the repository.
   `task test:*` sets it). Multi-suite resultsets auto-merge into
   `coverage/.resultset.json`; `task coverage:merge` collates them via
   `SimpleCov.collate` and produces `coverage/index.html` +
-  `coverage/coverage.json`. CI: `lint-and-specs.yml`'s `coverage` job
-  downloads per-job artifacts + pushes the merged JSON to Codecov
+  `coverage/coverage.xml` (Cobertura). CI: `lint-and-specs.yml`'s `coverage` job
+  downloads per-job artifacts + pushes the merged Cobertura XML to Codecov
   (sole public consumer; the gh-pages `/coverage/` page used to mirror
   this and was removed since Codecov is the canonical surface). Skip
   with `COVERAGE=false` env; mutation runs auto-skip via

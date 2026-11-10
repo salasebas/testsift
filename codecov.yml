@@ -2,19 +2,20 @@
 # Codecov bot also drops a comment with the per-PR delta + diff
 # coverage summary. Documentation: https://docs.codecov.com/docs/codecovyml-reference
 #
-# The line + branch baseline lives in `benchmark/ratchet.json`-adjacent
-# spirit: SimpleCov collates resultsets uploaded by every per-suite
-# CI job (lint-and-specs.yml `coverage` aggregator); Codecov computes
-# the project + patch ratios server-side from the resulting
-# `coverage/coverage.json`.
+# SimpleCov collates the resultsets uploaded by every per-suite CI
+# job (lint-and-specs.yml `coverage` aggregator) into one Cobertura
+# report, `coverage/coverage.xml`. Cobertura is the format whose
+# per-line branch data (`condition-coverage`) Codecov's parser reads;
+# Codecov ignores the `branches` key of SimpleCov's JSON output. A
+# line with an untaken branch counts as a partial, which lowers both
+# the project and the patch ratio below.
 
 codecov:
   require_ci_to_pass: false
   notify:
-    # Wait for every test-* + the `coverage` aggregator to upload
-    # before posting the PR comment, so the delta math is computed
-    # over the full collated payload, not whichever shard reported
-    # first.
+    # Only the `coverage` aggregator uploads, once per commit, after
+    # collating every test-* job's resultset; the per-suite jobs
+    # upload nothing to Codecov.
     after_n_builds: 1
 
 coverage:

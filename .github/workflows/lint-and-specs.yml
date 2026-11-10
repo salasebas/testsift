@@ -174,7 +174,7 @@ jobs:
       # scope for this PR.
 
   # Aggregator: collate every per-job coverage resultset into one
-  # canonical merged report (HTML + JSON) and push to Codecov for
+  # canonical merged report (HTML + Cobertura) and push to Codecov for
   # PR delta + diff-coverage gating + project history. Codecov is
   # the only consumer; the merged report is read from the runner
   # workspace directly and not re-uploaded as a CI artifact.
@@ -199,11 +199,15 @@ jobs:
           pattern: coverage-test-*
       - name: Merge resultsets via SimpleCov.collate
         run: task coverage:merge
+      # continue-on-error keeps a Codecov outage from turning
+      # `ci-done` red; fail_ci_if_error still marks the step failed.
       - name: Push to Codecov
-        uses: codecov/codecov-action@v7
+        uses: codecov/codecov-action@303a32d7a59b442fa8d48b6a1cc6825c09c847a5 # v7.1.1
+        continue-on-error: true
         with:
-          files: coverage/coverage.json
-          fail_ci_if_error: false
+          files: coverage/coverage.xml
+          disable_search: true
+          fail_ci_if_error: true
           token: ${{ secrets.CODECOV_TOKEN }}
 
   test-mutation-smoke:
