@@ -8,7 +8,7 @@ module OSSBenchmark
     COMPLETE_CASES = %w[plain coverage_control full invalidated].freeze
 
     def self.executed_ids(row)
-      JSON.parse(File.read(File.join(row.fetch(:artifact_directory), 'examples.json'))).to_set(&:first)
+      JSON.load_file(File.join(row.fetch(:artifact_directory), 'examples.json')).to_set(&:first)
     end
 
     def initialize(row, oracle, processes:, tracer_version:)

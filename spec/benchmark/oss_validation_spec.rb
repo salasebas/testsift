@@ -64,6 +64,14 @@ RSpec.describe OSSBenchmark::Validation do
                                      'testsift loaded 2.0.0.rc.1 from /gems/testsift-0.0.1')
   end
 
+  it 'reads non-ASCII example IDs when the locale is C' do
+    previous = Encoding.default_external
+    Encoding.default_external = Encoding::US_ASCII
+    expect(described_class.executed_ids(row(passed('é')))).to eq(Set['é'])
+  ensure
+    Encoding.default_external = previous
+  end
+
   it 'rejects a run during which the host slept' do
     data = validate(row(passed('a', 'b', 'c', 'd')).merge(slept_seconds: 8634.2))
     expect(data[:errors]).to include('host slept 8634.2 s during the run')

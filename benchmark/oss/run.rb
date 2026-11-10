@@ -147,7 +147,7 @@ module OSSBenchmark
     def replay_lockfile(name)
       return nil unless @options[:lockfiles]
 
-      JSON.parse(File.read(@options[:lockfiles])).dig('projects', name, 'benchmark_lockfile', 'content') ||
+      JSON.load_file(@options[:lockfiles]).dig('projects', name, 'benchmark_lockfile', 'content') ||
         raise(SetupError, "#{@options[:lockfiles]} has no lockfile for #{name}")
     end
 

@@ -215,7 +215,7 @@ module OSSBenchmark
     end
 
     def measurements(directory, tracer)
-      processes = Dir.glob(File.join(directory, 'results', 'process.*.json')).map { |path| JSON.parse(File.read(path)) }
+      processes = Dir.glob(File.join(directory, 'results', 'process.*.json')).map { |path| JSON.load_file(path) }
       examples = processes.flat_map { |process| process.fetch('examples', []) }
       File.write(File.join(directory, 'examples.json'), JSON.generate(examples))
       resources(directory).merge(
@@ -243,10 +243,10 @@ module OSSBenchmark
       manifest = File.join(cache, 'last_run.json')
       return { cache_examples: 0, duplicate_examples: nil } unless File.file?(manifest)
 
-      run = File.join(cache, JSON.parse(File.read(manifest)).fetch('run_id'))
+      run = File.join(cache, JSON.load_file(manifest).fetch('run_id'))
       duplicates = File.join(run, 'duplicate_examples.json')
-      { cache_examples: JSON.parse(File.read(File.join(run, 'all_examples.json'))).size,
-        duplicate_examples: File.file?(duplicates) ? JSON.parse(File.read(duplicates)).values.sum(&:size) : 0 }
+      { cache_examples: JSON.load_file(File.join(run, 'all_examples.json')).size,
+        duplicate_examples: File.file?(duplicates) ? JSON.load_file(duplicates).values.sum(&:size) : 0 }
     end
 
     def files(directory)
