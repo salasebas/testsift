@@ -189,15 +189,23 @@ module OSSBenchmark
       env = { 'RUBYOPT' => "-r#{BOOT}", 'OSS_RESULTS' => File.join(directory, 'results'),
               'OSS_TRACER' => tracer, 'OSS_COVERAGE' => kase == 'coverage_control' ? COVERAGE_MODES : nil }
       argv = Host.timed(command, File.join(directory, 'time.txt'))
-      started = Process.clock_gettime(Process::CLOCK_MONOTONIC)
+      started = clocks
       output, status = Open3.capture2e(@workspace.env(env), *argv, chdir: @workspace.path, unsetenv_others: true)
-      wall = Process.clock_gettime(Process::CLOCK_MONOTONIC) - started
+      wall, total = clocks.zip(started).map { |now, before| now - before }
       File.write(File.join(directory, 'output.log'), output)
       measurements(directory, tracer).merge(
         project: @workspace.name, suite: @options.fetch(:suite), case: kase, tracer: tracer, variant: variant,
         command: argv, env: @workspace.project_env.merge(env.compact), exit_code: status.exitstatus,
-        wall_seconds: wall, artifact_directory: directory
+        wall_seconds: wall, slept_seconds: total - wall, artifact_directory: directory
       )
+    end
+
+    # clock_gettime(3): the first clock stops while the host sleeps, the second
+    # keeps counting (macOS CLOCK_UPTIME_RAW/CLOCK_MONOTONIC, Linux
+    # CLOCK_MONOTONIC/CLOCK_BOOTTIME).
+    def clocks
+      awake, total = Host.platform == :macos ? %i[CLOCK_UPTIME_RAW CLOCK_MONOTONIC] : %i[CLOCK_MONOTONIC CLOCK_BOOTTIME]
+      [Process.const_get(awake), Process.const_get(total)].map { |clock| Process.clock_gettime(clock) }
     end
 
     def command

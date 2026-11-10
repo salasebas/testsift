@@ -21,6 +21,7 @@ module OSSBenchmark
     end
 
     def apply
+      check_awake
       check_process_count
       check_tracer_loaded if @tracer
       check_exit
@@ -30,6 +31,11 @@ module OSSBenchmark
     end
 
     private
+
+    def check_awake
+      slept = @row[:slept_seconds].to_f
+      @errors << "host slept #{slept.round(1)} s during the run" if slept > 1
+    end
 
     def check_process_count
       telemetry = @row.fetch(:processes)
